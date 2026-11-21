@@ -116,6 +116,10 @@
         <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">REGISTERED AGENTS</div><div class="stat-value" id="capability-total">00</div><div class="stat-foot">All departments</div></article><article class="stat-card"><div class="stat-label">PREFLIGHT PASSED</div><div class="stat-value" id="capability-preflight-total">00</div><div class="stat-foot">Structure only</div></article><article class="stat-card"><div class="stat-label">VERIFIED CAPABILITIES</div><div class="stat-value" id="capability-verified-total">00</div><div class="stat-foot">Evidence-backed</div></article></div>
         <div class="orchestrator-section-head"><div><p class="eyebrow">AGENT TEST REGISTER</p><h2>Capability status by agent</h2></div><span class="pill amber">NOT VERIFIED BY DEFAULT</span></div>
         <div id="capability-agent-list" class="capability-agent-list"><p class="muted">Loading capability records…</p></div>
+        <section class="panel" style="margin-top:18px"><div class="panel-head"><div><p class="eyebrow">ROLE-SPECIFIC PRACTICAL EXAM</p><h2>Work Sample Assignments</h2><p>28 prepared assignments · start each sample, complete the work, then record evidence below.</p></div></div>
+          <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">QUEUED</div><div class="stat-value" id="work-sample-queued-count">00</div></article><article class="stat-card"><div class="stat-label">IN PROGRESS</div><div class="stat-value" id="work-sample-active-count">00</div></article><article class="stat-card"><div class="stat-label">SUBMITTED / REVIEWED</div><div class="stat-value" id="work-sample-submitted-count">00</div></article></div>
+          <div id="work-sample-assignment-list" class="capability-agent-list"><p class="muted">Loading assignments…</p></div>
+        </section>
         <div class="distribution-lower-grid capability-lower-grid"><section class="panel"><div class="panel-head"><div><h2>Record an evidence-based test</h2><p>Only after a real work sample or independent QA review.</p></div></div>
           <form id="capability-test-form" class="distribution-form"><label>AI Agent<select id="capability-employee"></select></label><label>Test type<select id="capability-test-kind"><option value="work_sample">Real work sample</option><option value="qa_review">Independent QA review</option></select></label><label>Result<select id="capability-test-status"><option value="passed">Passed</option><option value="failed">Failed</option><option value="blocked">Blocked</option></select></label><label>Evidence summary<textarea id="capability-evidence" rows="4" minlength="20" required placeholder="Describe the actual task, output, acceptance criteria, and what was checked…"></textarea></label><label>Evidence reference (optional)<input id="capability-reference" maxlength="500" placeholder="Task ID, asset ID, document link, or QA record"></label><button class="primary-btn" id="capability-test-submit" type="submit">Save test evidence</button></form>
         </section><section class="panel"><div class="panel-head"><div><h2>Recent test history</h2><p>Latest evidence records</p></div></div><div id="capability-test-history" class="activity-feed"><p class="muted">No tests yet.</p></div></section></div>
@@ -217,6 +221,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-13"></script>
+  <script type="module" src="./app.js?v=20261122-14"></script>
 </body>
 </html>
