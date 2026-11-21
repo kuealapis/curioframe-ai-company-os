@@ -241,3 +241,15 @@
 .distribution-quick-link small{font-size:.72rem;color:var(--muted)}
 .distribution-quick-link>b{font-size:.76rem;white-space:nowrap}
 .distribution-quick-link:hover{border-color:var(--accent)}
+
+/* Founder-led Distribution account activation */
+.activation-panel{margin:15px 0;padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+.activation-panel-head{display:flex;justify-content:space-between;gap:10px;font-size:.78rem}
+.activation-panel-head span{color:var(--muted);font-variant-numeric:tabular-nums}
+.activation-progress{height:6px;margin:10px 0 12px;border-radius:99px;background:var(--border);overflow:hidden}
+.activation-progress span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .2s}
+.activation-check{display:flex!important;flex-direction:row!important;align-items:center;gap:9px!important;margin:9px 0!important;font-weight:500!important;font-size:.76rem!important;cursor:pointer}
+.activation-check input{width:16px!important;height:16px;min-width:16px;accent-color:var(--accent);padding:0!important}
+.activation-panel>small{display:block;line-height:1.5;margin-top:9px}
+.activation-verify-btn{margin-top:12px}
+.activation-verify-btn:disabled{opacity:.45;cursor:not-allowed}
