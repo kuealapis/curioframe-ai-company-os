@@ -24,7 +24,7 @@ Research → Content → Quality Review → Marketing → Owner approval when re
 - This public repository contains source code and non-sensitive documentation only.
 
 ## Implementation status
-This repository is the starting point for the Company OS. A live dashboard, database, integrations, and autonomous AI execution are not yet deployed.
+This repository contains the first Company OS dashboard foundation. The dashboard now includes Supabase email/password authentication and live database-backed company records. AI agents, automated research/content execution, and publishing integrations are still future build stages.
 
 
 ## Repository structure
@@ -37,9 +37,10 @@ This repository is the starting point for the Company OS. A live dashboard, data
 - [x] Dashboard foundation committed.
 - [x] Responsive navigation and initial modules.
 - [x] Initial database schema drafted.
-- [ ] Supabase project connection and schema deployment.
-- [ ] Authentication and live database-backed dashboard.
+- [x] Supabase project connection and initial schema deployment.
+- [x] Owner authentication and live database-backed dashboard code.
+- [x] GitHub Pages deployment workflow added.
+- [ ] Configure the public site URL in Supabase Auth and verify first owner sign-in.
 - [ ] Agent orchestration, model integration, and real task execution.
-- [ ] Hosting and public deployment.
 
-The current dashboard uses illustrative sample data in the browser. Do not treat sample tasks, approvals, employee statuses, or metrics as real company activity.
+Dashboard metrics, employees, tasks, approvals, and content counts are intended to load from the authenticated owner's Supabase records. Employee role records describe planned responsibilities; they are not autonomous agents until orchestration and model integrations are implemented.
