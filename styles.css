@@ -231,3 +231,13 @@
 .distribution-roadmap p{color:var(--muted);font-size:.8rem;line-height:1.65}
 @media(max-width:850px){.distribution-lower-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.distribution-summary-grid{grid-template-columns:1fr}.distribution-account-grid{grid-template-columns:1fr}.distribution-queue-item{display:block}.distribution-queue-item time{display:block;margin-top:8px}}
+
+/* Ensure mobile users can reach every workspace destination */
+.sidebar .nav{overflow-y:auto;overscroll-behavior:contain;max-height:calc(100vh - 190px);padding-bottom:10px;scrollbar-width:thin}
+.distribution-quick-link{display:flex;align-items:center;gap:13px;margin:0 0 18px;padding:15px 17px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-decoration:none}
+.distribution-quick-link>span:first-child{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--surface-2);font-size:21px}
+.distribution-quick-link>span:nth-child(2){display:grid;gap:3px;flex:1;min-width:0}
+.distribution-quick-link strong{font-size:.88rem}
+.distribution-quick-link small{font-size:.72rem;color:var(--muted)}
+.distribution-quick-link>b{font-size:.76rem;white-space:nowrap}
+.distribution-quick-link:hover{border-color:var(--accent)}
