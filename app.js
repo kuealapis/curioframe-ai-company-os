@@ -16,7 +16,7 @@ const employeeSeed = [
   {name:"Operations Officer",role_key:"operations",department:"Operations",responsibilities:"Maintains workflows, schedules, records, and operational handoffs."}
 ];
 
-let currentUser=null, company=null, employees=[], tasks=[], approvals=[], contentAssets=[], agentMessages=[], qualityReviews=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function setMessage(message){$("#auth-message").textContent=message}
@@ -42,17 +42,19 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes]=await Promise.all([
+  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes]=await Promise.all([
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("approvals").select("*").eq("company_id",company.id).eq("status","pending").order("created_at",{ascending:false}),
     supabase.from("content_assets").select("*").eq("company_id",company.id),
     supabase.from("agent_messages").select("*, from_employee:ai_employees!agent_messages_from_employee_id_fkey(name), to_employee:ai_employees!agent_messages_to_employee_id_fkey(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
-    supabase.from("quality_reviews").select("*, ai_employees(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40)
+    supabase.from("quality_reviews").select("*, ai_employees(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
+    supabase.from("task_events").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(150),
+    supabase.from("recovery_snapshots").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
   ]);
-  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes])if(result.error)throw result.error;
-  employees=employeeRes.data||[];tasks=taskRes.data||[];approvals=approvalRes.data||[];contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];
+  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes])if(result.error)throw result.error;
+  employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];
   renderAll();
 }
 
@@ -81,10 +83,29 @@ function renderAll(){
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
+  renderHistoryRecovery();
   const quality=$("#quality-feed");
   if(quality)quality.innerHTML=qualityReviews.length?qualityReviews.map(q=>'<article class="activity-item"><div><strong>'+escapeHtml(q.review_stage.toUpperCase())+' · '+escapeHtml(q.ai_employees?.name||"AI Reviewer")+'</strong><small>Iteration '+q.iteration+' · '+escapeHtml(q.status.toUpperCase())+'</small><p>'+escapeHtml(q.evidence||"Review recorded.")+'</p></div><span class="pill '+(q.status==="passed"?"green":q.status==="failed"?"amber":"gray")+'">'+escapeHtml(q.status)+'</span></article>').join(""):'<p class="muted">No QC/QA reviews recorded yet.</p>';
   $("#today-label").textContent=new Intl.DateTimeFormat("en",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date()).toUpperCase();
   $("#owner-email").textContent=currentUser.email||"OWNER";
+}
+
+function renderHistoryRecovery(){
+  const timeline=$("#history-timeline"),recover=$("#recovery-list");
+  const eventItems=taskEvents.map(e=>({time:e.created_at,title:String(e.event_type||"event").replaceAll("_"," "),detail:e.message,taskId:e.task_id}));
+  const decisionItems=allApprovals.filter(a=>a.status!=="pending").map(a=>({time:a.decided_at||a.created_at,title:"Approval "+a.status,detail:a.title+" · "+(a.decision_note||"No decision note"),taskId:a.task_id}));
+  const merged=[...eventItems,...decisionItems].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,100);
+  if(timeline)timeline.innerHTML=merged.length?merged.map(x=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(x.title)+'</strong><time>'+escapeHtml(x.time?new Date(x.time).toLocaleString("id-ID"):"Time unavailable")+'</time></div><p>'+escapeHtml(x.detail)+'</p>'+(x.taskId?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===x.taskId)?.title||x.taskId)+'</small>':'')+'</article>').join(""):'<p class="muted">No company activity has been recorded yet.</p>';
+  const rejected=allApprovals.filter(a=>a.status==="rejected").sort((a,b)=>new Date(b.decided_at||b.created_at)-new Date(a.decided_at||a.created_at));
+  if(recover)recover.innerHTML=rejected.length?rejected.map(a=>'<article class="recovery-entry"><div><strong>'+escapeHtml(a.title)+'</strong><p>Approval rejected · '+escapeHtml(a.decided_at?new Date(a.decided_at).toLocaleString("id-ID"):"date unavailable")+'</p><small>'+escapeHtml(a.decision_note||"No decision note")+'</small></div><button class="secondary-btn" type="button" data-reopen-approval="'+escapeHtml(a.id)+'">Reopen review</button></article>').join(""):'<p class="muted">No rejected approvals need recovery.</p>';
+  const count=$("#recovery-snapshot-count");if(count)count.textContent=String(recoverySnapshots.length);
+  const rejectedCount=$("#rejected-approval-count");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
+}
+async function reopenApprovalForReview(id,button){
+  if(!confirm("Reopen this rejected approval for Owner review? Previous states will be preserved in Recovery History."))return;
+  button.disabled=true;button.textContent="Recovering…";
+  try{const {data,error}=await supabase.rpc("restore_approval_for_review",{p_approval_id:id});if(error)throw error;if(data?.success!==true)throw new Error("Recovery was not confirmed.");await loadData();alert("Approval restored to Pending Owner Review. Previous state preserved in Recovery History.");}
+  catch(error){button.disabled=false;button.textContent="Reopen review";showError(error);}
 }
 
 function renderVirtualHQ(){
@@ -204,12 +225,16 @@ async function decideApproval(decision){
   const buttons=[$("#approval-approve-btn"),$("#approval-revision-btn"),$("#approval-reject-btn")];
   buttons.forEach(b=>b.disabled=true);
   try{
+    const assetBefore=contentAssets.filter(a=>a.task_id===approval.task_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+    const taskBefore=tasks.find(t=>t.id===approval.task_id);
+    const {error:snapshotError}=await supabase.from("recovery_snapshots").insert({company_id:company.id,task_id:approval.task_id,entity_type:"approval",entity_id:approval.id,action:"before_owner_"+decision,created_by:currentUser.id,snapshot:{approval,task:taskBefore||null,asset:assetBefore||null}});
+    if(snapshotError)throw snapshotError;
     const {error:approvalError}=await supabase.from("approvals").update({
       status:decision,decided_by:currentUser.id,decided_at:new Date().toISOString(),decision_note:note||null
     }).eq("id",approvalId).eq("status","pending");
     if(approvalError)throw approvalError;
     if(approval.task_id){
-      const asset=contentAssets.filter(a=>a.task_id===approval.task_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+      const asset=assetBefore;
       if(asset){
         const assetStatus=decision==="approved"?"approved":decision==="rejected"?"rejected":"draft";
         const {error:assetError}=await supabase.from("content_assets").update({status:assetStatus,updated_at:new Date().toISOString()}).eq("id",asset.id);
@@ -287,6 +312,7 @@ function navigate(page){
 $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.page)}));
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
@@ -298,6 +324,8 @@ $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2")
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
+  const recoveryTrigger=e.target.closest("[data-reopen-approval]");
+  if(recoveryTrigger){reopenApprovalForReview(recoveryTrigger.dataset.reopenApproval,recoveryTrigger);return}
   const hqClose=e.target.closest("[data-hq-close]");
   if(hqClose){selectedHQEmployeeId=null;renderVirtualHQ();return}
   const hqStation=e.target.closest("[data-hq-employee]");
