@@ -6,15 +6,16 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-20">
+  <link rel="stylesheet" href="./styles.css?v=20261121-22">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
-    <form class="auth-card" id="auth-form">
+    <form class="auth-card" id="auth-form" autocomplete="on">
       <div class="brand-mark auth-mark">C</div><p class="eyebrow">CURIOFRAME AI COMPANY OS</p>
       <h1 id="auth-title">Owner sign in</h1><p class="auth-copy" id="auth-copy">Sign in to open your private company workspace.</p>
-      <label>Email address<input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-      <label>Password<input id="auth-password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
+      <label>Email address<input id="auth-email" type="email" autocomplete="username" required placeholder="you@example.com"></label>
+      <label><span id="auth-password-label">Password</span><input id="auth-password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
+      <div class="auth-options" id="auth-options"><label class="remember-email"><input id="remember-email" type="checkbox"> Remember my email on this device</label><button class="auth-forgot" id="auth-forgot-password" type="button">Forgot password?</button></div>
       <button class="primary-btn auth-submit" id="auth-submit" type="submit">Sign in</button>
       <button class="auth-switch" id="auth-switch" type="button">New here? Create your owner account</button>
       <p class="auth-message" id="auth-message" role="status"></p>
@@ -122,6 +123,6 @@
       }
     }, true);
   </script>
-  <script type="module" src="./app.js?v=20261121-21"></script>
+  <script type="module" src="./app.js?v=20261121-22"></script>
 </body>
 </html>
