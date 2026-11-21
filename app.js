@@ -462,7 +462,7 @@ function renderHQDetail(employeeId){
 }
 function selectHQEmployee(employeeId){
   selectedHQEmployeeId=employeeId;
-  $(".hq-dept-card").forEach(card=>card.classList.toggle("selected",card.dataset.hqEmployee===employeeId));
+  $$(".hq-dept-card").forEach(card=>card.classList.toggle("selected",card.dataset.hqEmployee===employeeId));
   hqWorlds.forEach(world=>world.select(employeeId));
   renderHQDetail(employeeId);
 }
@@ -672,8 +672,8 @@ async function refreshSession(){
   if(data.session)await startWorkspace(data.session.user);else showAuth();
 }
 function navigate(page){
-  $(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
-  $(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
+  $$(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
+  $$(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
   $("#page-crumb").textContent=page.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
   $("#sidebar").classList.remove("open");history.replaceState(null,"","#"+page);
   // A hidden page has zero width; initialize its WebGL canvas only after it becomes visible.
