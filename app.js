@@ -317,6 +317,71 @@ function runDispatcherQADryRun(){
 }
 
 
+async function submitResearchEvidencePack(event){
+ event.preventDefault();
+ const button=$("#research-evidence-submit"),status=$("#work-sample-batch-status"),host=$("#safe-simulation-results");
+ const topic=$("#research-evidence-topic").value.trim();
+ const question=$("#research-evidence-question").value.trim();
+ const rows=$("#research-evidence-claims").value.split("\n").map(x=>x.trim()).filter(Boolean);
+ if(!company?.id||!currentUser?.id){if(host)host.innerHTML='<p class="notice">Sign in to the company workspace first.</p>';return}
+ const researcher=employees.find(e=>String(e.role_key||"").toLowerCase()==="research");
+ const policy=operatingPolicy;
+ if(!researcher){if(host)host.innerHTML='<p class="notice">BLOCKED: Research Officer is not registered.</p>';return}
+ if(!policy||policy.approval_mode!=="spending_only"||Number(policy.max_automatic_spend)!==0||policy.allow_paid_services!==false||policy.allow_paid_api_usage!==false){if(host)host.innerHTML='<p class="notice">BLOCKED: zero-spend policy could not be positively verified. Nothing was saved.</p>';return}
+ if(topic.length<5||question.length<10||rows.length<2){if(host)host.innerHTML='<p class="notice">Add a clear topic, research question, and at least two claim-evidence-source rows.</p>';return}
+ const parsed=[];
+ for(let i=0;i<rows.length;i++){
+  const parts=rows[i].split("|").map(x=>x.trim());
+  if(parts.length<3||!parts[0]||!parts[1]||!parts[2]){if(host)host.innerHTML='<p class="notice">Row '+(i+1)+' must use: Claim | Supporting evidence note | Source URL</p>';return}
+  let url;try{url=new URL(parts.slice(2).join("|"))}catch{if(host)host.innerHTML='<p class="notice">Row '+(i+1)+' has an invalid source URL.</p>';return}
+  if(!["http:","https:"].includes(url.protocol)){if(host)host.innerHTML='<p class="notice">Only HTTP(S) source URLs are accepted.</p>';return}
+  parsed.push({claim:parts[0],evidence_note:parts[1],source_url:url.href,domain:url.hostname.toLowerCase().replace(/^www\./,"")});
+ }
+ const domains=[...new Set(parsed.map(x=>x.domain))];
+ if(domains.length<2){if(host)host.innerHTML='<p class="notice">Use at least two distinct source domains. This checks domain diversity only, not source credibility.</p>';return}
+ if(button){button.disabled=true;button.textContent="Saving evidence packet…"}
+ let taskId=null,assetId=null;
+ try{
+  const taskResult=await supabase.from("tasks").insert({
+   company_id:company.id,title:"Research evidence validation · "+topic.slice(0,90),
+   objective:"RESEARCH EVIDENCE REVIEW — Founder-submitted draft. Topic: "+topic+". Question: "+question+". Inspect each claim, open and verify every cited source, confirm the evidence directly supports the claim, identify publication dates/primary sources, flag contradictions, and produce an independently checked research brief. Do not mark approved until source content has actually been reviewed. No AI provider/API calls are authorized by this task.",
+   assigned_employee_id:researcher.id,status:"queued",priority:"normal",created_by:currentUser.id
+  }).select("id").single();
+  if(taskResult.error)throw taskResult.error;
+  taskId=taskResult.data.id;
+  const body=[
+   "FOUNDER-SUBMITTED RESEARCH EVIDENCE DRAFT — NOT VERIFIED",
+   "This is a structured evidence intake packet, not a completed or approved research report.",
+   "Topic: "+topic,
+   "Research question: "+question,
+   "Claims and submitted evidence:",
+   ...parsed.map((x,i)=>[
+    (i+1)+". Claim: "+x.claim,
+    "Evidence note (user supplied; not independently checked): "+x.evidence_note,
+    "Source URL (not fetched or verified by this workflow): "+x.source_url,
+    "Source domain: "+x.domain
+   ].join("\n")),
+   "Distinct source domains submitted: "+domains.join(", "),
+   "Required next step: Research Officer must inspect each source, verify publication details and claim support, add source-backed findings, note uncertainty/contradictions, and route for independent QA.",
+   "Verification status: NOT VERIFIED. No source pages were fetched by this workflow.",
+   "Publication status: BLOCKED pending source verification and independent QA.",
+   "Provider/API calls: 0."
+  ].join("\n\n");
+  const assetResult=await supabase.from("content_assets").insert({company_id:company.id,task_id:taskId,title:"Research Evidence Draft · "+topic.slice(0,100)+" · NOT VERIFIED",asset_type:"research_brief",status:"review",body}).select("id").single();
+  if(assetResult.error)throw assetResult.error;
+  assetId=assetResult.data.id;
+  const event=await supabase.from("task_events").insert({company_id:company.id,task_id:taskId,employee_id:researcher.id,event_type:"research_evidence_packet_submitted",message:"Founder-submitted claim/evidence/source packet queued for Research Officer verification. It remains NOT VERIFIED.",metadata:{source_asset_id:assetId,claims_count:parsed.length,distinct_source_domains:domains.length,source_urls_submitted:parsed.length,source_pages_fetched:false,provider_called:false,verification_status:"not_verified"}}).select("id").single();
+  if(event.error)throw event.error;
+  await loadData();
+  if(host)host.innerHTML='<div class="notice" style="margin:12px 0"><strong>RESEARCH EVIDENCE PACK SAVED · NOT VERIFIED</strong><p>Founder-submitted evidence has been routed to the Research Officer for source inspection. URL format and domain diversity were checked; source content and claim accuracy were not.</p></div><article class="capability-agent-card"><ul><li>Research asset: <code>'+escapeHtml(assetId)+'</code> · review</li><li>Research task: <code>'+escapeHtml(taskId)+'</code> · queued</li><li>Claim/source rows: <strong>'+parsed.length+'</strong></li><li>Distinct source domains: <strong>'+domains.length+'</strong></li><li>Submission event: <strong>SAVED</strong> · <code>'+escapeHtml(event.data.id)+'</code></li><li>Source pages fetched: <strong>NO</strong></li><li>Provider/API calls: <strong>0</strong></li></ul><p>Content intake must remain blocked until the Research Officer has actually verified the sources and independent QA has reviewed the resulting brief.</p></article>';
+  if(status)status.textContent="Research evidence draft saved and assigned to Research Officer. Not verified; zero provider/API calls.";
+  $("#research-evidence-form").reset();
+ }catch(error){
+  if(taskId&&!assetId)await supabase.from("tasks").delete().eq("id",taskId).eq("company_id",company.id);
+  if(host)host.innerHTML='<p class="notice">EVIDENCE PACK SAVE FAILED: '+escapeHtml(error?.message||"Unknown database error")+'. Check database records before retrying.</p>';
+  if(status)status.textContent="Research evidence pack failed to save. No AI provider was called.";
+ }finally{if(button){button.disabled=false;button.textContent="Save & Queue Research Verification"}}
+}
 async function runResearchContentRealHandoff(){
  const host=$("#safe-simulation-results"),status=$("#work-sample-batch-status");
  if(!host)return;
@@ -1131,6 +1196,7 @@ $("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun)
 $("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);
 $("#run-research-content-handoff")?.addEventListener("click",runResearchContentRealHandoff);
 $("#run-content-intake-validation")?.addEventListener("click",runContentIntakeSourceValidation);
+$("#research-evidence-form")?.addEventListener("submit",submitResearchEvidencePack);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
