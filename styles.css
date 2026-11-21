@@ -144,3 +144,11 @@
 .history-separated{margin-top:18px}
 .history-separated .panel{min-width:0}
 .history-entry-top strong{overflow-wrap:anywhere}
+
+/* Status colors in the activity timeline */
+.history-entry{border-left:4px solid #64748b}
+.history-entry.history-rejected,.recovery-entry.recovery-rejected{border-left:4px solid #ef5350;background:rgba(239,83,80,.09)}
+.history-entry.history-success{border-left:4px solid #22c55e;background:rgba(34,197,94,.08)}
+.history-entry.history-transfer{border-left:4px solid #38bdf8;background:rgba(56,189,248,.08)}
+.history-entry.history-neutral{border-left:4px solid #94a3b8}
+.recovery-entry.recovery-rejected{border-top:1px solid rgba(239,83,80,.22);border-right:1px solid rgba(239,83,80,.22);border-bottom:1px solid rgba(239,83,80,.22)}
