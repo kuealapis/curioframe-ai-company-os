@@ -288,6 +288,23 @@ async function runAllWorkSamples(button){
   if(!stopped)await loadData();
  }
 }
+
+function runSafeWorkSampleSimulation(){
+ const host=$("#safe-simulation-results");if(!host)return;
+ const queue=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
+ if(!queue.length){host.innerHTML='<p class="muted">No queued or in-progress assignments to simulate.</p>';return}
+ host.innerHTML='<p class="muted">Running local-only simulation…</p>';
+ const rows=queue.map((item,index)=>{
+  const agent=employees.find(e=>e.id===item.employee_id);
+  const role=agent?.role_key||"unassigned";
+  const checks=["Role and responsibility mapped","Assignment brief loaded","Expected artifact checklist generated","QA handoff prepared","No external provider called"];
+  const artifact="SIMULATED OUTPUT — "+(item.expected_artifacts||"Role-specific deliverable placeholder");
+  return {index:index+1,name:agent?.name||"Unknown agent",role,title:item.assignment_title,brief:item.task_brief,checks,artifact};
+ });
+ host.innerHTML='<div class="notice" style="margin:12px 0"><span>ⓘ</span><div><strong>SIMULATION ONLY · NOT REAL AGENT EXECUTION</strong><p>'+rows.length+' assignment(s) were processed locally in this browser. No Supabase records were changed, no Gemini/API request was made, and no capability gate was passed.</p></div></div>'+rows.map(r=>'<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(r.index+'. '+r.name)+'</strong><small>'+escapeHtml(r.role)+' · SIMULATED</small></div><span class="pill amber">NOT VERIFIED</span></div><h3>'+escapeHtml(r.title)+'</h3><p>'+escapeHtml(r.brief)+'</p><p><strong>Mock artifact:</strong> '+escapeHtml(r.artifact)+'</p><ul>'+r.checks.map(c=>'<li>'+escapeHtml(c)+'</li>').join("")+'</ul><p class="muted">QA status: NOT PERFORMED · Human/independent QA evidence required.</p></article>').join("");
+ const status=$("#work-sample-batch-status");if(status)status.textContent="Safe simulation completed: "+rows.length+" assignments · local only · 0 API calls · 0 database writes.";
+}
+
 async function startWorkSampleAssignment(id,button){
  const item=workSampleAssignments.find(x=>x.id===id);if(!item||item.status!=="queued")return;
  button.disabled=true;
@@ -959,9 +976,8 @@ $("#distribution-publication-form")?.addEventListener("submit",createDistributio
 $("#organization-department-form")?.addEventListener("submit",addOrganizationDepartment);
 $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
-$("#batch-zero-cost-confirm")?.addEventListener("change",e=>{const b=$("#run-all-work-samples");if(b)b.disabled=!e.target.checked});
-$("#run-all-work-samples")?.addEventListener("click",e=>runAllWorkSamples(e.currentTarget));
-$("#resume-work-samples")?.addEventListener("click",e=>runAllWorkSamples(e.currentTarget));
+$("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation);
+// Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
