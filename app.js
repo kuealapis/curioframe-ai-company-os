@@ -20,6 +20,7 @@ const employeeSeed = [
   {name:"AI CEO / Orchestrator",role_key:"ai_ceo",department:"Executive Office",responsibilities:"Coordinates company goals, delegates work, and escalates consequential decisions."},
   {name:"Research Officer",role_key:"research",department:"Research",responsibilities:"Finds promising topics, verifies facts, and prepares research briefs."},
   {name:"Content Officer",role_key:"content",department:"Content Studio",responsibilities:"Turns approved research into English scripts and production assets."},
+  {name:"Development Engineer",role_key:"developer",department:"Engineering",responsibilities:"Turns approved technical plans into implementation deliverables and fixes defects. Does not approve own work."},
   {name:"Marketing Officer",role_key:"marketing",department:"Digital Marketing",responsibilities:"Plans packaging, distribution, audience growth, and customer acquisition."},
   {name:"Quality Manager",role_key:"quality",department:"Quality Assurance",responsibilities:"Coordinates quality policy and escalations."},
   {name:"QC Officer",role_key:"qc",department:"Quality Control",responsibilities:"Independently checks factual accuracy, source traceability, language, timing, and production quality."},
@@ -28,7 +29,7 @@ const employeeSeed = [
   {name:"Operations Officer",role_key:"operations",department:"Operations",responsibilities:"Maintains workflows, schedules, records, and operational handoffs."}
 ];
 
-let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -57,7 +58,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes]=await Promise.all([
+  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes]=await Promise.all([
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("approvals").select("*").eq("company_id",company.id).order("created_at",{ascending:false}),
@@ -65,12 +66,38 @@ async function loadData(){
     supabase.from("agent_messages").select("*, from_employee:ai_employees!agent_messages_from_employee_id_fkey(name), to_employee:ai_employees!agent_messages_to_employee_id_fkey(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
     supabase.from("quality_reviews").select("*, ai_employees(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
     supabase.from("task_events").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(150),
-    supabase.from("recovery_snapshots").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
+    supabase.from("recovery_snapshots").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
+    supabase.from("workflow_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(20),
+    supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order")
   ]);
-  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes])if(result.error)throw result.error;
+  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes])if(result.error)throw result.error;
   employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];
   renderAll();
+}
+
+function renderOrchestrator(){
+  const host=$("#orchestrator-runs");if(!host)return;
+  if(!workflowRuns.length){host.innerHTML='<div class="empty-state"><strong>No active workflows yet</strong><p>Give the Orchestrator one clear goal to create its first pipeline.</p></div>';return}
+  host.innerHTML=workflowRuns.map(run=>{
+    const steps=workflowSteps.filter(s=>s.workflow_id===run.id).sort((a,b)=>a.sort_order-b.sort_order);
+    const labels={planning:"1 · Planning & task breakdown",architecture:"2 · Architecture & UX",development:"3 · Development",qa:"3 · Independent QA",integration:"4 · Integration & release"};
+    const stageOrder=["planning","architecture","development","qa","integration"];
+    const progress=steps.length?Math.round(steps.filter(s=>s.status==="completed").length/steps.length*100):0;
+    return '<article class="orchestrator-run"><div class="orchestrator-run-head"><div><span class="eyebrow">WORKFLOW · '+escapeHtml(run.project_type.toUpperCase())+'</span><h3>'+escapeHtml(run.goal)+'</h3></div><span class="pill '+(run.status==="release_ready"?"green":run.status==="blocked"||run.status==="failed"?"amber":"blue")+'">'+escapeHtml(run.status.replaceAll("_"," "))+'</span></div><div class="orchestrator-progress"><span style="width:'+progress+'%"></span></div><small class="muted">'+progress+'% task completion · '+steps.length+' tasks · QA retries '+run.iteration+'/3</small><div class="orchestrator-steps">'+stageOrder.map(stage=>{const rows=steps.filter(s=>s.stage===stage);if(!rows.length)return "";return '<div class="orchestrator-stage"><strong>'+labels[stage]+'</strong>'+rows.map(st=>'<div class="orchestrator-task"><span class="status-dot '+escapeHtml(st.status)+'"></span><span>'+escapeHtml(st.title)+'</span><small>'+escapeHtml(st.assigned_role_key)+' · '+escapeHtml(st.status)+'</small></div>').join("")+'</div>'}).join("")+'</div></article>';
+  }).join("");
+}
+async function submitOrchestratorGoal(event){
+  event.preventDefault();const button=$("#orchestrator-submit"),goal=$("#orchestrator-goal").value.trim(),type=$("#orchestrator-type").value;
+  if(goal.length<8){$("#orchestrator-message").textContent="Write a more specific goal (at least 8 characters).";return}
+  button.disabled=true;button.textContent="Planning…";$("#orchestrator-message").textContent="Orchestrator is breaking down your goal. This can take a short while.";
+  try{
+    const {data,error}=await supabase.functions.invoke("orchestrate-company-goal",{body:{goal,project_type:type}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    $("#orchestrator-goal").value="";$("#orchestrator-message").textContent=data.message||"Plan created.";
+    await loadData();
+  }catch(error){$("#orchestrator-message").textContent=error.message||"Could not create workflow."}
+  finally{button.disabled=false;button.textContent="Generate pipeline →"}
 }
 
 function renderAll(){
@@ -95,6 +122,7 @@ function renderAll(){
   $("#approval-page-list").innerHTML=pendingMarkup;
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
+  renderOrchestrator();
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
@@ -698,6 +726,7 @@ function openTaskDialog(){
   $("#task-dialog").showModal();
 }
 $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2").addEventListener("click",openTaskDialog);
+$("#orchestrator-form")?.addEventListener("submit",submitOrchestratorGoal);
 
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
