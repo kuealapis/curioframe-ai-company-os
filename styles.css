@@ -205,3 +205,29 @@
 .empty-state strong{display:block;color:var(--text);margin-bottom:6px}
 @media(max-width:850px){.orchestrator-intro{grid-template-columns:1fr}.orchestrator-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.orchestrator-steps{grid-template-columns:1fr}.orchestrator-run{padding:14px}.orchestrator-run-head{display:block}.orchestrator-form-row{align-items:stretch;flex-direction:column}.orchestrator-form-row select{max-width:none}.orchestrator-form-row button{width:100%}.orchestrator-rule-grid{grid-template-columns:1fr}}
+
+/* Distribution Network */
+.distribution-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 26px}
+.distribution-account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.distribution-account-card{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:18px;min-width:0}
+.distribution-account-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.distribution-account-head h3{margin:4px 0;font-size:1rem}
+.distribution-account-card label,.distribution-form label{display:flex;flex-direction:column;gap:7px;margin:10px 0;color:var(--text);font-size:.78rem;font-weight:650}
+.distribution-account-card input,.distribution-form input,.distribution-form select,.distribution-form textarea{width:100%;min-width:0;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);padding:11px;font:inherit;font-weight:400}
+.distribution-account-meta{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0;color:var(--muted);font-size:.72rem}
+.distribution-account-meta strong{color:var(--text)}
+.distribution-account-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.distribution-account-actions .muted{font-size:.68rem}
+.distribution-lower-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;margin-top:20px;align-items:start}
+.distribution-form{display:grid;gap:8px}
+.distribution-form button{justify-self:start}
+.distribution-queue-list{display:grid;gap:10px;max-height:620px;overflow:auto}
+.distribution-queue-item{display:flex;justify-content:space-between;gap:14px;padding:13px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}
+.distribution-queue-item strong{font-size:.82rem}
+.distribution-queue-item small{display:block;color:var(--muted);font-size:.7rem;margin-top:5px}
+.distribution-queue-item p{font-size:.76rem;color:var(--muted);margin:7px 0 0;white-space:pre-wrap}
+.distribution-queue-item time{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.distribution-roadmap{margin-top:18px;padding:18px}
+.distribution-roadmap p{color:var(--muted);font-size:.8rem;line-height:1.65}
+@media(max-width:850px){.distribution-lower-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.distribution-summary-grid{grid-template-columns:1fr}.distribution-account-grid{grid-template-columns:1fr}.distribution-queue-item{display:block}.distribution-queue-item time{display:block;margin-top:8px}}
