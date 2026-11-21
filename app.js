@@ -28,7 +28,7 @@ function prettyStatus(s){return String(s||"queued").replaceAll("_"," ").replace(
 function showError(error){console.error(error);alert(error.message||"Something went wrong. Please try again.")}
 
 async function ensureCompany(){
-  const {data:existing,error:readError}=await supabase.from("companies").select("*").limit(1).maybeSingle();
+  const {data:existing,error:readError}=await supabase.from("companies").select("*").eq("owner_id",currentUser.id).order("created_at",{ascending:true}).limit(1).maybeSingle();
   if(readError)throw readError;
   if(existing){company=existing}
   else{
@@ -328,21 +328,24 @@ async function decideApproval(decision){
 async function startWorkspace(user){
   currentUser=user;setSystem("SYNCING");
   $("#owner-email").textContent=user.email||"OWNER";
+  setMessage("Sign-in successful. Loading your CurioFrame workspace…");
   try{
     await ensureCompany();
     await loadData();
     setupHQRealtime();
     setSystem("DATABASE CONNECTED");
     showApp();
+    setMessage("");
   }catch(error){
     console.error("Workspace initialization failed:",error);
     showAuth();
-    setMessage("Login succeeded, but the workspace could not load: "+(error.message||"Unknown database error"));
+    setSystem("WORKSPACE LOAD ERROR");
+    setMessage("Your account is signed in, but CurioFrame could not load its workspace. Your account and data are safe. Details: "+(error.message||"Unknown database error"));
     throw error;
   }
 }
 async function handleAuth(event){
-  event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage("Please wait…");
+  event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage("Connecting to secure sign-in…");
   const email=$("#auth-email").value.trim(),password=$("#auth-password").value;
   try{
     if(authMode==="signup"){
@@ -357,6 +360,7 @@ async function handleAuth(event){
   }catch(error){
     console.error("Authentication failed:",error);
     showAuth();
+    setSystem("SIGN-IN ERROR");
     setMessage(error.message||"Unable to sign in. Check your email and password, then try again.");
   }
   finally{button.disabled=false}
