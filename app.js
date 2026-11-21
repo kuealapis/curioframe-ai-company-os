@@ -14,7 +14,7 @@ const employeeSeed = [
   {name:"Operations Officer",role_key:"operations",department:"Operations",responsibilities:"Maintains workflows, schedules, records, and operational handoffs."}
 ];
 
-let currentUser=null, company=null, employees=[], tasks=[], approvals=[], contentAssets=[];
+let currentUser=null, company=null, employees=[], tasks=[], approvals=[], contentAssets=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function setMessage(message){$("#auth-message").textContent=message}
@@ -84,18 +84,56 @@ function renderVirtualHQ(){
   const assigned=employee=>tasks.filter(t=>t.assigned_employee_id===employee.id&&!["completed","cancelled"].includes(t.status));
   const state=employee=>{
     const open=assigned(employee);
-    if(open.some(t=>["review","pending"].includes(t.status)))return {key:"review",label:"REVIEW"};
-    if(open.length)return {key:"working",label:"TASK ASSIGNED"};
+    if(open.some(t=>["review","pending"].includes(t.status)))return {key:"review",label:"AWAITING REVIEW"};
+    if(open.some(t=>t.status==="in_progress"))return {key:"working",label:"IN PROGRESS"};
+    if(open.some(t=>t.status==="blocked"))return {key:"blocked",label:"BLOCKED"};
+    if(open.some(t=>t.status==="queued"))return {key:"queued",label:"QUEUED"};
     return {key:"idle",label:employee.status==="planned"?"READY TO ACTIVATE":"IDLE"};
   };
   const cards=employees.map((e,i)=>{
     const s=state(e),open=assigned(e).length;
-    return '<article class="hq-station station-'+(i+1)+' '+s.key+'"><div class="hq-desk-top"></div><div class="hq-bot"><span class="bot-face">'+(icons[e.role_key]||"🤖")+'</span><span class="bot-body"></span></div><div class="hq-monitor"><i></i><i></i><i></i></div><div class="hq-station-copy"><strong>'+escapeHtml(short[e.role_key]||e.department.toUpperCase())+'</strong><span>'+escapeHtml(e.name)+'</span><small><b class="state-dot"></b>'+s.label+(open?' · '+open+' TASK'+(open>1?'S':''):'')+'</small></div></article>';
+    return '<article class="hq-station station-'+(i+1)+' '+s.key+(selectedHQEmployeeId===e.id?' selected':'')+'" data-hq-employee="'+escapeHtml(e.id)+'" role="button" tabindex="0" aria-label="Inspect '+escapeHtml(e.name)+' department"><div class="hq-desk-top"></div><div class="hq-bot"><span class="bot-face">'+(icons[e.role_key]||"🤖")+'</span><span class="bot-body"></span></div><div class="hq-monitor"><i></i><i></i><i></i></div><div class="hq-station-copy"><strong>'+escapeHtml(short[e.role_key]||e.department.toUpperCase())+'</strong><span>'+escapeHtml(e.name)+'</span><small><b class="state-dot"></b>'+s.label+(open?' · '+open+' TASK'+(open>1?'S':''):'')+'</small></div></article>';
   }).join("");
-  const scene='<div class="hq-backdrop"><div class="hq-world-map">✧ &nbsp; GLOBAL OPERATIONS &nbsp; ✧</div><div class="hq-floor"><div class="hq-grid-lines"></div><div class="hq-center"><div class="hq-orbit"></div><div class="hq-core"><span>CF</span><strong>AI COMMAND</strong><small>OWNER CONTROL</small></div></div>'+cards+'</div><div class="hq-caption"><span>CURIOFRAME AI</span><b>HEADQUARTERS / 01</b><span>7 DEPARTMENTS</span></div></div>';
+  const scene='<div class="hq-backdrop"><div class="hq-world-map">✧ &nbsp; GLOBAL OPERATIONS &nbsp; ✧</div><div class="hq-floor"><div class="hq-grid-lines"></div><div class="hq-center"><div class="hq-orbit"></div><div class="hq-core"><span>CF</span><strong>AI COMMAND</strong><small>OWNER CONTROL</small></div></div>'+cards+'</div><div class="hq-caption"><span>CURIOFRAME AI</span><b>HEADQUARTERS / 01</b><span>'+employees.length+' DEPARTMENTS</span></div></div>';
   ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(selector=>{const el=$(selector);if(el)el.innerHTML=scene;});
   const grid=$("#hq-department-grid");
-  if(grid)grid.innerHTML=employees.map(e=>{const s=state(e),open=assigned(e);return '<article class="hq-dept-card"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+s.key+'">'+s.label+'</b><footer>'+open.length+' open task'+(open.length===1?'':'s')+'</footer></article>'}).join("");
+  if(grid)grid.innerHTML=employees.map(e=>{const s=state(e),open=assigned(e);return '<article class="hq-dept-card '+(selectedHQEmployeeId===e.id?'selected':'')+'" data-hq-employee="'+escapeHtml(e.id)+'" role="button" tabindex="0"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+s.key+'">'+s.label+'</b><footer>'+open.length+' open task'+(open.length===1?'':'s')+'</footer></article>'}).join("");
+  if(selectedHQEmployeeId&&!employees.some(e=>e.id===selectedHQEmployeeId))selectedHQEmployeeId=null;
+  renderHQDetail(selectedHQEmployeeId);
+
+}
+function renderHQDetail(employeeId){
+  const targets=["#hq-selected-detail-overview","#hq-selected-detail-full"].map($).filter(Boolean);
+  if(!employeeId){targets.forEach(el=>{el.hidden=true;el.innerHTML=""});return}
+  const employee=employees.find(e=>e.id===employeeId);
+  if(!employee){targets.forEach(el=>{el.hidden=true;el.innerHTML=""});return}
+  const assigned=tasks.filter(t=>t.assigned_employee_id===employee.id);
+  const active=assigned.filter(t=>!["completed","cancelled"].includes(t.status));
+  const taskMarkup=active.length?active.map(t=>'<li><span>'+escapeHtml(t.title)+'</span><b class="hq-task-status '+escapeHtml(t.status)+'">'+escapeHtml(prettyStatus(t.status))+'</b></li>').join(""):'<li class="hq-no-task">No active tasks assigned to this department.</li>';
+  const markup='<div class="hq-detail-head"><div><small>DEPARTMENT INSPECTOR</small><strong>'+escapeHtml(employee.name)+'</strong><span>'+escapeHtml(employee.department)+'</span></div><button type="button" class="hq-detail-close" data-hq-close aria-label="Close department details">×</button></div><p>'+escapeHtml(employee.responsibilities)+'</p><div class="hq-detail-summary"><span>'+active.length+' active task'+(active.length===1?'':'s')+'</span><span>'+assigned.filter(t=>t.status==="completed").length+' completed</span></div><ul>'+taskMarkup+'</ul>';
+  targets.forEach(el=>{el.innerHTML=markup;el.hidden=false});
+}
+function selectHQEmployee(employeeId){
+  selectedHQEmployeeId=employeeId;
+  renderVirtualHQ();
+}
+function setupHQRealtime(){
+  if(hqChannel){supabase.removeChannel(hqChannel);hqChannel=null}
+  if(!company)return;
+  const indicator=$("#hq-live-indicator");
+  if(indicator)indicator.textContent="● CONNECTING TO LIVE DATA";
+  hqChannel=supabase.channel("hq-live-"+company.id)
+    .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ai_employees",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"approvals",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"content_assets",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .subscribe(status=>{
+      const live=$("#hq-live-indicator");
+      if(!live)return;
+      if(status==="SUBSCRIBED"){live.textContent="● LIVE · DATABASE EVENTS CONNECTED";live.dataset.state="live"}
+      else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){live.textContent="● LIVE SYNC UNAVAILABLE · USE REFRESH";live.dataset.state="offline"}
+      else{live.textContent="● CONNECTING TO LIVE DATA";live.dataset.state="connecting"}
+    });
 }
 function taskRow(t,all=false){
   const owner=t.ai_employees?.name||employees.find(e=>e.id===t.assigned_employee_id)?.name||"Unassigned";
@@ -181,7 +219,7 @@ async function decideApproval(decision){
 async function startWorkspace(user){
   currentUser=user;showApp();setSystem("SYNCING");
   $("#owner-email").textContent=user.email||"OWNER";
-  await ensureCompany();await loadData();setSystem("DATABASE CONNECTED");
+  await ensureCompany();await loadData();setupHQRealtime();setSystem("DATABASE CONNECTED");
 }
 async function handleAuth(event){
   event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage("Please wait…");
@@ -222,7 +260,7 @@ $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();n
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);
-$("#sign-out-btn").addEventListener("click",async()=>{await supabase.auth.signOut();company=null;showAuth();setMessage("You have been signed out.")});
+$("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
   $("#task-owner").innerHTML='<option value="">Unassigned</option>'+employees.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+'</option>').join("");
   $("#task-dialog").showModal();
@@ -231,7 +269,14 @@ $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2")
 
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
-  if(trigger)openApproval(trigger.dataset.openApproval);
+  if(trigger){openApproval(trigger.dataset.openApproval);return}
+  const hqClose=e.target.closest("[data-hq-close]");
+  if(hqClose){selectedHQEmployeeId=null;renderVirtualHQ();return}
+  const hqStation=e.target.closest("[data-hq-employee]");
+  if(hqStation)selectHQEmployee(hqStation.dataset.hqEmployee);
+});
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches("[data-hq-employee]")){e.preventDefault();selectHQEmployee(e.target.dataset.hqEmployee)}
 });
 $("#approval-copy-btn").addEventListener("click",copyApprovalDeliverable);
 $("#approval-approve-btn").addEventListener("click",()=>decideApproval("approved"));
