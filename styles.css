@@ -87,3 +87,5 @@
 @keyframes hq-screen-pulse{from{opacity:.45}to{opacity:1}}
 @media(max-width:700px){.hq-live-line{align-items:flex-start;flex-direction:column;font-size:9px}.hq-selected-detail{padding:11px}.hq-selected-detail li{align-items:flex-start;flex-direction:column}.hq-station:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.hq-station,.hq-dept-card{transition:none}.hq-station.working .hq-bot,.hq-station.working .hq-monitor i{animation:none}}
+
+.revision-btn{background:#493d27;color:#ffdda0;border:1px solid #80643b}.approval-actions{gap:8px}@media(max-width:700px){.approval-actions{display:grid;grid-template-columns:1fr}}
