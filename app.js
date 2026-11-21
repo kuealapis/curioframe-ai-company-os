@@ -176,7 +176,18 @@ async function restoreTransferredTask(messageId,button){
 async function reopenApprovalForReview(id,button){
   if(!confirm("Reopen this rejected approval for Owner review? Previous states will be preserved in Recovery History."))return;
   button.disabled=true;button.textContent="Recovering…";
-  try{const {data,error}=await supabase.rpc("restore_approval_for_review",{p_approval_id:id});if(error)throw error;if(data?.success!==true)throw new Error("Recovery was not confirmed.");await loadData();alert("Approval restored to Pending Ow
+  try{
+    const {data,error}=await supabase.rpc("restore_approval_for_review",{p_approval_id:id});
+    if(error)throw error;
+    if(data?.success!==true)throw new Error("Recovery was not confirmed.");
+    await loadData();
+    alert("Approval restored to Pending Owner review.");
+  }catch(error){
+    button.disabled=false;button.textContent="Reopen for review";
+    showError(error);
+  }
+}
+
 const hqWorlds=new Map();
 const hqColors={ai_ceo:0x8bb7ff,research:0x67d6d0,content:0xffb86b,marketing:0xd69bff,quality:0x82a8ff,qc:0x66c7ff,qa:0x76d6a5,finance:0xf2ce70,operations:0xb1bdcf};
 function hqStatus(e){const a=tasks.filter(t=>t.assigned_employee_id===e.id&&!["completed","cancelled"].includes(t.status));if(a.some(t=>["review","pending"].includes(t.status)))return{key:"review",label:"AWAITING REVIEW",count:a.length};if(a.some(t=>t.status==="in_progress"))return{key:"working",label:"IN PROGRESS",count:a.length};if(a.some(t=>t.status==="blocked"))return{key:"blocked",label:"BLOCKED",count:a.length};if(a.some(t=>t.status==="queued"))return{key:"queued",label:"QUEUED",count:a.length};return{key:"idle",label:e.status==="planned"?"READY TO ACTIVATE":"IDLE",count:a.length}}
