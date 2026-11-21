@@ -32,6 +32,7 @@
         <a class="nav-link active" href="#overview" data-page="overview"><span>◫</span> Overview</a>
         <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#employees" data-page="employees"><span>♙</span> AI Employees</a>
+        <a class="nav-link" href="#capability-lab" data-page="capability-lab"><span>✓</span> Agent Capability Lab</a>
         <a class="nav-link" href="#organization" data-page="organization"><span>▦</span> Departments & Agents</a>
         <a class="nav-link" href="#tasks" data-page="tasks"><span>☷</span> Task Manager</a>
         <a class="nav-link" href="#orchestrator" data-page="orchestrator"><span>⌘</span> Agents Orchestrator</a>
@@ -109,6 +110,16 @@
         </div>
       </section>
       <section class="page" id="page-employees"><div class="page-heading"><div><p class="eyebrow">ORGANIZATION</p><h1>AI Employees</h1><p class="subheading">Defined roles and responsibilities. AI execution is available for assigned tasks once the Gemini key is connected.</p></div></div><div class="employee-grid" id="employee-grid"></div></section>
+      <section class="page" id="page-capability-lab">
+        <div class="page-heading"><div><p class="eyebrow">EVIDENCE-BASED READINESS</p><h1>Agent Capability Test System</h1><p class="subheading">Structural checks, real work samples, and independent QA. A passing preflight never verifies capability by itself.</p></div><button class="secondary-btn" type="button" id="capability-refresh-btn">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Verification standard</strong><p>Each agent needs three passing gates: structural preflight, a completed real work sample, and independent QA review. Record actual evidence. Verification does not automatically make an agent READY or dispatch work.</p></div></div>
+        <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">REGISTERED AGENTS</div><div class="stat-value" id="capability-total">00</div><div class="stat-foot">All departments</div></article><article class="stat-card"><div class="stat-label">PREFLIGHT PASSED</div><div class="stat-value" id="capability-preflight-total">00</div><div class="stat-foot">Structure only</div></article><article class="stat-card"><div class="stat-label">VERIFIED CAPABILITIES</div><div class="stat-value" id="capability-verified-total">00</div><div class="stat-foot">Evidence-backed</div></article></div>
+        <div class="orchestrator-section-head"><div><p class="eyebrow">AGENT TEST REGISTER</p><h2>Capability status by agent</h2></div><span class="pill amber">NOT VERIFIED BY DEFAULT</span></div>
+        <div id="capability-agent-list" class="capability-agent-list"><p class="muted">Loading capability records…</p></div>
+        <div class="distribution-lower-grid capability-lower-grid"><section class="panel"><div class="panel-head"><div><h2>Record an evidence-based test</h2><p>Only after a real work sample or independent QA review.</p></div></div>
+          <form id="capability-test-form" class="distribution-form"><label>AI Agent<select id="capability-employee"></select></label><label>Test type<select id="capability-test-kind"><option value="work_sample">Real work sample</option><option value="qa_review">Independent QA review</option></select></label><label>Result<select id="capability-test-status"><option value="passed">Passed</option><option value="failed">Failed</option><option value="blocked">Blocked</option></select></label><label>Evidence summary<textarea id="capability-evidence" rows="4" minlength="20" required placeholder="Describe the actual task, output, acceptance criteria, and what was checked…"></textarea></label><label>Evidence reference (optional)<input id="capability-reference" maxlength="500" placeholder="Task ID, asset ID, document link, or QA record"></label><button class="primary-btn" id="capability-test-submit" type="submit">Save test evidence</button></form>
+        </section><section class="panel"><div class="panel-head"><div><h2>Recent test history</h2><p>Latest evidence records</p></div></div><div id="capability-test-history" class="activity-feed"><p class="muted">No tests yet.</p></div></section></div>
+      </section>
       <section class="page" id="page-tasks"><div class="page-heading"><div><p class="eyebrow">EXECUTION</p><h1>Task Manager</h1><p class="subheading">Track assigned work and deliverables across departments.</p></div><button class="primary-btn" id="new-task-btn-2">＋ Create task</button></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>TASK</th><th>ASSIGNED TO</th><th>DEPARTMENT</th><th>STATUS</th><th>PRIORITY</th><th>ACTION</th></tr></thead><tbody id="all-task-table"></tbody></table></div></section></section>
       <section class="page" id="page-orchestrator">
         <div class="page-heading"><div><p class="eyebrow">AUTONOMOUS WORKFLOW CONTROL</p><h1>Agents Orchestrator</h1><p class="subheading">One goal from the Owner. One coordinated pipeline from planning to release readiness.</p></div></div>
@@ -206,6 +217,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-12"></script>
+  <script type="module" src="./app.js?v=20261122-13"></script>
 </body>
 </html>
