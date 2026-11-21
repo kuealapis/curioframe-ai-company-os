@@ -222,7 +222,7 @@ async function buildHQ3D(el){
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   el.appendChild(renderer.domElement);
   const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true;controls.dampingFactor=.075;controls.rotateSpeed=.72;
+  controls.enabled=true;controls.enableRotate=true;controls.enableZoom=true;controls.enablePan=true;controls.touches.ONE=THREE.TOUCH.ROTATE;controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;controls.enableDamping=true;controls.dampingFactor=.075;controls.rotateSpeed=.9;
   controls.zoomSpeed=.85;controls.panSpeed=.7;controls.minDistance=9;controls.maxDistance=38;
   controls.maxPolarAngle=Math.PI*.48;controls.target.set(0,1.15,0);
   const hemi=new THREE.HemisphereLight(0xd9edff,0x1a2a3c,2.1);scene.add(hemi);
@@ -635,11 +635,18 @@ async function refreshSession(){
   if(data.session)await startWorkspace(data.session.user);else showAuth();
 }
 function navigate(page){
-  $$(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
-  
-  $$(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
+  $(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
+  $(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
   $("#page-crumb").textContent=page.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
   $("#sidebar").classList.remove("open");history.replaceState(null,"","#"+page);
+  // A hidden page has zero width; initialize its WebGL canvas only after it becomes visible.
+  if(page==="virtual-hq"){
+    requestAnimationFrame(()=>{
+      const stage=$("#virtual-hq-full-scene");
+      if(stage&&!hqWorlds.has(stage)&&stage.clientWidth>0&&stage.clientHeight>0)launchHQ3D(stage);
+      else if(stage&&hqWorlds.has(stage))hqWorlds.get(stage).refresh();
+    });
+  }
 }
 $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.page)}));
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
