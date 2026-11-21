@@ -429,6 +429,7 @@ $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
 window.__curioAuthReady=true;
+if(window.__curioBootTimer)clearTimeout(window.__curioBootTimer);
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
   $("#task-owner").innerHTML='<option value="">Unassigned</option>'+employees.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+'</option>').join("");
