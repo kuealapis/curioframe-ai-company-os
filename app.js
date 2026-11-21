@@ -361,6 +361,8 @@ async function startWorkspace(user){
     setupHQRealtime();
     setSystem("DATABASE CONNECTED");
     showApp();
+    const requestedPage=location.hash.replace(/^#/, "");
+    if(requestedPage && document.getElementById("page-"+requestedPage)) navigate(requestedPage);
     setMessage("");
   }catch(error){
     console.error("Workspace initialization failed:",error);
