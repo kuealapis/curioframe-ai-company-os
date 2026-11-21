@@ -31,7 +31,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -60,7 +60,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
+  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes]=await Promise.all([
     supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
     supabase.from("company_operating_policies").select("*").eq("company_id",company.id).maybeSingle(),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
@@ -74,11 +74,12 @@ async function loadData(){
     supabase.from("workflow_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(20),
     supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order"),
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
-    supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
+    supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
+    supabase.from("agent_capability_test_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(500)
   ]);
-  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
+  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes])if(result.error)throw result.error;
   departments=departmentRes.data||[];operatingPolicy=policyRes.data||null;employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];
   renderAll();
 }
 
@@ -236,6 +237,45 @@ async function submitOrchestratorGoal(event){
   finally{button.disabled=false;button.textContent="Generate pipeline →"}
 }
 
+
+function latestCapabilityResults(employeeId){
+ const rows=capabilityTestRuns.filter(r=>r.employee_id===employeeId),latest={};
+ for(const kind of ["preflight","work_sample","qa_review"])latest[kind]=rows.find(r=>r.test_kind===kind)||null;
+ return latest;
+}
+function renderCapabilityLab(){
+ const host=$("#capability-agent-list"),select=$("#capability-employee");if(!host||!select)return;
+ const verified=employees.filter(e=>e.capability_status==="verified").length,preflighted=employees.filter(e=>latestCapabilityResults(e.id).preflight?.status==="passed").length;
+ $("#capability-total").textContent=String(employees.length);$("#capability-preflight-total").textContent=String(preflighted);$("#capability-verified-total").textContent=String(verified);
+ const selected=select.value;select.innerHTML=employees.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+' · '+escapeHtml(e.department)+'</option>').join("");if(employees.some(e=>e.id===selected))select.value=selected;
+ host.innerHTML=employees.map(e=>{
+  const latest=latestCapabilityResults(e.id),allPassed=["preflight","work_sample","qa_review"].every(k=>latest[k]?.status==="passed"),status=e.capability_status||"planned";
+  const chips=["preflight","work_sample","qa_review"].map(k=>{const r=latest[k];return '<span class="capability-test-chip '+(r?.status==="passed"?"passed":r?.status==="failed"?"failed":r?.status==="blocked"?"blocked":"pending")+'">'+k.replaceAll("_"," ")+' · '+(r?r.status:"not run")+'</span>'}).join("");
+  return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(e.name)+'</strong><small>'+escapeHtml(e.department)+' · '+escapeHtml(e.role_key)+'</small></div><span class="pill '+(status==="verified"?"green":status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(status))+'</span></div><div class="capability-test-chips">'+chips+'</div><div class="capability-actions"><button class="secondary-btn" type="button" data-capability-preflight="'+e.id+'">Run structural preflight</button><button class="primary-btn" type="button" data-capability-verify="'+e.id+'" '+(!allPassed||status==="verified"?"disabled":"")+'>Verify capability</button></div><p class="muted">'+(allPassed?"All three test gates have passing evidence. Founder can verify.":"Requires structural preflight, a real work sample, and independent QA evidence.")+'</p></article>';
+ }).join("")||'<p class="muted">No agents registered.</p>';
+ const history=$("#capability-test-history");if(history)history.innerHTML=capabilityTestRuns.slice(0,30).map(r=>{const emp=employees.find(e=>e.id===r.employee_id);return '<article class="activity-item"><div><strong>'+escapeHtml(emp?.name||"Unknown agent")+' · '+escapeHtml(r.test_kind.replaceAll("_"," "))+'</strong><small>'+escapeHtml(new Date(r.created_at).toLocaleString("id-ID"))+' · '+escapeHtml(r.status)+'</small><p>'+escapeHtml(r.evidence_summary||"No evidence summary")+'</p></div><span class="pill '+(r.status==="passed"?"green":r.status==="failed"?"amber":"gray")+'">'+escapeHtml(r.status)+'</span></article>'}).join("")||'<p class="muted">No capability tests recorded yet.</p>';
+}
+async function runCapabilityPreflight(id,button){
+ const agent=employees.find(e=>e.id===id);if(!agent)return;
+ const checks={identity:!!agent.name&&!!agent.role_key,responsibilities:!!String(agent.responsibilities||"").trim(),department_registered:departments.some(d=>d.name===agent.department),role_key_unique:employees.filter(e=>e.role_key===agent.role_key).length===1,zero_cost_policy:operatingPolicy?.approval_mode==="spending_only"&&Number(operatingPolicy?.max_automatic_spend)===0&&operatingPolicy?.allow_paid_services===false&&operatingPolicy?.allow_paid_api_usage===false&&operatingPolicy?.allow_paid_advertising===false};
+ const passed=Object.values(checks).every(Boolean);button.disabled=true;
+ try{const {error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:"preflight",status:passed?"passed":"blocked",evidence_summary:"Structural preflight only. "+Object.entries(checks).map(([k,v])=>k+": "+(v?"PASS":"FAIL")).join("; ")+". This does not test task execution.",test_payload:{checks,scope:"structural_only"},tested_by:currentUser.id});if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
+}
+async function recordCapabilityTest(event){
+ event.preventDefault();const form=$("#capability-test-form"),button=$("#capability-test-submit"),id=$("#capability-employee").value,kind=$("#capability-test-kind").value,status=$("#capability-test-status").value,evidence=$("#capability-evidence").value.trim(),reference=$("#capability-reference").value.trim();
+ if(evidence.length<20){alert("Evidence summary must contain at least 20 characters.");return}button.disabled=true;
+ try{const {error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:kind,status,evidence_summary:evidence,evidence_reference:reference||null,test_payload:{recorded_as:"founder_evaluated_evidence"},tested_by:currentUser.id});if(error)throw error;
+  if(status!=="passed")await supabase.from("ai_employees").update({capability_status:status==="blocked"?"blocked":"testing",capability_verified_at:null,capability_verified_by:null}).eq("id",id).eq("company_id",company.id);
+  form.reset();await loadData()
+ }catch(error){showError(error)}finally{button.disabled=false}
+}
+async function verifyCapabilityAgent(id,button){
+ const agent=employees.find(e=>e.id===id);if(!agent)return;const latest=latestCapabilityResults(id);
+ if(!["preflight","work_sample","qa_review"].every(k=>latest[k]?.status==="passed")){alert("All three latest test gates must pass.");return}
+ if(!confirm("Verify "+agent.name+"? Confirm the work sample was genuinely completed and QA was independently performed. This does not automatically set READY."))return;
+ button.disabled=true;try{const {error}=await supabase.from("ai_employees").update({capability_status:"verified",capability_verified_at:new Date().toISOString(),capability_verified_by:currentUser.id}).eq("id",id).eq("company_id",company.id);if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
+}
+
 function renderAll(){
   $("#employee-total").textContent=String(employees.length).padStart(2,"0");
   $("#open-task-total").textContent=String(tasks.filter(t=>!["completed","cancelled"].includes(t.status)).length).padStart(2,"0");
@@ -261,6 +301,7 @@ function renderAll(){
   renderOrchestrator();
   renderDistribution();
   renderOrganization();
+  renderCapabilityLab();
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
@@ -869,8 +910,11 @@ $("#orchestrator-form")?.addEventListener("submit",submitOrchestratorGoal);
 $("#distribution-publication-form")?.addEventListener("submit",createDistributionPublication);
 $("#organization-department-form")?.addEventListener("submit",addOrganizationDepartment);
 $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
+$("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
+$("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
+document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify)});
 document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
