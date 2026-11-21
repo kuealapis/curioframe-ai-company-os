@@ -376,6 +376,7 @@ function setAuthModeUI(){
   $("#auth-submit").textContent=recovery?"Update password":signup?"Create account":"Sign in";
   $("#auth-switch").hidden=recovery;$("#auth-forgot-password").hidden=signup||recovery;$("#auth-options").hidden=recovery||signup;
   $("#auth-password-label").textContent=recovery?"New password":signup?"Create password":"Password";
+  $("#auth-email-label").hidden=recovery;$("#auth-email").required=!recovery;
   $("#auth-password").autocomplete=signup||recovery?"new-password":"current-password";
   $("#auth-password").value="";
 }
@@ -397,6 +398,7 @@ async function requestPasswordReset(){
 
 async function refreshSession(){
   const {data,error}=await supabase.auth.getSession();if(error)throw error;
+  if(authMode==="recovery"){showAuth();return}
   if(data.session)await startWorkspace(data.session.user);else showAuth();
 }
 function navigate(page){
