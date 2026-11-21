@@ -24,13 +24,13 @@ Research → Content → Quality Review → Marketing → Owner approval when re
 - This public repository contains source code and non-sensitive documentation only.
 
 ## Implementation status
-This repository contains the first Company OS dashboard foundation. The dashboard now includes Supabase email/password authentication and live database-backed company records. AI agents, automated research/content execution, and publishing integrations are still future build stages.
+This repository contains the first Company OS dashboard foundation. The dashboard code now includes Supabase email/password authentication and live database-backed company records. GitHub Pages deployment uses a custom Actions workflow; the repository's Pages source must be set to GitHub Actions once in Settings → Pages. AI agents, automated research/content execution, and publishing integrations are still future build stages.
 
 
 ## Repository structure
 - `index.html` — responsive Company OS dashboard shell.
 - `styles.css` — mobile-first dashboard styling.
-- `app.js` — navigation, employee roster, sample task UI, and pipeline rendering.
+- `app.js` — Supabase authentication, live company data, task creation, and dashboard rendering.
 - `supabase/schema.sql` — initial PostgreSQL schema with owner-scoped row-level security.
 
 ## Current build status
