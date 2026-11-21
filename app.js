@@ -151,30 +151,37 @@ function openApproval(approvalId){
   $("#approval-detail-body").textContent=asset?.body||"No deliverable body was attached to this approval.";
   $("#approval-detail-note").value="";
   $("#approval-detail-dialog").dataset.approvalId=approval.id;
+  [$("#approval-approve-btn"),$("#approval-revision-btn"),$("#approval-reject-btn")].forEach(button=>{button.disabled=false;});
+  $("#approval-copy-btn").disabled=false;
+  $("#approval-copy-btn").textContent="⧉ Copy deliverable";
   $("#approval-detail-dialog").showModal();
 }
 async function copyApprovalDeliverable(){
-  const title=$("#approval-detail-title").textContent||"";
-  const description=$("#approval-detail-description").textContent||"";
-  const body=$("#approval-detail-body").textContent||"";
-  const text=[title,description,body].filter(Boolean).join("\\n\\n");
+  const dialog=$("#approval-detail-dialog");
+  const approval=approvals.find(a=>a.id===dialog.dataset.approvalId);
+  if(!approval){alert("Approval record not found. Close and reopen this deliverable.");return;}
+  const asset=contentAssets.filter(a=>a.task_id===approval.task_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+  const body=typeof asset?.body==="string"?asset.body:"";
+  const text=body||[approval.title,approval.description||""].filter(Boolean).join("\n\n");
+  if(!text.trim()){alert("No deliverable content is available to copy.");return;}
   const button=$("#approval-copy-btn");
+  button.disabled=true;
   try{
     if(navigator.clipboard&&window.isSecureContext){
       await navigator.clipboard.writeText(text);
     }else{
       const field=document.createElement("textarea");
       field.value=text;field.setAttribute("readonly","");
-      field.style.position="fixed";field.style.opacity="0";
-      document.body.appendChild(field);field.select();
+      field.style.position="fixed";field.style.left="-9999px";field.style.top="0";
+      document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);
       const copied=document.execCommand("copy");field.remove();
       if(!copied)throw new Error("Copy is not supported by this browser.");
     }
-    button.textContent="✓ Copied";
-    button.disabled=true;
+    button.textContent="✓ Copied full deliverable";
     setTimeout(()=>{button.textContent="⧉ Copy deliverable";button.disabled=false},1800);
   }catch(error){
-    alert("Could not copy automatically. Please select and copy the deliverable text.");
+    button.disabled=false;
+    alert("Could not copy automatically. Try opening the app in your browser and allow clipboard access.");
   }
 }
 async function decideApproval(decision){
