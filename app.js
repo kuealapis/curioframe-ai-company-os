@@ -428,7 +428,7 @@ async function refreshSession(){
   if(data.session)await startWorkspace(data.session.user);else showAuth();
 }
 function navigate(page){
-  $(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
+  $$(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
   if(page==="virtual-hq"){const stage=$("#virtual-hq-full-scene");requestAnimationFrame(()=>launchHQ3D(stage));}
   $$(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
   $("#page-crumb").textContent=page.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
