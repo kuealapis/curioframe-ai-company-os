@@ -116,8 +116,9 @@
         <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">REGISTERED AGENTS</div><div class="stat-value" id="capability-total">00</div><div class="stat-foot">All departments</div></article><article class="stat-card"><div class="stat-label">PREFLIGHT PASSED</div><div class="stat-value" id="capability-preflight-total">00</div><div class="stat-foot">Structure only</div></article><article class="stat-card"><div class="stat-label">VERIFIED CAPABILITIES</div><div class="stat-value" id="capability-verified-total">00</div><div class="stat-foot">Evidence-backed</div></article></div>
         <div class="orchestrator-section-head"><div><p class="eyebrow">AGENT TEST REGISTER</p><h2>Capability status by agent</h2></div><span class="pill amber">NOT VERIFIED BY DEFAULT</span></div>
         <div id="capability-agent-list" class="capability-agent-list"><p class="muted">Loading capability records…</p></div>
-        <section class="panel" style="margin-top:18px"><div class="panel-head"><div><p class="eyebrow">ROLE-SPECIFIC PRACTICAL EXAM</p><h2>Work Sample Assignments</h2><p>28 prepared assignments · start each sample, complete the work, then record evidence below.</p></div></div>
+        <section class="panel" style="margin-top:18px"><div class="panel-head"><div><p class="eyebrow">ROLE-SPECIFIC PRACTICAL EXAM</p><h2>Work Sample Assignments</h2><p>Run the registered Agents through one controlled queue. Each Agent executes sequentially and submits a real deliverable for independent QA.</p></div></div>
           <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">QUEUED</div><div class="stat-value" id="work-sample-queued-count">00</div></article><article class="stat-card"><div class="stat-label">IN PROGRESS</div><div class="stat-value" id="work-sample-active-count">00</div></article><article class="stat-card"><div class="stat-label">SUBMITTED / REVIEWED</div><div class="stat-value" id="work-sample-submitted-count">00</div></article></div>
+          <div class="panel" style="margin:14px 0;padding:16px;background:var(--surface-soft,#f7f8fa)"><p><strong>Batch execution · sequential mode</strong></p><p class="muted">One Agent at a time to avoid request collisions. You can leave and resume later; submitted results remain saved.</p><label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0"><input type="checkbox" id="batch-zero-cost-confirm" style="margin-top:4px"><span>I have confirmed that Gemini API usage is within a free allowance and billing will not be incurred. I understand each Work Sample makes an AI API request.</span></label><div class="capability-actions"><button class="primary-btn" id="run-all-work-samples" type="button" disabled>▶ Run All Work Samples</button><button class="secondary-btn" id="resume-work-samples" type="button">Resume / Continue Queue</button></div><p id="work-sample-batch-status" class="muted" aria-live="polite">Ready · no Agent is executing until you start the batch.</p></div>
           <div id="work-sample-assignment-list" class="capability-agent-list"><p class="muted">Loading assignments…</p></div>
         </section>
         <div class="distribution-lower-grid capability-lower-grid"><section class="panel"><div class="panel-head"><div><h2>Record an evidence-based test</h2><p>Only after a real work sample or independent QA review.</p></div></div>
@@ -221,6 +222,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-14"></script>
+  <script type="module" src="./app.js?v=20261122-15"></script>
 </body>
 </html>
