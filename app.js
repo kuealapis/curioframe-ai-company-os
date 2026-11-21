@@ -103,7 +103,14 @@ function renderHistoryRecovery(){
   const snapshotItems=recoverySnapshots.map(s=>({id:s.id,time:s.created_at,title:"Recovery snapshot · "+s.action,detail:"Previous "+s.entity_type+" state preserved",taskId:s.task_id,source:"snapshot"}));
   const versionItems=contentAssets.map(a=>({id:a.id,time:a.created_at,title:"Deliverable version · "+a.status,detail:a.title+" ("+a.asset_type+")",taskId:a.task_id,source:"version"}));
   const merged=[...eventItems,...decisionItems,...snapshotItems,...versionItems].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,150);
-  if(timeline)timeline.innerHTML=merged.length?merged.map(x=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("ACT",{id:x.id,created_at:x.time}))+' · '+escapeHtml(x.title)+'</strong><time>'+escapeHtml(x.time?new Date(x.time).toLocaleString("id-ID"):"Time unavailable")+'</time></div><p>'+escapeHtml(x.detail)+'</p>'+(x.taskId?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===x.taskId)?.title||x.taskId)+'</small>':'')+'</article>').join(""):'<p class="muted">No company activity has been recorded yet.</p>';
+  const historyTone=x=>{
+    const t=String(x.title||"").toLowerCase(),d=String(x.detail||"").toLowerCase();
+    if(/reject|failed|error/.test(t+" "+d))return "history-rejected";
+    if(/approved|passed|complete|restored|recovery/.test(t+" "+d))return "history-success";
+    if(/handoff|transfer|queued|started/.test(t+" "+d))return "history-transfer";
+    return "history-neutral";
+  };
+  if(timeline)timeline.innerHTML=merged.length?merged.map(x=>'<article class="history-entry '+historyTone(x)+'"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("ACT",{id:x.id,created_at:x.time}))+' · '+escapeHtml(x.title)+'</strong><time>'+escapeHtml(x.time?new Date(x.time).toLocaleString("id-ID"):"Time unavailable")+'</time></div><p>'+escapeHtml(x.detail)+'</p>'+(x.taskId?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===x.taskId)?.title||x.taskId)+'</small>':'')+'</article>').join(""):'<p class="muted">No company activity has been recorded yet.</p>';
 
   const transfers=agentMessages.filter(m=>["handoff","quality_handoff"].includes(String(m.message_type||"").toLowerCase())).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   const deletions=taskEvents.filter(e=>/delete|deleted|remove|removed|trash|purge/i.test(String(e.event_type||"")+" "+String(e.message||""))).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -115,10 +122,29 @@ function renderHistoryRecovery(){
   if(deletedPanel)deletedPanel.innerHTML=deletions.length?deletions.map(e=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("DEL",e))+' · '+escapeHtml(e.event_type)+'</strong><time>'+escapeHtml(new Date(e.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml(e.message||"Deletion event recorded.")+'</p>'+(e.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===e.task_id)?.title||e.task_id)+'</small>':'')+'</article>').join(""):'<p class="muted">No deletion events are recorded. Deleted data will appear here only when a deletion is explicitly logged; nothing is inferred or fabricated.</p>';
 
   const rejected=allApprovals.filter(a=>a.status==="rejected").sort((a,b)=>new Date(b.decided_at||b.created_at)-new Date(a.decided_at||a.created_at));
-  if(recover)recover.innerHTML=rejected.length?rejected.map(a=>'<article class="recovery-entry"><div><strong>'+escapeHtml(a.title)+'</strong><p>Approval rejected · '+escapeHtml(a.decided_at?new Date(a.decided_at).toLocaleString("id-ID"):"date unavailable")+'</p><small>'+escapeHtml(a.decision_note||"No decision note")+'</small></div><button class="secondary-btn" type="button" data-reopen-approval="'+escapeHtml(a.id)+'">Reopen review</button></article>').join(""):'<p class="muted">No rejected approvals need recovery.</p>';
+  const latestQualityByStage=new Map();
+  [...qualityReviews].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).forEach(q=>{const key=q.task_id+":"+q.review_stage;if(!latestQualityByStage.has(key))latestQualityByStage.set(key,q)});
+  const failedQuality=[...latestQualityByStage.values()].filter(q=>q.status==="failed").sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const recoveryCards=[
+    ...rejected.map(a=>'<article class="recovery-entry recovery-rejected"><div><strong>'+escapeHtml(a.title)+'</strong><p>OWNER REJECTED · '+escapeHtml(a.decided_at?new Date(a.decided_at).toLocaleString("id-ID"):"date unavailable")+'</p><small>'+escapeHtml(a.decision_note||"No decision note")+'</small></div><button class="secondary-btn" type="button" data-reopen-approval="'+escapeHtml(a.id)+'">Reopen for Owner Review</button></article>'),
+    ...failedQuality.map(q=>'<article class="recovery-entry recovery-rejected"><div><strong>'+escapeHtml(tasks.find(t=>t.id===q.task_id)?.title||"Task")+'</strong><p>'+escapeHtml(String(q.review_stage).toUpperCase())+' REJECTED · Iteration '+escapeHtml(q.iteration)+' · '+escapeHtml(new Date(q.created_at).toLocaleString("id-ID"))+'</p><small>'+escapeHtml(q.evidence||"Quality review failed. Return task to its assigned AI Employee for correction.")+'</small></div><button class="secondary-btn" type="button" data-restore-quality="'+escapeHtml(q.id)+'">Return to Previous AI Employee</button></article>')
+  ];
+  if(recover)recover.innerHTML=recoveryCards.length?recoveryCards.join(""):'<p class="muted">No rejected items need recovery.</p>';
   const count=$("#recovery-snapshot-count");if(count)count.textContent=String(recoverySnapshots.length);
-  const rejectedCount=$("#rejected-approval-count");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
+  const rejectedCount=$("#rejected-approval-count");if(rejectedCount)rejectedCount.textContent=String(rejected.length+failedQuality.length);
 }
+async function restoreQualityRejectedTask(reviewId,button){
+  if(!confirm("Return this task to its assigned AI Employee for correction after the failed QC/QA review? The previous task state will be preserved."))return;
+  button.disabled=true;button.textContent="Returning…";
+  try{
+    const {data,error}=await supabase.rpc("restore_failed_quality_task",{p_quality_review_id:reviewId});
+    if(error)throw error;
+    if(data?.success!==true)throw new Error("Quality recovery was not confirmed.");
+    await loadData();
+    alert("Task returned to "+(data.returned_to_employee||"its assigned AI Employee")+" for correction.");
+  }catch(error){button.disabled=false;button.textContent="Return to Previous AI Employee";showError(error);}
+}
+
 async function restoreTransferredTask(messageId,button){
   if(!confirm("Return this task to the AI Employee who owned it before the latest handoff? The current assignment will be preserved in Recovery History."))return;
   button.disabled=true;button.textContent="Restoring…";
@@ -354,6 +380,8 @@ $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2")
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
+  const qualityRestoreTrigger=e.target.closest("[data-restore-quality]");
+  if(qualityRestoreTrigger){restoreQualityRejectedTask(qualityRestoreTrigger.dataset.restoreQuality,qualityRestoreTrigger);return}
   const transferRestoreTrigger=e.target.closest("[data-restore-transfer]");
   if(transferRestoreTrigger){restoreTransferredTask(transferRestoreTrigger.dataset.restoreTransfer,transferRestoreTrigger);return}
   const recoveryTrigger=e.target.closest("[data-reopen-approval]");
