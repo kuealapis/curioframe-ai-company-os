@@ -429,8 +429,16 @@ function renderVirtualHQ(){
   ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(sel=>{
     const el=$(sel);if(!el)return;
     el.classList.add("hq-3d-stage");
-    if(!hqWorlds.has(el)){el.innerHTML='<div class="hq-3d-loading">BUILDING 3D HEADQUARTERS…</div>';requestAnimationFrame(()=>launchHQ3D(el))}
-    else hqWorlds.get(el).refresh();
+    // Never create WebGL renderers for hidden pages or while the app shell is still hidden.
+    const visible=el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0;
+    if(!visible){
+      if(!hqWorlds.has(el))el.innerHTML='<div class="hq-3d-loading">3D HEADQUARTERS READY · OPEN VIRTUAL HQ TO ENTER</div>';
+      return;
+    }
+    if(!hqWorlds.has(el)){
+      if(!el.querySelector(".hq-3d-loading"))el.innerHTML='<div class="hq-3d-loading">BUILDING 3D HEADQUARTERS…</div>';
+      requestAnimationFrame(()=>{if(el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0)launchHQ3D(el)});
+    }else hqWorlds.get(el).refresh();
   });
   const grid=$("#hq-department-grid");
   if(grid)grid.innerHTML=employees.map(e=>{
@@ -594,6 +602,7 @@ async function startWorkspace(user){
     setupHQRealtime();
     setSystem("DATABASE CONNECTED");
     showApp();
+    requestAnimationFrame(()=>renderVirtualHQ());
     const requestedPage=location.hash.replace(/^#/, "");
     if(requestedPage && document.getElementById("page-"+requestedPage)) navigate(requestedPage);
     setMessage("");
