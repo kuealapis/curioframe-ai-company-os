@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261122-03">
+  <link rel="stylesheet" href="./styles.css?v=20261122-04">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -97,8 +97,8 @@
       </section>
 
       <section class="page" id="page-distribution">
-        <div class="page-heading"><div><p class="eyebrow">CHANNEL OPERATIONS</p><h1>Distribution Network</h1><p class="subheading">Manage official channel records, profile readiness, and the multi-platform publishing queue.</p></div><button class="secondary-btn" id="distribution-refresh-btn" type="button">↻ Refresh</button></div>
-        <div class="notice"><span>ⓘ</span><div><strong>Founder-owned accounts</strong><p>Account records are prepared for YouTube, TikTok, Instagram, and Facebook. Platform accounts have not been created or connected by this app. Complete sign-up and verification directly on each platform; never enter passwords or OTPs here.</p></div></div>
+        <div class="page-heading"><div><p class="eyebrow">CHANNEL OPERATIONS</p><h1>Distribution Network</h1><p class="subheading">Activate Founder-owned accounts first, then connect APIs and manage publishing and analytics.</p></div><button class="secondary-btn" id="distribution-refresh-btn" type="button">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Founder-owned accounts</strong><p>Account setup is Founder-led. Complete the five checks for each platform only after doing them directly on that platform. Never enter passwords, OTPs, access tokens, or recovery codes here. OAuth/API remains a separate stage.</p></div></div>
         <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">REGISTERED CHANNELS</div><div class="stat-value" id="distribution-account-count">04</div><div class="stat-foot">Four platform records</div></article><article class="stat-card"><div class="stat-label">CONNECTED CHANNELS</div><div class="stat-value" id="distribution-connected-count">00</div><div class="stat-foot">Verified platform integrations</div></article><article class="stat-card"><div class="stat-label">PUBLISHING QUEUE</div><div class="stat-value" id="distribution-queue-count">00</div><div class="stat-foot">Draft and scheduled items</div></article></div>
         <div class="orchestrator-section-head"><div><p class="eyebrow">ACCOUNT REGISTRY</p><h2>Official platform accounts</h2></div><span class="pill amber">SETUP REQUIRED</span></div>
         <div class="distribution-account-grid" id="distribution-accounts"><p class="muted">Loading channel records…</p></div>
@@ -114,7 +114,7 @@
           </section>
           <section class="panel"><div class="panel-head"><div><h2>Publishing queue</h2><p>Publication status and planned schedule</p></div></div><div id="distribution-queue-list" class="distribution-queue-list"><p class="muted">Loading queue…</p></div></section>
         </div>
-        <section class="panel distribution-roadmap"><h2>Connection & automation roadmap</h2><p>1. Founder creates and verifies each platform account. 2. Developer configures official OAuth/API integrations. 3. QA tests account scopes and publication workflow. 4. Founder approves the first live publication. Until those gates pass, queue items remain preparation records and no post is sent to a platform.</p></section>
+        <section class="panel distribution-roadmap"><h2>Activation → OAuth/API → Publishing → Analytics</h2><p>Current implementation: the Account Activation checklist is being prepared. After Founder verification, the next gated stages are official OAuth/API connection, queue validation, publishing worker with QA and Owner approval, then platform analytics. No passwords or tokens are stored in the browser, and no post is sent to a platform by this queue.</p></section>
       </section>
       <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div><div class="pipeline-board" id="pipeline-board"></div></section>
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
@@ -177,6 +177,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-09"></script>
+  <script type="module" src="./app.js?v=20261122-10"></script>
 </body>
 </html>
