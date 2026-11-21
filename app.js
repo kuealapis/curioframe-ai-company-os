@@ -109,6 +109,30 @@ function openApproval(approvalId){
   $("#approval-detail-dialog").dataset.approvalId=approval.id;
   $("#approval-detail-dialog").showModal();
 }
+async function copyApprovalDeliverable(){
+  const title=$("#approval-detail-title").textContent||"";
+  const description=$("#approval-detail-description").textContent||"";
+  const body=$("#approval-detail-body").textContent||"";
+  const text=[title,description,body].filter(Boolean).join("\\n\\n");
+  const button=$("#approval-copy-btn");
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(text);
+    }else{
+      const field=document.createElement("textarea");
+      field.value=text;field.setAttribute("readonly","");
+      field.style.position="fixed";field.style.opacity="0";
+      document.body.appendChild(field);field.select();
+      const copied=document.execCommand("copy");field.remove();
+      if(!copied)throw new Error("Copy is not supported by this browser.");
+    }
+    button.textContent="✓ Copied";
+    button.disabled=true;
+    setTimeout(()=>{button.textContent="⧉ Copy deliverable";button.disabled=false},1800);
+  }catch(error){
+    alert("Could not copy automatically. Please select and copy the deliverable text.");
+  }
+}
 async function decideApproval(decision){
   const dialog=$("#approval-detail-dialog"),approvalId=dialog.dataset.approvalId;
   const approval=approvals.find(a=>a.id===approvalId);
@@ -203,6 +227,7 @@ document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger)openApproval(trigger.dataset.openApproval);
 });
+$("#approval-copy-btn").addEventListener("click",copyApprovalDeliverable);
 $("#approval-approve-btn").addEventListener("click",()=>decideApproval("approved"));
 $("#approval-reject-btn").addEventListener("click",()=>decideApproval("rejected"));
 $("#all-task-table").addEventListener("click",async e=>{
