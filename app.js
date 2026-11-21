@@ -18,6 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 const employeeSeed = [
   {name:"AI CEO / Orchestrator",role_key:"ai_ceo",department:"Executive Office",responsibilities:"Coordinates company goals, delegates work, and escalates consequential decisions."},
+  {name:"Chief of Staff",role_key:"chief_of_staff",department:"Executive Office",responsibilities:"Coordinates Founder priorities, filters company reports, prepares decision briefs, and tracks cross-department commitments. Cannot approve strategic decisions or release content for the Founder."},
   {name:"Research Officer",role_key:"research",department:"Research",responsibilities:"Finds promising topics, verifies facts, and prepares research briefs."},
   {name:"Content Officer",role_key:"content",department:"Content Studio",responsibilities:"Turns approved research into English scripts and production assets."},
   {name:"Development Engineer",role_key:"developer",department:"Engineering",responsibilities:"Turns approved technical plans into implementation deliverables and fixes defects. Does not approve own work."},
@@ -26,10 +27,11 @@ const employeeSeed = [
   {name:"QC Officer",role_key:"qc",department:"Quality Control",responsibilities:"Independently checks factual accuracy, source traceability, language, timing, and production quality."},
   {name:"QA Officer",role_key:"qa",department:"Quality Assurance",responsibilities:"Audits SOP compliance, Owner instructions, revision history, evidence, and workflow quality gates."},
   {name:"Finance Officer",role_key:"finance",department:"Finance",responsibilities:"Tracks income, expenses, budgets, and reinvestment proposals."},
-  {name:"Operations Officer",role_key:"operations",department:"Operations",responsibilities:"Maintains workflows, schedules, records, and operational handoffs."}
+  {name:"Operations Officer",role_key:"operations",department:"Operations",responsibilities:"Maintains workflows, schedules, records, and operational handoffs."},
+  {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -58,7 +60,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes]=await Promise.all([
+  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("approvals").select("*").eq("company_id",company.id).order("created_at",{ascending:false}),
@@ -68,12 +70,50 @@ async function loadData(){
     supabase.from("task_events").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(150),
     supabase.from("recovery_snapshots").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
     supabase.from("workflow_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(20),
-    supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order")
+    supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order"),
+    supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
+    supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
   ]);
-  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes])if(result.error)throw result.error;
+  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
   employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];
   renderAll();
+}
+
+
+function renderDistribution(){
+  const accountsHost=$("#distribution-accounts"),queueHost=$("#distribution-queue-list");
+  if(!accountsHost||!queueHost)return;
+  const platformNames={youtube:"YouTube",tiktok:"TikTok",instagram:"Instagram",facebook:"Facebook"};
+  accountsHost.innerHTML=distributionAccounts.map(account=>{
+    const label=platformNames[account.platform]||account.platform;
+    return '<article class="distribution-account-card"><div class="distribution-account-head"><div><span class="eyebrow">OFFICIAL CHANNEL</span><h3>'+escapeHtml(label)+'</h3></div><span class="pill '+(account.account_status==="active"?"green":"amber")+'">'+escapeHtml(prettyStatus(account.account_status))+'</span></div><label>Channel / account name<input data-account-field="account_name" data-account-id="'+account.id+'" value="'+escapeHtml(account.account_name||"CurioFrame")+'" maxlength="80"></label><label>Username / handle<input data-account-field="handle" data-account-id="'+account.id+'" value="'+escapeHtml(account.handle||"")+'" placeholder="@CurioFrame"></label><label>Profile URL<input data-account-field="profile_url" data-account-id="'+account.id+'" value="'+escapeHtml(account.profile_url||"")+'" placeholder="https://..."></label><div class="distribution-account-meta"><span>Connection: <strong>'+escapeHtml(prettyStatus(account.connection_status))+'</strong></span><span>Publishing: <strong>'+escapeHtml(prettyStatus(account.publishing_mode))+'</strong></span></div><div class="distribution-account-actions"><button class="secondary-btn" type="button" data-save-account="'+account.id+'">Save profile</button><span class="muted">Founder creates and verifies account</span></div></article>';
+  }).join("")||'<p class="muted">No platform accounts registered.</p>';
+  queueHost.innerHTML=distributionPublications.length?distributionPublications.map(item=>'<article class="distribution-queue-item"><div><strong>'+escapeHtml(item.title||"Untitled publication")+'</strong><small>'+escapeHtml(platformNames[item.platform]||item.platform)+' · '+escapeHtml(prettyStatus(item.status))+'</small><p>'+escapeHtml(item.caption||"No caption yet")+'</p></div><time>'+escapeHtml(item.scheduled_at?new Date(item.scheduled_at).toLocaleString("id-ID"):"Not scheduled")+'</time></article>').join(""):'<div class="empty-state"><strong>Publishing queue is empty</strong><p>Add a content item to prepare a manual or scheduled publication. Nothing is uploaded automatically yet.</p></div>';
+}
+async function saveDistributionAccount(id,button){
+  const account=distributionAccounts.find(x=>x.id===id);if(!account)return;
+  const fields=[...document.querySelectorAll('[data-account-id="'+id+'"][data-account-field]')];
+  const patch={updated_at:new Date().toISOString()};
+  fields.forEach(input=>patch[input.dataset.accountField]=input.value.trim()||null);
+  if(patch.account_name===null)patch.account_name="CurioFrame";
+  if(patch.profile_url&&!/^https:\/\//i.test(patch.profile_url)){alert("Profile URL must start with https://");return}
+  button.disabled=true;button.textContent="Saving…";
+  const {error}=await supabase.from("distribution_accounts").update(patch).eq("id",id).eq("company_id",company.id);
+  if(error){button.disabled=false;button.textContent="Save profile";showError(error);return}
+  await loadData();alert("Channel profile details saved. Account ownership and platform connection remain unverified until Founder completes platform setup.");
+}
+async function createDistributionPublication(event){
+  event.preventDefault();
+  const form=$("#distribution-publication-form"),button=$("#distribution-publication-submit");
+  const platform=$("#distribution-platform").value,title=$("#distribution-title").value.trim(),caption=$("#distribution-caption").value.trim(),dateValue=$("#distribution-scheduled-at").value;
+  if(!title){alert("Enter a publication title.");return}
+  const account=distributionAccounts.find(x=>x.platform===platform);
+  const payload={company_id:company.id,account_id:account?.id||null,platform,title,caption,status:dateValue?"scheduled":"draft",scheduled_at:dateValue?new Date(dateValue).toISOString():null,created_by:currentUser.id};
+  button.disabled=true;button.textContent="Saving…";
+  const {error}=await supabase.from("distribution_publications").insert(payload);
+  if(error){button.disabled=false;button.textContent="Add to queue";showError(error);return}
+  form.reset();button.disabled=false;button.textContent="Add to queue";await loadData();
 }
 
 function renderOrchestrator(){
@@ -123,6 +163,7 @@ function renderAll(){
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
   renderOrchestrator();
+  renderDistribution();
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
@@ -717,6 +758,7 @@ document.addEventListener("click",e=>{const link=e.target instanceof Element?e.t
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#distribution-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
 window.__curioAuthReady=true;
 if(window.__curioBootTimer)clearTimeout(window.__curioBootTimer);
@@ -727,6 +769,8 @@ function openTaskDialog(){
 }
 $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2").addEventListener("click",openTaskDialog);
 $("#orchestrator-form")?.addEventListener("submit",submitOrchestratorGoal);
+$("#distribution-publication-form")?.addEventListener("submit",createDistributionPublication);
+document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
 
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
