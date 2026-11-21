@@ -85,11 +85,49 @@ function renderDistribution(){
   const accountsHost=$("#distribution-accounts"),queueHost=$("#distribution-queue-list");
   if(!accountsHost||!queueHost)return;
   const platformNames={youtube:"YouTube",tiktok:"TikTok",instagram:"Instagram",facebook:"Facebook"};
+  const checks=[
+    ["account_created","Account created by Founder"],
+    ["email_verified","Company email verified"],
+    ["two_factor_enabled","2FA / passkey enabled"],
+    ["recovery_saved","Recovery method secured"],
+    ["profile_complete","Brand profile and handle completed"]
+  ];
   accountsHost.innerHTML=distributionAccounts.map(account=>{
     const label=platformNames[account.platform]||account.platform;
-    return '<article class="distribution-account-card"><div class="distribution-account-head"><div><span class="eyebrow">OFFICIAL CHANNEL</span><h3>'+escapeHtml(label)+'</h3></div><span class="pill '+(account.account_status==="active"?"green":"amber")+'">'+escapeHtml(prettyStatus(account.account_status))+'</span></div><label>Channel / account name<input data-account-field="account_name" data-account-id="'+account.id+'" value="'+escapeHtml(account.account_name||"CurioFrame")+'" maxlength="80"></label><label>Username / handle<input data-account-field="handle" data-account-id="'+account.id+'" value="'+escapeHtml(account.handle||"")+'" placeholder="@CurioFrame"></label><label>Profile URL<input data-account-field="profile_url" data-account-id="'+account.id+'" value="'+escapeHtml(account.profile_url||"")+'" placeholder="https://..."></label><div class="distribution-account-meta"><span>Connection: <strong>'+escapeHtml(prettyStatus(account.connection_status))+'</strong></span><span>Publishing: <strong>'+escapeHtml(prettyStatus(account.publishing_mode))+'</strong></span></div><div class="distribution-account-actions"><button class="secondary-btn" type="button" data-save-account="'+account.id+'">Save profile</button><span class="muted">Founder creates and verifies account</span></div></article>';
+    const checklist=account.activation_checklist||{};
+    const done=checks.filter(([key])=>checklist[key]===true).length;
+    const verified=account.activation_status==="verified";
+    const checkMarkup=checks.map(([key,text])=>'<label class="activation-check"><input type="checkbox" data-activation-check="'+key+'" data-account-id="'+account.id+'" '+(checklist[key]===true?"checked":"")+' '+(verified?"disabled":"")+'><span>'+text+'</span></label>').join("");
+    return '<article class="distribution-account-card"><div class="distribution-account-head"><div><span class="eyebrow">OFFICIAL CHANNEL</span><h3>'+escapeHtml(label)+'</h3></div><span class="pill '+(verified?"green":"amber")+'">'+escapeHtml(prettyStatus(account.activation_status||"planned"))+'</span></div><label>Channel / account name<input data-account-field="account_name" data-account-id="'+account.id+'" value="'+escapeHtml(account.account_name||"CurioFrame")+'" maxlength="80"></label><label>Username / handle<input data-account-field="handle" data-account-id="'+account.id+'" value="'+escapeHtml(account.handle||"")+'" placeholder="@CurioFrame"></label><label>Profile URL<input data-account-field="profile_url" data-account-id="'+account.id+'" value="'+escapeHtml(account.profile_url||"")+'" placeholder="https://..."></label><div class="activation-panel"><div class="activation-panel-head"><strong>Account activation checklist</strong><span>'+done+'/5 complete</span></div><div class="activation-progress"><span style="width:'+(done/5*100)+'%"></span></div>'+checkMarkup+'<button class="secondary-btn activation-verify-btn" type="button" data-verify-account="'+account.id+'" '+(verified||done!==5?"disabled":"")+'>Founder verified account</button><small class="muted">Only verify after completing every item on the platform itself. This does not connect the API.</small></div><div class="distribution-account-meta"><span>Account: <strong>'+escapeHtml(prettyStatus(account.account_status))+'</strong></span><span>Connection: <strong>'+escapeHtml(prettyStatus(account.connection_status))+'</strong></span><span>Publishing: <strong>'+escapeHtml(prettyStatus(account.publishing_mode))+'</strong></span></div><div class="distribution-account-actions"><button class="secondary-btn" type="button" data-save-account="'+account.id+'">Save profile</button><span class="muted">Passwords and OTPs never belong here</span></div></article>';
   }).join("")||'<p class="muted">No platform accounts registered.</p>';
+  const connected=distributionAccounts.filter(a=>a.connection_status==="connected").length;
+  const queueCount=distributionPublications.filter(p=>["draft","queued","scheduled","publishing"].includes(p.status)).length;
+  const count=$("#distribution-account-count"),connectedCount=$("#distribution-connected-count"),queueCountEl=$("#distribution-queue-count");
+  if(count)count.textContent=String(distributionAccounts.length).padStart(2,"0");
+  if(connectedCount)connectedCount.textContent=String(connected).padStart(2,"0");
+  if(queueCountEl)queueCountEl.textContent=String(queueCount).padStart(2,"0");
   queueHost.innerHTML=distributionPublications.length?distributionPublications.map(item=>'<article class="distribution-queue-item"><div><strong>'+escapeHtml(item.title||"Untitled publication")+'</strong><small>'+escapeHtml(platformNames[item.platform]||item.platform)+' · '+escapeHtml(prettyStatus(item.status))+'</small><p>'+escapeHtml(item.caption||"No caption yet")+'</p></div><time>'+escapeHtml(item.scheduled_at?new Date(item.scheduled_at).toLocaleString("id-ID"):"Not scheduled")+'</time></article>').join(""):'<div class="empty-state"><strong>Publishing queue is empty</strong><p>Add a content item to prepare a manual or scheduled publication. Nothing is uploaded automatically yet.</p></div>';
+}
+async function saveDistributionActivationCheck(id,key,checked,input){
+  const account=distributionAccounts.find(x=>x.id===id);if(!account||account.activation_status==="verified")return;
+  const checklist={...(account.activation_checklist||{}),[key]:checked};
+  const allKeys=["account_created","email_verified","two_factor_enabled","recovery_saved","profile_complete"];
+  const status=allKeys.every(k=>checklist[k]===true)?"in_progress":(allKeys.some(k=>checklist[k]===true)?"in_progress":"planned");
+  input.disabled=true;
+  const {error}=await supabase.from("distribution_accounts").update({activation_checklist:checklist,activation_status:status,updated_at:new Date().toISOString()}).eq("id",id).eq("company_id",company.id);
+  if(error){input.checked=!checked;input.disabled=false;showError(error);return}
+  await loadData();
+}
+async function verifyDistributionAccount(id,button){
+  const account=distributionAccounts.find(x=>x.id===id);if(!account)return;
+  const checklist=account.activation_checklist||{};
+  const keys=["account_created","email_verified","two_factor_enabled","recovery_saved","profile_complete"];
+  if(!keys.every(k=>checklist[k]===true)){alert("Complete all activation checks first.");return}
+  if(!confirm("Confirm that you personally created and verified this "+account.platform+" account, secured recovery access, and completed its profile? This records account activation only; OAuth/API remains disconnected."))return;
+  button.disabled=true;
+  const {error}=await supabase.from("distribution_accounts").update({activation_status:"verified",account_status:"active",activated_at:new Date().toISOString(),activation_verified_by:currentUser.id,updated_at:new Date().toISOString()}).eq("id",id).eq("company_id",company.id);
+  if(error){button.disabled=false;showError(error);return}
+  await loadData();alert("Account activation recorded. OAuth/API connection is still not connected.");
 }
 async function saveDistributionAccount(id,button){
   const account=distributionAccounts.find(x=>x.id===id);if(!account)return;
@@ -771,6 +809,8 @@ $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2")
 $("#orchestrator-form")?.addEventListener("submit",submitOrchestratorGoal);
 $("#distribution-publication-form")?.addEventListener("submit",createDistributionPublication);
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
+document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
+document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
