@@ -100,9 +100,10 @@ function renderHistoryRecovery(){
   const timeline=$("#history-timeline"),recover=$("#recovery-list");
   const eventItems=taskEvents.map(e=>({id:e.id,time:e.created_at,title:String(e.event_type||"event").replaceAll("_"," "),detail:e.message,taskId:e.task_id,source:"event"}));
   const decisionItems=allApprovals.filter(a=>a.status!=="pending").map(a=>({id:a.id,time:a.decided_at||a.created_at,title:"Approval "+a.status,detail:a.title+" · "+(a.decision_note||"No decision note"),taskId:a.task_id,source:"decision"}));
+  const qualityItems=qualityReviews.map(q=>({id:q.id,time:q.created_at,title:String(q.review_stage).toUpperCase()+" "+String(q.status).toUpperCase(),detail:"Iteration "+q.iteration+" · "+(q.evidence||"Quality review recorded"),taskId:q.task_id,source:"quality"}));
   const snapshotItems=recoverySnapshots.map(s=>({id:s.id,time:s.created_at,title:"Recovery snapshot · "+s.action,detail:"Previous "+s.entity_type+" state preserved",taskId:s.task_id,source:"snapshot"}));
   const versionItems=contentAssets.map(a=>({id:a.id,time:a.created_at,title:"Deliverable version · "+a.status,detail:a.title+" ("+a.asset_type+")",taskId:a.task_id,source:"version"}));
-  const merged=[...eventItems,...decisionItems,...snapshotItems,...versionItems].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,150);
+  const merged=[...eventItems,...decisionItems,...qualityItems,...snapshotItems,...versionItems].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,150);
   const historyTone=x=>{
     const t=String(x.title||"").toLowerCase(),d=String(x.detail||"").toLowerCase();
     if(/reject|failed|error/.test(t+" "+d))return "history-rejected";
