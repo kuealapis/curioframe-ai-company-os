@@ -158,3 +158,15 @@
 
 /* Owner authentication convenience controls */
 .auth-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 8px}.auth-card .remember-email{display:flex;align-items:center;gap:7px;margin:0;color:var(--muted);font-size:10px;cursor:pointer}.remember-email input{width:14px;height:14px;margin:0;accent-color:var(--blue)}.auth-forgot{border:0;background:transparent;color:var(--blue);font-size:10px;padding:6px 0;cursor:pointer}.auth-forgot:hover,.auth-switch:hover{text-decoration:underline}
+
+
+/* Premium stylized Virtual HQ refresh */
+.hq-3d-stage{background:radial-gradient(ellipse at 50% 30%,#173b59 0,#0a1a2b 68%,#071321 100%);border-color:#365b79}
+.hq-3d-stage canvas{touch-action:none;cursor:grab}
+.hq-dept-card.selected{background:linear-gradient(115deg,#1a3550,#142438);border-color:#68cde9;box-shadow:0 0 0 1px #68cde933,0 8px 24px #0004}
+.hq-dept-card:focus-visible{outline:2px solid #79d8ef;outline-offset:3px}
+.hq-live-line>span:last-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hq-camera-tools{display:inline-flex;gap:5px}
+.hq-camera-tools button{border:1px solid #3b5d79;background:#1b3048;color:#d9edff;border-radius:7px;min-width:29px;height:27px;font-size:13px;cursor:pointer}
+.hq-camera-tools button:hover{background:#2a4b69}
+@media(max-width:700px){.hq-3d-stage{height:54vh;min-height:370px}.hq-scene:not(.hq-scene-large).hq-3d-stage{height:245px;min-height:220px}}
