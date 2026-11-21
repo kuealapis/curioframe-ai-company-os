@@ -107,8 +107,11 @@ function renderHistoryRecovery(){
 
   const transfers=agentMessages.filter(m=>["handoff","quality_handoff"].includes(String(m.message_type||"").toLowerCase())).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   const deletions=taskEvents.filter(e=>/delete|deleted|remove|removed|trash|purge/i.test(String(e.event_type||"")+" "+String(e.message||""))).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const latestTransferByTask=new Map();
+  transfers.forEach(m=>{if(m.task_id&&!latestTransferByTask.has(m.task_id))latestTransferByTask.set(m.task_id,m.id)});
+
   const transferPanel=$("#transferred-history"),deletedPanel=$("#deleted-history");
-  if(transferPanel)transferPanel.innerHTML=transfers.length?transfers.map(m=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("TRF",m))+' · '+escapeHtml(m.subject||"Task handoff")+'</strong><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml((m.from_employee?.name||"AI Employee")+" → "+(m.to_employee?.name||"AI Employee"))+'</p><p>'+escapeHtml(m.body||"Task transferred to another AI Employee.")+'</p>'+(m.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===m.task_id)?.title||m.task_id)+'</small>':'')+'</article>').join(""):'<p class="muted">No task handoffs have been recorded yet.</p>';
+  if(transferPanel)transferPanel.innerHTML=transfers.length?transfers.map(m=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("TRF",m))+' · '+escapeHtml(m.subject||"Task handoff")+'</strong><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml((m.from_employee?.name||"AI Employee")+" → "+(m.to_employee?.name||"AI Employee"))+'</p><p>'+escapeHtml(m.body||"Task transferred to another AI Employee.")+'</p>'+(m.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===m.task_id)?.title||m.task_id)+'</small>':'')+(m.task_id&&latestTransferByTask.get(m.task_id)===m.id?'<button class="secondary-btn" type="button" data-restore-transfer="'+escapeHtml(m.id)+'">Restore to previous AI Employee</button>':'')+'</article>').join(""):'<p class="muted">No task handoffs have been recorded yet.</p>';
   if(deletedPanel)deletedPanel.innerHTML=deletions.length?deletions.map(e=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("DEL",e))+' · '+escapeHtml(e.event_type)+'</strong><time>'+escapeHtml(new Date(e.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml(e.message||"Deletion event recorded.")+'</p>'+(e.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===e.task_id)?.title||e.task_id)+'</small>':'')+'</article>').join(""):'<p class="muted">No deletion events are recorded. Deleted data will appear here only when a deletion is explicitly logged; nothing is inferred or fabricated.</p>';
 
   const rejected=allApprovals.filter(a=>a.status==="rejected").sort((a,b)=>new Date(b.decided_at||b.created_at)-new Date(a.decided_at||a.created_at));
@@ -116,6 +119,18 @@ function renderHistoryRecovery(){
   const count=$("#recovery-snapshot-count");if(count)count.textContent=String(recoverySnapshots.length);
   const rejectedCount=$("#rejected-approval-count");if(rejectedCount)rejectedCount.textContent=String(rejected.length);
 }
+async function restoreTransferredTask(messageId,button){
+  if(!confirm("Return this task to the AI Employee who owned it before the latest handoff? The current assignment will be preserved in Recovery History."))return;
+  button.disabled=true;button.textContent="Restoring…";
+  try{
+    const {data,error}=await supabase.rpc("restore_task_to_previous_employee",{p_message_id:messageId});
+    if(error)throw error;
+    if(data?.success!==true)throw new Error("Task restoration was not confirmed.");
+    await loadData();
+    alert(data.already_restored?"This task is already assigned to its previous AI Employee.":"Task returned to "+(data.restored_to_name||"its previous AI Employee")+".");
+  }catch(error){button.disabled=false;button.textContent="Restore to previous AI Employee";showError(error);}
+}
+
 async function reopenApprovalForReview(id,button){
   if(!confirm("Reopen this rejected approval for Owner review? Previous states will be preserved in Recovery History."))return;
   button.disabled=true;button.textContent="Recovering…";
@@ -339,6 +354,8 @@ $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2")
 document.addEventListener("click",e=>{
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
+  const transferRestoreTrigger=e.target.closest("[data-restore-transfer]");
+  if(transferRestoreTrigger){restoreTransferredTask(transferRestoreTrigger.dataset.restoreTransfer,transferRestoreTrigger);return}
   const recoveryTrigger=e.target.closest("[data-reopen-approval]");
   if(recoveryTrigger){reopenApprovalForReview(recoveryTrigger.dataset.reopenApproval,recoveryTrigger);return}
   const hqClose=e.target.closest("[data-hq-close]");
