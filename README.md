@@ -25,3 +25,21 @@ Research → Content → Quality Review → Marketing → Owner approval when re
 
 ## Implementation status
 This repository is the starting point for the Company OS. A live dashboard, database, integrations, and autonomous AI execution are not yet deployed.
+
+
+## Repository structure
+- `index.html` — responsive Company OS dashboard shell.
+- `styles.css` — mobile-first dashboard styling.
+- `app.js` — navigation, employee roster, sample task UI, and pipeline rendering.
+- `supabase/schema.sql` — initial PostgreSQL schema with owner-scoped row-level security.
+
+## Current build status
+- [x] Dashboard foundation committed.
+- [x] Responsive navigation and initial modules.
+- [x] Initial database schema drafted.
+- [ ] Supabase project connection and schema deployment.
+- [ ] Authentication and live database-backed dashboard.
+- [ ] Agent orchestration, model integration, and real task execution.
+- [ ] Hosting and public deployment.
+
+The current dashboard uses illustrative sample data in the browser. Do not treat sample tasks, approvals, employee statuses, or metrics as real company activity.
