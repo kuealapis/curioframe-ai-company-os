@@ -263,6 +263,31 @@ function renderWorkSampleAssignments(){
  if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
  host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(item.status==="queued"?'<button class="primary-btn" type="button" data-work-sample-start="'+item.id+'">Start work sample</button>':item.status==="in_progress"?'<button class="secondary-btn" type="button" data-work-sample-record="'+item.employee_id+'">Record work evidence</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
 }
+async function runAllWorkSamples(button){
+ const confirmBox=$("#batch-zero-cost-confirm"),status=$("#work-sample-batch-status");
+ if(!confirmBox?.checked){alert("Confirm the AI API free allowance and no-billing condition before execution.");return}
+ if(!confirm("Start sequential execution of all queued and in-progress Work Samples? Each assignment will call the AI provider. You can resume later if interrupted."))return;
+ const runButton=$("#run-all-work-samples"),resumeButton=$("#resume-work-samples");
+ if(runButton)runButton.disabled=true;if(resumeButton)resumeButton.disabled=true;
+ let completed=0,failed=0,stopped=false;
+ try{
+  while(true){
+   if(status)status.textContent="Executing next Agent… Completed this session: "+completed+" · blocked: "+failed;
+   const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,confirmed_zero_cost:true}});
+   if(error)throw error;
+   if(data?.done){if(status)status.textContent="Queue finished. Submitted this session: "+completed+" · blocked: "+failed;break}
+   if(data?.ok&&data.status==="submitted"){completed++;await loadData();continue}
+   failed++;await loadData();
+   if(status)status.textContent="Queue paused. "+(data?.employee||"Agent")+" needs attention: "+(data?.error||data?.detail||"Execution did not complete.")+" · Submitted this session: "+completed;
+   stopped=true;break;
+  }
+ }catch(error){stopped=true;if(status)status.textContent="Batch paused due to an execution error. You can resume after checking the issue.";showError(error)}
+ finally{
+  if(runButton)runButton.disabled=!confirmBox?.checked;
+  if(resumeButton)resumeButton.disabled=false;
+  if(!stopped)await loadData();
+ }
+}
 async function startWorkSampleAssignment(id,button){
  const item=workSampleAssignments.find(x=>x.id===id);if(!item||item.status!=="queued")return;
  button.disabled=true;
@@ -934,6 +959,9 @@ $("#distribution-publication-form")?.addEventListener("submit",createDistributio
 $("#organization-department-form")?.addEventListener("submit",addOrganizationDepartment);
 $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
+$("#batch-zero-cost-confirm")?.addEventListener("change",e=>{const b=$("#run-all-work-samples");if(b)b.disabled=!e.target.checked});
+$("#run-all-work-samples")?.addEventListener("click",e=>runAllWorkSamples(e.currentTarget));
+$("#resume-work-samples")?.addEventListener("click",e=>runAllWorkSamples(e.currentTarget));
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
