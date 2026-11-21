@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-2">
+  <link rel="stylesheet" href="./styles.css?v=20261121-3">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -54,8 +54,9 @@
         <div class="notice"><span>ⓘ</span><div><strong>Live workspace</strong><p>Metrics and records below are loaded from your private Supabase database. AI execution and channel publishing will be connected in later build stages.</p></div></div>
         <section class="hq-preview panel">
           <div class="panel-head"><div><p class="eyebrow">YOUR DIGITAL COMPANY</p><h2>AI Headquarters</h2><p>One team. Connected departments. Owner-controlled operations.</p></div><a href="#virtual-hq" data-page="virtual-hq">Enter headquarters →</a></div>
-          <div class="hq-scene" id="virtual-hq-scene" aria-label="Live isometric AI company headquarters"></div>
-          <div class="hq-legend"><span><i class="legend-dot idle"></i> Registered / idle</span><span><i class="legend-dot working"></i> Working on a task</span><span><i class="legend-dot review"></i> Awaiting review</span></div>
+          <div class="hq-scene" id="virtual-hq-scene" aria-label="Interactive isometric AI company headquarters"></div>
+          <div class="hq-selected-detail" id="hq-selected-detail-overview" hidden></div>
+          <div class="hq-legend"><span><i class="legend-dot idle"></i> Idle</span><span><i class="legend-dot queued"></i> Queued</span><span><i class="legend-dot working"></i> In progress</span><span><i class="legend-dot review"></i> Review</span><span><i class="legend-dot blocked"></i> Blocked</span></div>
         </section>
         <div class="stats-grid">
           <article class="stat-card"><div class="stat-label">REGISTERED ROLES <span>♙</span></div><div class="stat-value" id="employee-total">00</div><div class="stat-foot">Registered company roles</div></article>
@@ -79,7 +80,7 @@
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
       <section class="page" id="page-virtual-hq">
         <div class="page-heading"><div><p class="eyebrow">COMPANY FLOOR / LIVE WORKSPACE</p><h1>Virtual Headquarters</h1><p class="subheading">A visual command floor for your registered AI team. Activity indicators reflect actual database tasks and agent records.</p></div><button class="secondary-btn" id="hq-refresh-btn" type="button">↻ Refresh workspace</button></div>
-        <section class="panel hq-main-panel"><div class="hq-scene hq-scene-large" id="virtual-hq-full-scene" aria-label="Isometric CurioFrame AI headquarters"></div><div class="hq-legend"><span><i class="legend-dot idle"></i> Registered / idle</span><span><i class="legend-dot working"></i> Assigned open task</span><span><i class="legend-dot review"></i> Review / approval</span></div></section>
+        <section class="panel hq-main-panel"><div class="hq-live-line"><span class="hq-live-indicator" id="hq-live-indicator">● SYNCING WITH WORKSPACE</span><span>Tap any room to inspect its real tasks</span></div><div class="hq-scene hq-scene-large" id="virtual-hq-full-scene" aria-label="Interactive isometric CurioFrame AI headquarters"></div><div class="hq-selected-detail" id="hq-selected-detail-full" hidden></div><div class="hq-legend"><span><i class="legend-dot idle"></i> Idle</span><span><i class="legend-dot queued"></i> Queued</span><span><i class="legend-dot working"></i> In progress</span><span><i class="legend-dot review"></i> Review</span><span><i class="legend-dot blocked"></i> Blocked</span></div></section>
         <div class="hq-department-grid" id="hq-department-grid"></div>
         <div class="notice hq-note"><span>ⓘ</span><div><strong>Operational truth</strong><p>The headquarters is a visual interface, not a simulation of autonomous work. An employee is shown as working only when a real open task is assigned to that role. Assigned tasks can be executed by the AI worker after the Gemini API key is connected. Every result is saved as a draft and sent to you for approval.</p></div></div>
       </section>
@@ -98,6 +99,6 @@
     <p class="form-note">Approval records your decision and updates the linked task and deliverable status.</p>
   </dialog>
   <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Save task</button></div><p class="form-note">Tasks are saved to your company database. Creating a task does not mean an AI agent is already executing it.</p></form></dialog>
-  <script type="module" src="./app.js?v=20261121-2"></script>
+  <script type="module" src="./app.js?v=20261121-3"></script>
 </body>
 </html>
