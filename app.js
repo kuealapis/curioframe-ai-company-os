@@ -19,6 +19,9 @@ const employeeSeed = [
 let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
+function safeStorageSet(key,value){try{window.localStorage.setItem(key,value)}catch(error){console.warn("Could not save local preference:",error)}}
+function safeStorageRemove(key){try{window.localStorage.removeItem(key)}catch(error){console.warn("Could not clear local preference:",error)}}
 function setMessage(message){$("#auth-message").textContent=message}
 function showAuth(){ $("#auth-screen").hidden=false; $("#app-shell").hidden=true }
 function showApp(){ $("#auth-screen").hidden=true; $("#app-shell").hidden=false }
@@ -357,8 +360,8 @@ async function handleAuth(event){
       if(data.session){await startWorkspace(data.user);setMessage("")}
       else setMessage("Account created. Check your email to confirm, then return here and sign in.");
     }else{
-      if($("#remember-email").checked)localStorage.setItem("curioframe_owner_email",email);
-      else localStorage.removeItem("curioframe_owner_email");
+      if($("#remember-email").checked)safeStorageSet("curioframe_owner_email",email);
+      else safeStorageRemove("curioframe_owner_email");
       const {data,error}=await supabase.auth.signInWithPassword({email,password});
       if(error)throw error;await startWorkspace(data.user);setMessage("");
     }
@@ -412,7 +415,7 @@ $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();n
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
-$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=localStorage.getItem("curioframe_owner_email")||"";$("#remember-email").checked=!!$("#auth-email").value;
+$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
 window.__curioAuthReady=true;
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
