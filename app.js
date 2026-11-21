@@ -228,7 +228,7 @@ async function submitOrchestratorGoal(event){
   if(goal.length<8){$("#orchestrator-message").textContent="Write a more specific goal (at least 8 characters).";return}
   button.disabled=true;button.textContent="Planning…";$("#orchestrator-message").textContent="Orchestrator is breaking down your goal. This can take a short while.";
   try{
-    const {data,error}=await supabase.functions.invoke("orchestrate-company-goal",{body:{goal,project_type:type}});
+    const {data,error}=await supabase.functions.invoke("orchestrate-company-goal",{body:{goal,project_type:type,company_id:company.id}});
     if(error)throw error;if(data?.error)throw new Error(data.error);
     $("#orchestrator-goal").value="";$("#orchestrator-message").textContent=data.message||"Plan created.";
     await loadData();
