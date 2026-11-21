@@ -1029,6 +1029,7 @@ $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
 $("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation);
 $("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun);
+$("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
