@@ -326,9 +326,20 @@ async function decideApproval(decision){
 }
 
 async function startWorkspace(user){
-  currentUser=user;showApp();setSystem("SYNCING");
+  currentUser=user;setSystem("SYNCING");
   $("#owner-email").textContent=user.email||"OWNER";
-  await ensureCompany();await loadData();setupHQRealtime();setSystem("DATABASE CONNECTED");
+  try{
+    await ensureCompany();
+    await loadData();
+    setupHQRealtime();
+    setSystem("DATABASE CONNECTED");
+    showApp();
+  }catch(error){
+    console.error("Workspace initialization failed:",error);
+    showAuth();
+    setMessage("Login succeeded, but the workspace could not load: "+(error.message||"Unknown database error"));
+    throw error;
+  }
 }
 async function handleAuth(event){
   event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage("Please wait…");
@@ -343,7 +354,11 @@ async function handleAuth(event){
       const {data,error}=await supabase.auth.signInWithPassword({email,password});
       if(error)throw error;await startWorkspace(data.user);setMessage("");
     }
-  }catch(error){setMessage(error.message||"Unable to authenticate.")}
+  }catch(error){
+    console.error("Authentication failed:",error);
+    showAuth();
+    setMessage(error.message||"Unable to sign in. Check your email and password, then try again.");
+  }
   finally{button.disabled=false}
 }
 let authMode="signin";
