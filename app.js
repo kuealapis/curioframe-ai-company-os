@@ -84,7 +84,7 @@ async function loadData(){
 
 
 function slugifyRole(value){
-  return String(value||"").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,48);
+  return String(value||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,48);
 }
 function renderOrganization(){
   const deptHost=$("#org-departments"),agentHost=$("#org-agents"),deptSelect=$("#org-agent-department");
