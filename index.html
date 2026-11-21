@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-22">
+  <link rel="stylesheet" href="./styles.css?v=20261121-23">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -122,7 +122,20 @@
         if (message) message.textContent = "CurioFrame is still initializing. Please refresh the page. If this message keeps appearing, the app could not finish loading.";
       }
     }, true);
+    function showStartupError(detail) {
+      if (window.__curioAuthReady) return;
+      var message = document.getElementById("auth-message");
+      if (message) message.textContent = "CurioFrame could not finish loading: " + detail + ". Please refresh. If it continues, tell the support team this exact message.";
+    }
+    window.addEventListener("error", function(event) {
+      if (event.target && event.target.tagName === "SCRIPT") showStartupError("the app script could not be downloaded");
+      else if (event.message) showStartupError(event.message);
+    }, true);
+    window.addEventListener("unhandledrejection", function(event) {
+      var reason = event.reason;
+      showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
+    });
   </script>
-  <script type="module" src="./app.js?v=20261121-22"></script>
+  <script type="module" src="./app.js?v=20261121-23"></script>
 </body>
 </html>
