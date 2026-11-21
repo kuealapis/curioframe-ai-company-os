@@ -390,6 +390,7 @@ $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("o
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);
+window.__curioAuthReady=true;
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
   $("#task-owner").innerHTML='<option value="">Unassigned</option>'+employees.map(e=>'<option value="'+e.id+'">'+escapeHtml(e.name)+'</option>').join("");
