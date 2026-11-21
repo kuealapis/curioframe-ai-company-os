@@ -351,7 +351,7 @@ async function decideApproval(decision){
   }
 }
 
-async async function startWorkspace(user){
+async function startWorkspace(user){
   currentUser=user;setSystem("SYNCING");
   $("#owner-email").textContent=user.email||"OWNER";
   setMessage("Sign-in successful. Loading your CurioFrame workspace…");
