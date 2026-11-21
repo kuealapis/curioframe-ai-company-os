@@ -9,7 +9,19 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="app-shell">
+  <section class="auth-screen" id="auth-screen">
+    <form class="auth-card" id="auth-form">
+      <div class="brand-mark auth-mark">C</div><p class="eyebrow">CURIOFRAME AI COMPANY OS</p>
+      <h1 id="auth-title">Owner sign in</h1><p class="auth-copy" id="auth-copy">Sign in to open your private company workspace.</p>
+      <label>Email address<input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+      <label>Password<input id="auth-password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
+      <button class="primary-btn auth-submit" id="auth-submit" type="submit">Sign in</button>
+      <button class="auth-switch" id="auth-switch" type="button">New here? Create your owner account</button>
+      <p class="auth-message" id="auth-message" role="status"></p>
+      <small class="auth-foot">Your workspace is private. Company records are protected by database row-level security.</small>
+    </form>
+  </section>
+  <div class="app-shell" id="app-shell" hidden>
     <aside class="sidebar" id="sidebar">
       <a class="brand" href="#" aria-label="CurioFrame AI home">
         <span class="brand-mark">C</span><span><strong>CurioFrame</strong><small>AI COMPANY OS</small></span>
@@ -34,17 +46,17 @@
       <header class="topbar">
         <button class="mobile-menu" id="menu-toggle" aria-label="Toggle menu">☰</button>
         <div class="crumb">CurioFrame AI <span>/</span> <strong id="page-crumb">Overview</strong></div>
-        <div class="top-actions"><span class="system-status"><b></b> SYSTEM PREVIEW</span><button class="icon-btn" title="Notifications">♧</button></div>
+        <div class="top-actions"><span class="system-status" id="system-status"><b></b> CONNECTING</span><button class="secondary-btn" id="sign-out-btn" type="button">Sign out</button></div>
       </header>
 
       <section class="page active-page" id="page-overview">
-        <div class="page-heading"><div><p class="eyebrow">SATURDAY, NOVEMBER 21, 2026</p><h1>Company Overview</h1><p class="subheading">Your AI company command center. Monitor work, people, and production in one place.</p></div><button class="primary-btn" id="new-task-btn">＋ Create task</button></div>
-        <div class="notice"><span>ⓘ</span><div><strong>Foundation preview</strong><p>Interface is live in your browser only when hosted. Current metrics and activities are sample data; database, AI execution, and publishing integrations are not connected yet.</p></div></div>
+        <div class="page-heading"><div><p class="eyebrow" id="today-label">OWNER WORKSPACE</p><h1>Company Overview</h1><p class="subheading">Your AI company command center. Monitor work, people, and production in one place.</p></div><button class="primary-btn" id="new-task-btn">＋ Create task</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Live workspace</strong><p>Metrics and records below are loaded from your private Supabase database. AI execution and channel publishing will be connected in later build stages.</p></div></div>
         <div class="stats-grid">
-          <article class="stat-card"><div class="stat-label">ACTIVE EMPLOYEES <span>♙</span></div><div class="stat-value">7<span class="stat-unit">/ 7</span></div><div class="stat-foot"><b class="green-text">7 roles</b> defined in organization</div></article>
-          <article class="stat-card"><div class="stat-label">OPEN TASKS <span>☷</span></div><div class="stat-value" id="open-task-total">08</div><div class="stat-foot"><b class="blue-text">3 in progress</b> · sample workload</div></article>
-          <article class="stat-card"><div class="stat-label">AWAITING APPROVAL <span>✓</span></div><div class="stat-value" id="approval-total">02</div><div class="stat-foot"><b class="amber-text">Owner action</b> required</div></article>
-          <article class="stat-card"><div class="stat-label">PUBLISHED THIS MONTH <span>↗</span></div><div class="stat-value">00</div><div class="stat-foot">No channel connected yet</div></article>
+          <article class="stat-card"><div class="stat-label">ACTIVE EMPLOYEES <span>♙</span></div><div class="stat-value" id="employee-total">00</div><div class="stat-foot">Registered company roles</div></article>
+          <article class="stat-card"><div class="stat-label">OPEN TASKS <span>☷</span></div><div class="stat-value" id="open-task-total">00</div><div class="stat-foot">Real tasks in your workspace</div></article>
+          <article class="stat-card"><div class="stat-label">AWAITING APPROVAL <span>✓</span></div><div class="stat-value" id="approval-total">00</div><div class="stat-foot">Awaiting your decision</div></article>
+          <article class="stat-card"><div class="stat-label">PUBLISHED THIS MONTH <span>↗</span></div><div class="stat-value" id="published-total">00</div><div class="stat-foot">Published content assets</div></article>
         </div>
         <div class="section-grid">
           <section class="panel wide-panel"><div class="panel-head"><div><h2>Work in progress</h2><p>Latest tasks across the company</p></div><a href="#tasks" data-page="tasks">View all →</a></div><div class="table-wrap"><table><thead><tr><th>TASK</th><th>OWNER</th><th>STATUS</th><th>PRIORITY</th></tr></thead><tbody id="task-table"></tbody></table></div></section>
@@ -52,7 +64,7 @@
         </div>
         <div class="section-grid lower-grid">
           <section class="panel"><div class="panel-head"><div><h2>Production pipeline</h2><p>Content workflow stages</p></div><a href="#pipeline" data-page="pipeline">Open pipeline →</a></div><div class="pipeline" id="pipeline-overview"></div></section>
-          <section class="panel"><div class="panel-head"><div><h2>Needs your attention</h2><p>Decisions reserved for the owner</p></div><a href="#approvals" data-page="approvals">Review →</a></div><div class="approval-list"><div class="approval-item"><span class="approval-icon">✎</span><div><strong>Approve first content direction</strong><small>Content strategy · Sample item</small></div><span class="pill amber">Pending</span></div><div class="approval-item"><span class="approval-icon">◈</span><div><strong>Confirm channel launch checklist</strong><small>Marketing · Sample item</small></div><span class="pill amber">Pending</span></div></div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Needs your attention</h2><p>Decisions reserved for the owner</p></div><a href="#approvals" data-page="approvals">Review →</a></div><div class="approval-list" id="overview-approvals"><p class="muted">No pending approvals.</p></div></section>
         </div>
       </section>
 
@@ -66,7 +78,7 @@
     </main>
   </div>
 
-  <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Add sample task</button></div><p class="form-note">This creates a temporary browser-side sample task only. It is not saved to a database or assigned to a running AI agent.</p></form></dialog>
-  <script src="./app.js"></script>
+  <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Save task</button></div><p class="form-note">Tasks are saved to your company database. Creating a task does not mean an AI agent is already executing it.</p></form></dialog>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
