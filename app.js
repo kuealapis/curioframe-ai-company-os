@@ -364,6 +364,58 @@ async function runResearchContentRealHandoff(){
   if(status)status.textContent="Research → Content handoff failed. No AI provider was called.";
  }finally{if(button){button.disabled=false;button.textContent="⇢ Run Research → Content Real Handoff"}}
 }
+async function runContentIntakeSourceValidation(){
+ const host=$("#safe-simulation-results"),status=$("#work-sample-batch-status");
+ const button=$("#run-content-intake-validation");
+ if(!host)return;
+ if(!company?.id||!currentUser?.id){host.innerHTML='<p class="notice">Sign in to the company workspace before validating intake.</p>';return}
+ const content=employees.find(e=>String(e.role_key||"").toLowerCase()==="content");
+ const policy=operatingPolicy;
+ if(!content){host.innerHTML='<p class="notice">BLOCKED: Content Officer is not registered.</p>';return}
+ if(!policy||policy.approval_mode!=="spending_only"||Number(policy.max_automatic_spend)!==0||policy.allow_paid_services!==false||policy.allow_paid_api_usage!==false){
+  host.innerHTML='<p class="notice">BLOCKED: zero-spend policy could not be positively verified. No records were written.</p>';return;
+ }
+ if(button){button.disabled=true;button.textContent="Validating source…"}
+ try{
+  const assetResult=await supabase.from("content_assets").select("id,title,asset_type,status,body,created_at").eq("company_id",company.id).eq("title","Research → Content Handoff Test Packet (NOT VERIFIED)").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(assetResult.error)throw assetResult.error;
+  const asset=assetResult.data;
+  if(!asset)throw new Error("No Research handoff packet found. Run the Research → Content Real Handoff first.");
+  const taskResult=await supabase.from("tasks").select("id,title,status,assigned_employee_id,objective").eq("company_id",company.id).eq("assigned_employee_id",content.id).ilike("objective","%"+asset.id+"%").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(taskResult.error)throw taskResult.error;
+  const task=taskResult.data;
+  if(!task)throw new Error("Receiving Content task linked to this source asset was not found.");
+  const body=String(asset.body||"");
+  const checks=[
+   {key:"source_asset_exists",label:"Source asset exists in company workspace",pass:Boolean(asset.id)},
+   {key:"source_type",label:"Asset type is research_brief",pass:asset.asset_type==="research_brief"},
+   {key:"source_status",label:"Source has approved status",pass:asset.status==="approved"},
+   {key:"verification_marker",label:"Source is not marked NOT VERIFIED",pass:!(/NOT VERIFIED|NOT VERIFIED RESEARCH/i.test(body+" "+asset.title))},
+   {key:"claims_present",label:"Research claims are present",pass:!(/NO FACTUAL CLAIMS PROVIDED|Claims:\s*\[NO FACTUAL CLAIMS/i.test(body))},
+   {key:"source_references",label:"Source references are present",pass:!(/Source references:\s*\[NONE\]/i.test(body))},
+   {key:"content_task_link",label:"Receiving task is assigned to Content Officer",pass:task.assigned_employee_id===content.id&&task.objective.includes(asset.id)}
+  ];
+  const passed=checks.filter(x=>x.pass).length,blocked=checks.length-passed;
+  const reasons=checks.filter(x=>!x.pass).map(x=>x.key);
+  const eventResult=await supabase.from("task_events").insert({
+   company_id:company.id,task_id:task.id,employee_id:content.id,
+   event_type:"content_intake_source_validation_blocked",
+   message:"Content intake validation completed. Source failed evidence checks; no factual content was generated and the task was blocked.",
+   metadata:{source_asset_id:asset.id,source_status:asset.status,validation_passed:passed,validation_total:checks.length,failed_checks:reasons,decision:"BLOCKED_NOT_VERIFIED",agent_execution:false,provider_called:false,fixture:true}
+  }).select("id").single();
+  if(eventResult.error)throw eventResult.error;
+  const update=await supabase.from("tasks").update({status:"blocked"}).eq("id",task.id).eq("company_id",company.id).eq("status","queued").select("id,status").maybeSingle();
+  if(update.error)throw update.error;
+  const taskStatus=update.data?.status||task.status;
+  const list=checks.map(x=>'<li><strong>'+(x.pass?'PASS':'BLOCK')+'</strong> · '+escapeHtml(x.label)+'</li>').join("");
+  host.innerHTML='<div class="notice" style="margin:12px 0"><strong>CONTENT INTAKE VALIDATION RECORDED · '+passed+'/'+checks.length+' CHECKS PASSED</strong><p>Decision: <strong>BLOCKED — SOURCE NOT VERIFIED</strong>. This is a deterministic intake-gate test, not an autonomous agent execution.</p></div><article class="capability-agent-card"><div class="capability-agent-head"><div><strong>Content Officer · Source Intake</strong><small>Persisted validation event</small></div><span class="pill">'+(blocked?'BLOCKED':'REVIEW')+'</span></div><ul>'+list+'</ul><p>Source asset: <code>'+escapeHtml(asset.id)+'</code> · '+escapeHtml(asset.status)+'</p><p>Receiving task: <code>'+escapeHtml(task.id)+'</code> · '+escapeHtml(taskStatus)+'</p><p>Validation event: <code>'+escapeHtml(eventResult.data.id)+'</code> · SAVED</p><p>Factual draft generated: <strong>NO</strong> · Provider/API calls: <strong>0</strong> · Capability changes: <strong>0</strong></p></article>';
+  if(status)status.textContent="Content intake validation recorded. "+passed+"/"+checks.length+" checks passed; source blocked; no factual draft or provider call.";
+  await loadData();
+ }catch(error){
+  host.innerHTML='<p class="notice">INTAKE VALIDATION FAILED: '+escapeHtml(error?.message||"Unknown database error")+'. No AI provider was called.</p>';
+  if(status)status.textContent="Content intake validation failed. Inspect records before retrying.";
+ }finally{if(button){button.disabled=false;button.textContent="✓ Run Content Intake & Source Validation"}}
+}
 function runDepartmentIntegrationDryRun(){
  const host=$("#safe-simulation-results");if(!host)return;
  const flows=[
@@ -1078,6 +1130,7 @@ $("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation)
 $("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun);
 $("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);
 $("#run-research-content-handoff")?.addEventListener("click",runResearchContentRealHandoff);
+$("#run-content-intake-validation")?.addEventListener("click",runContentIntakeSourceValidation);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
