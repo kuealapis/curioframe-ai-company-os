@@ -1,4 +1,16 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+let createClient;
+try {
+  ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.2"));
+} catch (primaryImportError) {
+  try {
+    ({ createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/+esm"));
+  } catch (fallbackImportError) {
+    const detail = fallbackImportError?.message || primaryImportError?.message || "Supabase client could not be downloaded";
+    const message = document.getElementById("auth-message");
+    if (message) message.textContent = "CurioFrame could not load its secure sign-in library: " + detail + ". Check your internet connection and refresh.";
+    throw new Error("Supabase client import failed: " + detail);
+  }
+}
 
 const SUPABASE_URL = "https://bqdshgftkzsyihlfhqak.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Lv5AbrHDcABBhcztbouegQ_sVYK8r7s";
@@ -328,7 +340,7 @@ async function decideApproval(decision){
   }
 }
 
-async function startWorkspace(user){
+async async function startWorkspace(user){
   currentUser=user;setSystem("SYNCING");
   $("#owner-email").textContent=user.email||"OWNER";
   setMessage("Sign-in successful. Loading your CurioFrame workspace…");
