@@ -31,7 +31,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -60,8 +60,9 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [departmentRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
+  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
     supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
+    supabase.from("company_operating_policies").select("*").eq("company_id",company.id).maybeSingle(),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("approvals").select("*").eq("company_id",company.id).order("created_at",{ascending:false}),
@@ -75,8 +76,8 @@ async function loadData(){
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
     supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
   ]);
-  for(const result of [departmentRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
-  departments=departmentRes.data||[];employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
+  departments=departmentRes.data||[];operatingPolicy=policyRes.data||null;employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
   agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];
   renderAll();
 }
@@ -92,6 +93,9 @@ function renderOrganization(){
   $("#org-department-count").textContent=String(departments.length).padStart(2,"0");
   $("#org-agent-count").textContent=String(employees.length).padStart(2,"0");
   $("#org-active-count").textContent=String(employees.filter(e=>e.status==="ready"||e.status==="working").length).padStart(2,"0");
+  const policy=operatingPolicy||{};
+  const policyStatus=$("#org-policy-status");if(policyStatus)policyStatus.textContent=policy.approval_mode==="spending_only"&&Number(policy.max_automatic_spend)===0?"ENFORCED POLICY":"POLICY NOT CONFIGURED";
+  const policyBody=$("#org-policy-details");if(policyBody)policyBody.innerHTML="<div><strong>Founder approval:</strong> Spending and financial commitments only</div><div><strong>Automatic spending limit:</strong> Rp0</div><div><strong>Free-tier services:</strong> "+(policy.allow_free_tier_services?"Allowed":"Disabled")+"</div><div><strong>Paid services / APIs / ads:</strong> "+(policy.allow_paid_services||policy.allow_paid_api_usage||policy.allow_paid_advertising?"Not allowed without authorization":"Blocked by zero-cost policy")+"</div><div><strong>Routine operations:</strong> Autonomous; no routine Founder approval</div><div><strong>Provider verification:</strong> Human verification remains required when a platform requires it</div>";
   deptHost.innerHTML=departments.map(d=>{
     const roster=employees.filter(e=>e.department===d.name);
     const active=roster.filter(e=>e.status==="ready"||e.status==="working").length;
@@ -100,7 +104,7 @@ function renderOrganization(){
   agentHost.innerHTML=departments.map(d=>{
     const roster=employees.filter(e=>e.department===d.name);
     if(!roster.length)return "";
-    return '<section class="org-agent-group"><div class="org-agent-group-head"><strong>'+escapeHtml(d.name)+'</strong><span>'+roster.length+' roles</span></div><div class="org-agent-grid">'+roster.map(e=>'<article class="org-agent-card"><div><strong>'+escapeHtml(e.name)+'</strong><span class="pill '+(e.status==="ready"||e.status==="working"?"green":"amber")+'">'+escapeHtml(prettyStatus(e.status))+'</span></div><p>'+escapeHtml(e.responsibilities)+'</p><small>ROLE KEY · '+escapeHtml(e.role_key)+'</small></article>').join("")+'</div></section>';
+    return '<section class="org-agent-group"><div class="org-agent-group-head"><strong>'+escapeHtml(d.name)+'</strong><span>'+roster.length+' roles</span></div><div class="org-agent-grid">'+roster.map(e=>'<article class="org-agent-card"><div><strong>'+escapeHtml(e.name)+'</strong><span class="pill '+(e.status==="ready"||e.status==="working"?"green":"amber")+'">'+escapeHtml(prettyStatus(e.status))+'</span></div><p>'+escapeHtml(e.responsibilities)+'</p><div class="org-agent-meta"><span>Capability: '+escapeHtml(prettyStatus(e.capability_status||"planned"))+'</span><small>ROLE KEY · '+escapeHtml(e.role_key)+'</small></div></article>').join("")+'</div></section>';
   }).join("")||'<p class="muted">No agents registered.</p>';
   const selected=deptSelect.value;
   deptSelect.innerHTML='<option value="">Choose department</option>'+departments.map(d=>'<option value="'+escapeHtml(d.name)+'">'+escapeHtml(d.name)+'</option>').join("");
@@ -127,7 +131,7 @@ async function addOrganizationAgent(event){
   const role_key=slugifyRole(name);
   try{
     if(!role_key||!department||!responsibilities)throw new Error("Complete all agent fields.");
-    const {error}=await supabase.from("ai_employees").insert({company_id:company.id,name,role_key,department,responsibilities,status:"planned"});
+    const {error}=await supabase.from("ai_employees").insert({company_id:company.id,name,role_key,department,responsibilities,status:"planned",capability_status:"planned",capability_profile:{source:"founder_registered",qa_required:true}});
     if(error)throw error;
     $("#organization-agent-form").reset();$("#org-agent-message").textContent="AI Agent registered as PLANNED. It will not execute work until its capability is implemented and tested.";
     await loadData();
