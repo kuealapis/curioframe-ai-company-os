@@ -225,7 +225,18 @@ async function decideApproval(decision){
       });
     }
     dialog.close();
-    alert(decision==="approved"?"Deliverable approved.":decision==="rejected"?"Deliverable rejected. The task is blocked.":"Revision requested. The task has been returned to the queue for the AI employee.");
+    if(decision==="revision_requested"){
+      try{
+        const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:approval.task_id}});
+        if(runError)throw runError;
+        if(data?.error)throw new Error(data.error);
+        alert("Revision dispatched automatically. Content Officer will revise, then QC and QA will run before the next Owner review.");
+      }catch(runError){
+        alert("Revision saved, but automatic execution did not start: "+(runError.message||"Check the AI provider connection.")+". The task remains queued.");
+      }
+    }else{
+      alert(decision==="approved"?"Deliverable approved.": "Deliverable rejected. The task is blocked.");
+    }
     await loadData();
   }catch(error){
     showError(error);
