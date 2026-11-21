@@ -62,12 +62,11 @@ function renderAll(){
   $("#all-task-table").innerHTML=tasks.length?tasks.map(t=>taskRow(t,true)).join(""):'<tr><td class="empty-row" colspan="6">No tasks have been created.</td></tr>';
   $("#employee-list").innerHTML=employees.slice(0,5).map(e=>employeeRow(e)).join("")||'<p class="muted">No roles configured.</p>';
   $("#employee-grid").innerHTML=employees.map(e=>'<article class="employee-card"><div class="employee-icon">✦</div><h3>'+escapeHtml(e.name)+'</h3><div class="role">'+escapeHtml(e.department)+'</div><p>'+escapeHtml(e.responsibilities)+'</p><div class="card-foot">ROLE REGISTERED · '+escapeHtml(e.status.toUpperCase())+' · AGENT EXECUTION NOT CONNECTED</div></article>').join("");
-  const pendingMarkup=approvals.length?approvals.map(a=>{
+  const pendingMarkup=approvals.length?approvals.map((a,index)=>{
     const createdAt=a.created_at?new Date(a.created_at):null;
-    const ageMs=createdAt&&!Number.isNaN(createdAt.getTime())?Date.now()-createdAt.getTime():null;
-    const isNew=ageMs!==null&&ageMs>=0&&ageMs<24*60*60*1000;
     const timeLabel=createdAt&&!Number.isNaN(createdAt.getTime())?new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(createdAt)+" WIB":"Waktu tidak tersedia";
-    return '<button class="approval-item approval-open" type="button" data-open-approval="'+escapeHtml(a.id)+'"><span class="approval-icon">✓</span><span class="approval-copy"><strong>'+escapeHtml(a.title)+(isNew?' <span class="approval-new-badge">BARU</span>':'')+'</strong><small>'+escapeHtml(a.description)+'</small><small class="approval-time">🕒 TERBIT: '+escapeHtml(timeLabel)+(isNew?' · 24 jam terakhir':'')+'</small></span><span class="pill amber">Pending · Review</span></button>';
+    const latestLabel=index===0?'<span class="approval-new-badge">TERBARU</span>':'<span class="approval-older-badge">SEBELUMNYA</span>';
+    return '<button class="approval-item approval-open" type="button" data-open-approval="'+escapeHtml(a.id)+'"><span class="approval-icon">✓</span><span class="approval-copy"><strong>'+escapeHtml(a.title)+' '+latestLabel+'</strong><small>'+escapeHtml(a.description)+'</small><small class="approval-time">🕒 TERBIT: '+escapeHtml(timeLabel)+'</small></span><span class="pill amber">Pending · Review</span></button>';
   }).join(""):'<p class="muted">No pending approvals.</p>';
   $("#overview-approvals").innerHTML=pendingMarkup;
   $("#approval-page-list").innerHTML=pendingMarkup;
