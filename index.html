@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-6">
+  <link rel="stylesheet" href="./styles.css?v=20261121-7">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -84,7 +84,7 @@
         <div class="hq-department-grid" id="hq-department-grid"></div>
         <div class="notice hq-note"><span>ⓘ</span><div><strong>Operational truth</strong><p>The headquarters is a visual interface, not a simulation of autonomous work. An employee is shown as working only when a real open task is assigned to that role. Assigned tasks can be executed by the AI worker after the Gemini API key is connected. Every result is saved as a draft and sent to you for approval.</p></div></div>
       </section>
-      <section class="page" id="page-activity"><div class="page-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h1>Activity Log</h1><p class="subheading">A transparent record of company operations.</p></div></div><section class="panel"><div class="empty-state"><span>◷</span><h2>Event logging not connected</h2><p>Real agent actions, task changes, approvals, and publishing events will be recorded here after backend integration.</p></div></section></section>
+      <section class="page" id="page-activity"><div class="page-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h1>Activity Log</h1><p class="subheading">A transparent record of company operations.</p></div></div><div class="section-grid"><section class="panel"><div class="panel-head"><div><h2>Inter-agent communication</h2><p>Messages and handoffs between AI employees</p></div></div><div id="activity-feed" class="activity-feed"><p class="muted">Loading agent messages…</p></div></section><section class="panel"><div class="panel-head"><div><h2>Quality gate history</h2><p>Independent QC and QA decisions</p></div></div><div id="quality-feed" class="activity-feed"><p class="muted">Loading quality reviews…</p></div></section></div></section>
       <footer class="footer">CURIOFRAME AI COMPANY OS <span>·</span> FOUNDATION BUILD 0.1.0 <span>·</span> OWNER: ARYA</footer>
     </main>
   </div>
@@ -99,6 +99,6 @@
     <p class="form-note">Approval records your decision and updates the linked task and deliverable status.</p>
   </dialog>
   <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Save task</button></div><p class="form-note">Tasks are saved to your company database. Creating a task does not mean an AI agent is already executing it.</p></form></dialog>
-  <script type="module" src="./app.js?v=20261121-6"></script>
+  <script type="module" src="./app.js?v=20261121-7"></script>
 </body>
 </html>
