@@ -47,7 +47,7 @@ async function loadData(){
     supabase.from("content_assets").select("*").eq("company_id",company.id)
   ]);
   for(const result of [employeeRes,taskRes,approvalRes,assetRes])if(result.error)throw result.error;
-  employees=employeeRes.data||[];tasks=taskRes.data||[];approvals=approvalRes.data||[];contentAssets=assetRes.data||[];
+  employees=employeeRes.data||[];tasks=taskRes.data||[];approvals=approvalRes.data||[];contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
   renderAll();
 }
 
@@ -145,7 +145,7 @@ function employeeRow(e){return '<div class="employee-row"><div class="employee-i
 function openApproval(approvalId){
   const approval=approvals.find(a=>a.id===approvalId);
   if(!approval)return;
-  const asset=contentAssets.find(a=>a.task_id===approval.task_id);
+  const asset=contentAssets.filter(a=>a.task_id===approval.task_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
   $("#approval-detail-title").textContent=approval.title;
   $("#approval-detail-description").textContent=approval.description||"Owner review requested.";
   $("#approval-detail-body").textContent=asset?.body||"No deliverable body was attached to this approval.";
@@ -182,7 +182,8 @@ async function decideApproval(decision){
   const approval=approvals.find(a=>a.id===approvalId);
   if(!approval)return;
   const note=$("#approval-detail-note").value.trim();
-  const buttons=[$("#approval-approve-btn"),$("#approval-reject-btn")];
+  if(decision==="revision_requested"&&!note){alert("Please add a revision note so the AI employee knows what to change.");$("#approval-detail-note").focus();return;}
+  const buttons=[$("#approval-approve-btn"),$("#approval-revision-btn"),$("#approval-reject-btn")];
   buttons.forEach(b=>b.disabled=true);
   try{
     const {error:approvalError}=await supabase.from("approvals").update({
@@ -190,25 +191,23 @@ async function decideApproval(decision){
     }).eq("id",approvalId).eq("status","pending");
     if(approvalError)throw approvalError;
     if(approval.task_id){
-      const asset=contentAssets.find(a=>a.task_id===approval.task_id);
+      const asset=contentAssets.filter(a=>a.task_id===approval.task_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
       if(asset){
-        const {error:assetError}=await supabase.from("content_assets").update({
-          status:decision==="approved"?"approved":"draft",updated_at:new Date().toISOString()
-        }).eq("id",asset.id);
+        const assetStatus=decision==="approved"?"approved":decision==="rejected"?"rejected":"draft";
+        const {error:assetError}=await supabase.from("content_assets").update({status:assetStatus,updated_at:new Date().toISOString()}).eq("id",asset.id);
         if(assetError)throw assetError;
       }
-      const {error:taskError}=await supabase.from("tasks").update({
-        status:decision==="approved"?"completed":"blocked",updated_at:new Date().toISOString()
-      }).eq("id",approval.task_id);
+      const taskStatus=decision==="approved"?"completed":decision==="rejected"?"blocked":"queued";
+      const {error:taskError}=await supabase.from("tasks").update({status:taskStatus,updated_at:new Date().toISOString()}).eq("id",approval.task_id);
       if(taskError)throw taskError;
       await supabase.from("task_events").insert({
-        company_id:company.id,task_id:approval.task_id,event_type:"owner_"+decision,
-        message:"Owner "+decision+" deliverable: "+approval.title,
+        company_id:company.id,task_id:approval.task_id,event_type:decision==="revision_requested"?"owner_revision_requested":"owner_"+decision,
+        message:decision==="revision_requested"?"Owner requested revisions: "+approval.title:"Owner "+decision+" deliverable: "+approval.title,
         metadata:{decision_note:note||null}
       });
     }
     dialog.close();
-    alert(decision==="approved"?"Deliverable approved.":"Deliverable rejected and returned for revision.");
+    alert(decision==="approved"?"Deliverable approved.":decision==="rejected"?"Deliverable rejected. The task is blocked.":"Revision requested. The task has been returned to the queue for the AI employee.");
     await loadData();
   }catch(error){
     showError(error);
@@ -280,6 +279,7 @@ document.addEventListener("keydown",e=>{
 });
 $("#approval-copy-btn").addEventListener("click",copyApprovalDeliverable);
 $("#approval-approve-btn").addEventListener("click",()=>decideApproval("approved"));
+$("#approval-revision-btn").addEventListener("click",()=>decideApproval("revision_requested"));
 $("#approval-reject-btn").addEventListener("click",()=>decideApproval("rejected"));
 $("#all-task-table").addEventListener("click",async e=>{
   const button=e.target.closest("[data-run-task]");if(!button)return;
