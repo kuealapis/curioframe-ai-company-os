@@ -45,7 +45,7 @@ async function loadData(){
   const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes]=await Promise.all([
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
-    supabase.from("approvals").select("*").eq("company_id",company.id).eq("status","pending").order("created_at",{ascending:false}),
+    supabase.from("approvals").select("*").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("content_assets").select("*").eq("company_id",company.id),
     supabase.from("agent_messages").select("*, from_employee:ai_employees!agent_messages_from_employee_id_fkey(name), to_employee:ai_employees!agent_messages_to_employee_id_fkey(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
     supabase.from("quality_reviews").select("*, ai_employees(name)").eq("company_id",company.id).order("created_at",{ascending:false}).limit(40),
@@ -90,14 +90,27 @@ function renderAll(){
   $("#owner-email").textContent=currentUser.email||"OWNER";
 }
 
+function historyCode(prefix,item){
+  const d=new Date(item.created_at||item.time||Date.now());
+  const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("");
+  const suffix=String(item.id||"record").replaceAll("-","").slice(-6).toUpperCase();
+  return prefix+"-"+date+"-"+suffix;
+}
 function renderHistoryRecovery(){
   const timeline=$("#history-timeline"),recover=$("#recovery-list");
-  const eventItems=taskEvents.map(e=>({time:e.created_at,title:String(e.event_type||"event").replaceAll("_"," "),detail:e.message,taskId:e.task_id}));
-  const decisionItems=allApprovals.filter(a=>a.status!=="pending").map(a=>({time:a.decided_at||a.created_at,title:"Approval "+a.status,detail:a.title+" · "+(a.decision_note||"No decision note"),taskId:a.task_id}));
-  const snapshotItems=recoverySnapshots.map(s=>({time:s.created_at,title:"Recovery snapshot · "+s.action,detail:"Previous "+s.entity_type+" state preserved",taskId:s.task_id}));
-  const versionItems=contentAssets.map(a=>({time:a.created_at,title:"Deliverable version · "+a.status,detail:a.title+" ("+a.asset_type+")",taskId:a.task_id}));
+  const eventItems=taskEvents.map(e=>({id:e.id,time:e.created_at,title:String(e.event_type||"event").replaceAll("_"," "),detail:e.message,taskId:e.task_id,source:"event"}));
+  const decisionItems=allApprovals.filter(a=>a.status!=="pending").map(a=>({id:a.id,time:a.decided_at||a.created_at,title:"Approval "+a.status,detail:a.title+" · "+(a.decision_note||"No decision note"),taskId:a.task_id,source:"decision"}));
+  const snapshotItems=recoverySnapshots.map(s=>({id:s.id,time:s.created_at,title:"Recovery snapshot · "+s.action,detail:"Previous "+s.entity_type+" state preserved",taskId:s.task_id,source:"snapshot"}));
+  const versionItems=contentAssets.map(a=>({id:a.id,time:a.created_at,title:"Deliverable version · "+a.status,detail:a.title+" ("+a.asset_type+")",taskId:a.task_id,source:"version"}));
   const merged=[...eventItems,...decisionItems,...snapshotItems,...versionItems].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,150);
-  if(timeline)timeline.innerHTML=merged.length?merged.map(x=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(x.title)+'</strong><time>'+escapeHtml(x.time?new Date(x.time).toLocaleString("id-ID"):"Time unavailable")+'</time></div><p>'+escapeHtml(x.detail)+'</p>'+(x.taskId?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===x.taskId)?.title||x.taskId)+'</small>':'')+'</article>').join(""):'<p class="muted">No company activity has been recorded yet.</p>';
+  if(timeline)timeline.innerHTML=merged.length?merged.map(x=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("ACT",{id:x.id,created_at:x.time}))+' · '+escapeHtml(x.title)+'</strong><time>'+escapeHtml(x.time?new Date(x.time).toLocaleString("id-ID"):"Time unavailable")+'</time></div><p>'+escapeHtml(x.detail)+'</p>'+(x.taskId?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===x.taskId)?.title||x.taskId)+'</small>':'')+'</article>').join(""):'<p class="muted">No company activity has been recorded yet.</p>';
+
+  const transfers=agentMessages.filter(m=>["handoff","quality_handoff"].includes(String(m.message_type||"").toLowerCase())).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const deletions=taskEvents.filter(e=>/delete|deleted|remove|removed|trash|purge/i.test(String(e.event_type||"")+" "+String(e.message||""))).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const transferPanel=$("#transferred-history"),deletedPanel=$("#deleted-history");
+  if(transferPanel)transferPanel.innerHTML=transfers.length?transfers.map(m=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("TRF",m))+' · '+escapeHtml(m.subject||"Task handoff")+'</strong><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml((m.from_employee?.name||"AI Employee")+" → "+(m.to_employee?.name||"AI Employee"))+'</p><p>'+escapeHtml(m.body||"Task transferred to another AI Employee.")+'</p>'+(m.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===m.task_id)?.title||m.task_id)+'</small>':'')+'</article>').join(""):'<p class="muted">No task handoffs have been recorded yet.</p>';
+  if(deletedPanel)deletedPanel.innerHTML=deletions.length?deletions.map(e=>'<article class="history-entry"><div class="history-entry-top"><strong>'+escapeHtml(historyCode("DEL",e))+' · '+escapeHtml(e.event_type)+'</strong><time>'+escapeHtml(new Date(e.created_at).toLocaleString("id-ID"))+'</time></div><p>'+escapeHtml(e.message||"Deletion event recorded.")+'</p>'+(e.task_id?'<small>Task: '+escapeHtml(tasks.find(t=>t.id===e.task_id)?.title||e.task_id)+'</small>':'')+'</article>').join(""):'<p class="muted">No deletion events are recorded. Deleted data will appear here only when a deletion is explicitly logged; nothing is inferred or fabricated.</p>';
+
   const rejected=allApprovals.filter(a=>a.status==="rejected").sort((a,b)=>new Date(b.decided_at||b.created_at)-new Date(a.decided_at||a.created_at));
   if(recover)recover.innerHTML=rejected.length?rejected.map(a=>'<article class="recovery-entry"><div><strong>'+escapeHtml(a.title)+'</strong><p>Approval rejected · '+escapeHtml(a.decided_at?new Date(a.decided_at).toLocaleString("id-ID"):"date unavailable")+'</p><small>'+escapeHtml(a.decision_note||"No decision note")+'</small></div><button class="secondary-btn" type="button" data-reopen-approval="'+escapeHtml(a.id)+'">Reopen review</button></article>').join(""):'<p class="muted">No rejected approvals need recovery.</p>';
   const count=$("#recovery-snapshot-count");if(count)count.textContent=String(recoverySnapshots.length);
