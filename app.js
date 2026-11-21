@@ -205,10 +205,7 @@ function hqTextSprite(THREE,text,accent="#70d9e8"){
 }
 async function buildHQ3D(el){
   if(!el||!el.clientWidth)return;
-  const [THREE,{OrbitControls}]=await Promise.all([
-    import("https://esm.sh/three@0.170.0"),
-    import("https://esm.sh/three@0.170.0/examples/jsm/controls/OrbitControls.js")
-  ]);
+  const THREE=await import("https://esm.sh/three@0.170.0");
   const old=hqWorlds.get(el);if(old)old.dispose();
   el.innerHTML="";
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x081525);
@@ -221,10 +218,23 @@ async function buildHQ3D(el){
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   el.appendChild(renderer.domElement);
-  const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enabled=true;controls.enableRotate=true;controls.enableZoom=true;controls.enablePan=true;controls.touches.ONE=THREE.TOUCH.ROTATE;controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;controls.enableDamping=true;controls.dampingFactor=.075;controls.rotateSpeed=.9;
-  controls.zoomSpeed=.85;controls.panSpeed=.7;controls.minDistance=9;controls.maxDistance=38;
-  controls.maxPolarAngle=Math.PI*.48;controls.target.set(0,1.15,0);
+  // Native pointer camera controller: avoids external OrbitControls touch quirks on mobile browsers.
+  const target=new THREE.Vector3(0,1.15,0),spherical=new THREE.Spherical();
+  const offset=new THREE.Vector3().subVectors(camera.position,target);spherical.setFromVector3(offset);
+  const pointers=new Map();let previousPinch=0,previousMid=null;
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const syncCamera=()=>{spherical.radius=clamp(spherical.radius,9,38);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
+  const controls={
+    target,
+    update(){syncCamera()},
+    dispose(){renderer.domElement.removeEventListener("pointerdown",cameraPointerDown);renderer.domElement.removeEventListener("pointermove",cameraPointerMove);renderer.domElement.removeEventListener("pointerup",cameraPointerEnd);renderer.domElement.removeEventListener("pointercancel",cameraPointerEnd);renderer.domElement.removeEventListener("wheel",cameraWheel)}
+  };
+  function cameraPointerDown(ev){if(ev.pointerType==="mouse"&&ev.button!==0)return;renderer.domElement.setPointerCapture?.(ev.pointerId);pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===2){const pts=[...pointers.values()];previousPinch=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);previousMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}}
+  function cameraPointerMove(ev){if(!pointers.has(ev.pointerId))return;const prev=pointers.get(ev.pointerId),dx=ev.clientX-prev.x,dy=ev.clientY-prev.y;pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===1){spherical.theta-=dx*.008;spherical.phi-=dy*.008;syncCamera()}else if(pointers.size>=2){const pts=[...pointers.values()],dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};if(previousPinch>0)spherical.radius*=previousPinch/Math.max(1,dist);if(previousMid){const scale=spherical.radius*.0018;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);target.addScaledVector(right,-(mid.x-previousMid.x)*scale).addScaledVector(up,(mid.y-previousMid.y)*scale)}previousPinch=dist;previousMid=mid;syncCamera()}}
+  function cameraPointerEnd(ev){pointers.delete(ev.pointerId);if(pointers.size<2){previousPinch=0;previousMid=null}}
+  function cameraWheel(ev){ev.preventDefault();spherical.radius*=Math.exp(ev.deltaY*.001);syncCamera()}
+  renderer.domElement.addEventListener("pointerdown",cameraPointerDown);renderer.domElement.addEventListener("pointermove",cameraPointerMove);renderer.domElement.addEventListener("pointerup",cameraPointerEnd);renderer.domElement.addEventListener("pointercancel",cameraPointerEnd);renderer.domElement.addEventListener("wheel",cameraWheel,{passive:false});
+  syncCamera();
   const hemi=new THREE.HemisphereLight(0xd9edff,0x1a2a3c,2.1);scene.add(hemi);
   const key=new THREE.DirectionalLight(0xffe5c4,3.1);key.position.set(-9,18,11);key.castShadow=true;
   key.shadow.mapSize.set(1536,1536);key.shadow.camera.left=-18;key.shadow.camera.right=18;key.shadow.camera.top=18;key.shadow.camera.bottom=-18;scene.add(key);
@@ -393,8 +403,8 @@ async function buildHQ3D(el){
       });
     },
     select(id){figures.forEach(f=>f.userData.selection.material.opacity=f.userData.employeeId===id?.85:0)},
-    reset(){camera.position.set(19,16,23);controls.target.set(0,1.15,0);controls.update()},
-    zoom(factor){const direction=new THREE.Vector3().subVectors(camera.position,controls.target);direction.multiplyScalar(factor);camera.position.copy(controls.target).add(direction);controls.update()},
+    reset(){target.set(0,1.15,0);spherical.setFromVector3(new THREE.Vector3(19,16,23).sub(target));controls.update()},
+    zoom(factor){spherical.radius*=factor;controls.update()},
     dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
   };
   hqWorlds.set(el,world);world.select(selectedHQEmployeeId);world.refresh();
