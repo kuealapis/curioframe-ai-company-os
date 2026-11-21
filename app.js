@@ -345,35 +345,56 @@ async function startWorkspace(user){
   }
 }
 async function handleAuth(event){
-  event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage("Connecting to secure sign-in…");
+  event.preventDefault();const button=$("#auth-submit");button.disabled=true;setMessage(authMode==="recovery"?"Updating your password…":"Connecting to secure sign-in…");
   const email=$("#auth-email").value.trim(),password=$("#auth-password").value;
   try{
-    if(authMode==="signup"){
+    if(authMode==="recovery"){
+      const {error}=await supabase.auth.updateUser({password});if(error)throw error;
+      authMode="signin";$("#auth-password").value="";setAuthModeUI();setMessage("Password updated successfully. Sign in with your new password.");
+    }else if(authMode==="signup"){
       const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0]}});
       if(error)throw error;
       if(data.session){await startWorkspace(data.user);setMessage("")}
       else setMessage("Account created. Check your email to confirm, then return here and sign in.");
     }else{
+      if($("#remember-email").checked)localStorage.setItem("curioframe_owner_email",email);
+      else localStorage.removeItem("curioframe_owner_email");
       const {data,error}=await supabase.auth.signInWithPassword({email,password});
       if(error)throw error;await startWorkspace(data.user);setMessage("");
     }
   }catch(error){
     console.error("Authentication failed:",error);
-    showAuth();
-    setSystem("SIGN-IN ERROR");
-    setMessage(error.message||"Unable to sign in. Check your email and password, then try again.");
-  }
-  finally{button.disabled=false}
+    showAuth();setSystem(authMode==="recovery"?"PASSWORD RESET ERROR":"SIGN-IN ERROR");
+    setMessage(error.message||"Unable to continue. Check your details and try again.");
+  }finally{button.disabled=false}
 }
 let authMode="signin";
-function toggleAuth(){
-  authMode=authMode==="signin"?"signup":"signin";
-  $("#auth-title").textContent=authMode==="signup"?"Create owner account":"Owner sign in";
-  $("#auth-copy").textContent=authMode==="signup"?"Create the secure owner login for CurioFrame AI.":"Sign in to open your private company workspace.";
-  $("#auth-submit").textContent=authMode==="signup"?"Create account":"Sign in";
-  $("#auth-switch").textContent=authMode==="signup"?"Already registered? Sign in":"New here? Create your owner account";
-  $("#auth-password").autocomplete=authMode==="signup"?"new-password":"current-password";setMessage("");
+function setAuthModeUI(){
+  const recovery=authMode==="recovery",signup=authMode==="signup";
+  $("#auth-title").textContent=recovery?"Choose a new password":signup?"Create owner account":"Owner sign in";
+  $("#auth-copy").textContent=recovery?"Enter a new password for your CurioFrame Owner account.":signup?"Create the secure owner login for CurioFrame AI.":"Sign in to open your private company workspace.";
+  $("#auth-submit").textContent=recovery?"Update password":signup?"Create account":"Sign in";
+  $("#auth-switch").hidden=recovery;$("#auth-forgot-password").hidden=signup||recovery;$("#auth-options").hidden=recovery||signup;
+  $("#auth-password-label").textContent=recovery?"New password":signup?"Create password":"Password";
+  $("#auth-password").autocomplete=signup||recovery?"new-password":"current-password";
+  $("#auth-password").value="";
 }
+function toggleAuth(){
+  authMode=authMode==="signin"?"signup":"signin";setAuthModeUI();
+  $("#auth-switch").textContent=authMode==="signup"?"Already registered? Sign in":"New here? Create your owner account";setMessage("");
+}
+async function requestPasswordReset(){
+  const email=$("#auth-email").value.trim();
+  if(!email){setMessage("Enter your account email first, then tap Forgot password.");$("#auth-email").focus();return}
+  const button=$("#auth-forgot-password");button.disabled=true;setMessage("Sending password recovery email…");
+  try{
+    const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]});
+    if(error)throw error;
+    setMessage("If this email belongs to an account, a password reset link has been sent. Check your inbox and spam folder.");
+  }catch(error){setMessage(error.message||"Could not send the recovery email. Please try again.");}
+  finally{button.disabled=false}
+}
+
 async function refreshSession(){
   const {data,error}=await supabase.auth.getSession();if(error)throw error;
   if(data.session)await startWorkspace(data.session.user);else showAuth();
@@ -389,7 +410,7 @@ $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();n
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
-$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);
+$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=localStorage.getItem("curioframe_owner_email")||"";$("#remember-email").checked=!!$("#auth-email").value;
 window.__curioAuthReady=true;
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
@@ -453,5 +474,5 @@ $("#task-form").addEventListener("submit",async e=>{
   }
   button.disabled=false;await loadData();
 });
-supabase.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;company=null;showAuth()}});
+supabase.auth.onAuthStateChange((event,session)=>{if(event==="PASSWORD_RECOVERY"){authMode="recovery";setAuthModeUI();showAuth();setMessage("Recovery link verified. Choose your new password.");return}if(!session){currentUser=null;company=null;showAuth()}});
 refreshSession().catch(error=>{setSystem("CONNECTION ERROR");setMessage(error.message||"Could not connect to the workspace.");showAuth()});
