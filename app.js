@@ -28,13 +28,15 @@ function showError(error){console.error(error);alert(error.message||"Something w
 async function ensureCompany(){
   const {data:existing,error:readError}=await supabase.from("companies").select("*").limit(1).maybeSingle();
   if(readError)throw readError;
-  if(existing){company=existing;return}
-  const {data:created,error:createError}=await supabase.from("companies").insert({owner_id:currentUser.id,name:"CurioFrame AI",operating_mode:"approval_based"}).select("*").single();
-  if(createError)throw createError;
-  company=created;
-  const {error:employeeError}=await supabase.from("ai_employees").insert(employeeSeed.map(e=>({...e,company_id:company.id,status:"planned"})));
+  if(existing){company=existing}
+  else{
+    const {data:created,error:createError}=await supabase.from("companies").insert({owner_id:currentUser.id,name:"CurioFrame AI",operating_mode:"approval_based"}).select("*").single();
+    if(createError)throw createError;
+    company=created;
+    await supabase.from("task_events").insert({company_id:company.id,event_type:"workspace_created",message:"CurioFrame AI owner workspace initialized."});
+  }
+  const {error:employeeError}=await supabase.from("ai_employees").upsert(employeeSeed.map(e=>({...e,company_id:company.id,status:"planned"})),{onConflict:"company_id,role_key",ignoreDuplicates:true});
   if(employeeError)throw employeeError;
-  await supabase.from("task_events").insert({company_id:company.id,event_type:"workspace_created",message:"CurioFrame AI owner workspace initialized."});
 }
 
 async function loadData(){
@@ -62,6 +64,7 @@ function renderAll(){
   $("#employee-grid").innerHTML=employees.map(e=>'<article class="employee-card"><div class="employee-icon">✦</div><h3>'+escapeHtml(e.name)+'</h3><div class="role">'+escapeHtml(e.department)+'</div><p>'+escapeHtml(e.responsibilities)+'</p><div class="card-foot">ROLE REGISTERED · '+escapeHtml(e.status.toUpperCase())+' · AGENT EXECUTION NOT CONNECTED</div></article>').join("");
   const pendingMarkup=approvals.length?approvals.map(a=>'<div class="approval-item"><span class="approval-icon">✓</span><div><strong>'+escapeHtml(a.title)+'</strong><small>'+escapeHtml(a.description)+'</small></div><span class="pill amber">Pending</span></div>').join(""):'<p class="muted">No pending approvals.</p>';
   $("#overview-approvals").innerHTML=pendingMarkup;
+  $("#approval-page-list").innerHTML=pendingMarkup;
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
   $("#today-label").textContent=new Intl.DateTimeFormat("en",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date()).toUpperCase();
