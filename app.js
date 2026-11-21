@@ -189,6 +189,8 @@ async function reopenApprovalForReview(id,button){
 }
 
 const hqWorlds=new Map();
+const hqBuilds=new WeakMap();
+let hqRefreshTimer=null;
 const hqColors={ai_ceo:0x8bb7ff,research:0x67d6d0,content:0xffb86b,marketing:0xd69bff,quality:0x82a8ff,qc:0x66c7ff,qa:0x76d6a5,finance:0xf2ce70,operations:0xb1bdcf};
 function hqStatus(e){const a=tasks.filter(t=>t.assigned_employee_id===e.id&&!["completed","cancelled"].includes(t.status));if(a.some(t=>["review","pending"].includes(t.status)))return{key:"review",label:"AWAITING REVIEW",count:a.length};if(a.some(t=>t.status==="in_progress"))return{key:"working",label:"IN PROGRESS",count:a.length};if(a.some(t=>t.status==="blocked"))return{key:"blocked",label:"BLOCKED",count:a.length};if(a.some(t=>t.status==="queued"))return{key:"queued",label:"QUEUED",count:a.length};return{key:"idle",label:e.status==="planned"?"READY TO ACTIVATE":"IDLE",count:a.length}}
 function hqTextSprite(THREE,text,accent="#70d9e8"){
@@ -213,9 +215,10 @@ async function buildHQ3D(el){
   const camera=new THREE.PerspectiveCamera(42,el.clientWidth/el.clientHeight,.1,120);
   camera.position.set(19,16,23);
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:"high-performance"});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.65));
+  const isSmallScreen=window.matchMedia?.("(max-width:700px)").matches||false;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmallScreen?1.2:1.65));
   renderer.setSize(el.clientWidth,el.clientHeight);
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled=!isSmallScreen;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   el.appendChild(renderer.domElement);
   // Native pointer camera controller: avoids external OrbitControls touch quirks on mobile browsers.
@@ -229,8 +232,8 @@ async function buildHQ3D(el){
     update(){syncCamera()},
     dispose(){renderer.domElement.removeEventListener("pointerdown",cameraPointerDown);renderer.domElement.removeEventListener("pointermove",cameraPointerMove);renderer.domElement.removeEventListener("pointerup",cameraPointerEnd);renderer.domElement.removeEventListener("pointercancel",cameraPointerEnd);renderer.domElement.removeEventListener("wheel",cameraWheel)}
   };
-  function cameraPointerDown(ev){if(ev.pointerType==="mouse"&&ev.button!==0)return;renderer.domElement.setPointerCapture?.(ev.pointerId);pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===2){const pts=[...pointers.values()];previousPinch=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);previousMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}}
-  function cameraPointerMove(ev){if(!pointers.has(ev.pointerId))return;const prev=pointers.get(ev.pointerId),dx=ev.clientX-prev.x,dy=ev.clientY-prev.y;pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===1){spherical.theta-=dx*.008;spherical.phi-=dy*.008;syncCamera()}else if(pointers.size>=2){const pts=[...pointers.values()],dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};if(previousPinch>0)spherical.radius*=previousPinch/Math.max(1,dist);if(previousMid){const scale=spherical.radius*.0018;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);target.addScaledVector(right,-(mid.x-previousMid.x)*scale).addScaledVector(up,(mid.y-previousMid.y)*scale)}previousPinch=dist;previousMid=mid;syncCamera()}}
+  function cameraPointerDown(ev){if(ev.pointerType==="mouse"&&ev.button!==0)return;ev.preventDefault?.();try{renderer.domElement.setPointerCapture?.(ev.pointerId)}catch{}pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===2){const pts=[...pointers.values()];previousPinch=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);previousMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}}
+  function cameraPointerMove(ev){if(!pointers.has(ev.pointerId))return;ev.preventDefault?.();const prev=pointers.get(ev.pointerId),dx=ev.clientX-prev.x,dy=ev.clientY-prev.y;pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===1){spherical.theta-=dx*.008;spherical.phi-=dy*.008;syncCamera()}else if(pointers.size>=2){const pts=[...pointers.values()],dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};if(previousPinch>0)spherical.radius*=previousPinch/Math.max(1,dist);if(previousMid){const scale=spherical.radius*.0018;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);target.addScaledVector(right,-(mid.x-previousMid.x)*scale).addScaledVector(up,(mid.y-previousMid.y)*scale)}previousPinch=dist;previousMid=mid;syncCamera()}}
   function cameraPointerEnd(ev){pointers.delete(ev.pointerId);if(pointers.size<2){previousPinch=0;previousMid=null}}
   function cameraWheel(ev){ev.preventDefault();spherical.radius*=Math.exp(ev.deltaY*.001);syncCamera()}
   renderer.domElement.addEventListener("pointerdown",cameraPointerDown);renderer.domElement.addEventListener("pointermove",cameraPointerMove);renderer.domElement.addEventListener("pointerup",cameraPointerEnd);renderer.domElement.addEventListener("pointercancel",cameraPointerEnd);renderer.domElement.addEventListener("wheel",cameraWheel,{passive:false});
@@ -382,8 +385,14 @@ async function buildHQ3D(el){
     const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
     camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);
   });resize.observe(el);
-  let raf,alive=true;const animate=()=>{
-    if(!alive)return;raf=requestAnimationFrame(animate);const t=performance.now()/1000;
+  let raf=0,alive=true,isVisible=true;
+  const visibilityObserver=typeof IntersectionObserver!=="undefined"?new IntersectionObserver(entries=>{
+    isVisible=entries.some(entry=>entry.isIntersecting);
+    if(isVisible&&alive&&!raf)animate();
+  },{threshold:.01}):null;
+  if(visibilityObserver){isVisible=false;visibilityObserver.observe(el)}
+  const animate=()=>{
+    if(!alive||!isVisible){raf=0;return}raf=requestAnimationFrame(animate);const t=performance.now()/1000;
     figures.forEach(figure=>{
       const data=figure.userData;
       figure.position.y=Math.sin(t*1.3+data.phase)*.018;
@@ -405,11 +414,16 @@ async function buildHQ3D(el){
     select(id){figures.forEach(f=>f.userData.selection.material.opacity=f.userData.employeeId===id?.85:0)},
     reset(){target.set(0,1.15,0);spherical.setFromVector3(new THREE.Vector3(19,16,23).sub(target));controls.update()},
     zoom(factor){spherical.radius*=factor;controls.update()},
-    dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
+    dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();visibilityObserver?.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
   };
   hqWorlds.set(el,world);world.select(selectedHQEmployeeId);world.refresh();
 }
-function launchHQ3D(el){buildHQ3D(el).catch(err=>{console.error("3D HQ unavailable:",err);if(el)el.innerHTML='<div class="hq-3d-loading">3D view unavailable. Your company workspace and sign-in remain available. Please refresh to retry.</div>'})}
+function launchHQ3D(el){
+  if(!el||hqWorlds.has(el))return Promise.resolve(hqWorlds.get(el));
+  if(hqBuilds.has(el))return hqBuilds.get(el);
+  const build=buildHQ3D(el).catch(err=>{console.error("3D HQ unavailable:",err);if(el)el.innerHTML='<div class="hq-3d-loading">3D view unavailable. Your company workspace and sign-in remain available. Please refresh to retry.</div>'}).finally(()=>hqBuilds.delete(el));
+  hqBuilds.set(el,build);return build;
+}
 function renderVirtualHQ(){
   const icons={ai_ceo:"🧭",research:"🔎",content:"✍️",marketing:"📣",quality:"🛡️",qc:"✓",qa:"◈",finance:"💹",operations:"⚙️"};
   ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(sel=>{
@@ -444,18 +458,22 @@ function selectHQEmployee(employeeId){
   hqWorlds.forEach(world=>world.select(employeeId));
   renderHQDetail(employeeId);
 }
+function scheduleHQRefresh(){
+  if(hqRefreshTimer)clearTimeout(hqRefreshTimer);
+  hqRefreshTimer=setTimeout(()=>{hqRefreshTimer=null;loadData().catch(error=>console.error("Live HQ refresh failed:",error))},240);
+}
 function setupHQRealtime(){
   if(hqChannel){supabase.removeChannel(hqChannel);hqChannel=null}
   if(!company)return;
   const indicator=$("#hq-live-indicator");
   if(indicator)indicator.textContent="● CONNECTING TO LIVE DATA";
   hqChannel=supabase.channel("hq-live-"+company.id)
-    .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
-    .on("postgres_changes",{event:"*",schema:"public",table:"ai_employees",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
-    .on("postgres_changes",{event:"*",schema:"public",table:"approvals",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
-    .on("postgres_changes",{event:"*",schema:"public",table:"content_assets",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
-    .on("postgres_changes",{event:"*",schema:"public",table:"agent_messages",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
-    .on("postgres_changes",{event:"*",schema:"public",table:"quality_reviews",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"company_id=eq."+company.id},scheduleHQRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"ai_employees",filter:"company_id=eq."+company.id},scheduleHQRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"approvals",filter:"company_id=eq."+company.id},scheduleHQRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"content_assets",filter:"company_id=eq."+company.id},scheduleHQRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"agent_messages",filter:"company_id=eq."+company.id},scheduleHQRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"quality_reviews",filter:"company_id=eq."+company.id},scheduleHQRefresh)
     .subscribe(status=>{
       const live=$("#hq-live-indicator");
       if(!live)return;
@@ -576,6 +594,7 @@ async function startWorkspace(user){
     setupHQRealtime();
     setSystem("DATABASE CONNECTED");
     showApp();
+    requestAnimationFrame(()=>renderVirtualHQ());
     const requestedPage=location.hash.replace(/^#/, "");
     if(requestedPage && document.getElementById("page-"+requestedPage)) navigate(requestedPage);
     setMessage("");
