@@ -32,6 +32,7 @@
         <a class="nav-link active" href="#overview" data-page="overview"><span>◫</span> Overview</a>
         <a class="nav-link" href="#employees" data-page="employees"><span>♙</span> AI Employees</a>
         <a class="nav-link" href="#tasks" data-page="tasks"><span>☷</span> Task Manager</a>
+        <a class="nav-link" href="#orchestrator" data-page="orchestrator"><span>⌘</span> Agents Orchestrator</a>
         <a class="nav-link" href="#pipeline" data-page="pipeline"><span>⇢</span> Production Pipeline</a>
         <a class="nav-link" href="#approvals" data-page="approvals"><span>✓</span> Approval Center <i id="approval-nav-count">2</i></a>
         <a class="nav-link" href="#virtual-hq" data-page="virtual-hq"><span>▦</span> Virtual HQ</a>
@@ -78,6 +79,20 @@
 
       <section class="page" id="page-employees"><div class="page-heading"><div><p class="eyebrow">ORGANIZATION</p><h1>AI Employees</h1><p class="subheading">Defined roles and responsibilities. AI execution is available for assigned tasks once the Gemini key is connected.</p></div></div><div class="employee-grid" id="employee-grid"></div></section>
       <section class="page" id="page-tasks"><div class="page-heading"><div><p class="eyebrow">EXECUTION</p><h1>Task Manager</h1><p class="subheading">Track assigned work and deliverables across departments.</p></div><button class="primary-btn" id="new-task-btn-2">＋ Create task</button></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>TASK</th><th>ASSIGNED TO</th><th>DEPARTMENT</th><th>STATUS</th><th>PRIORITY</th><th>ACTION</th></tr></thead><tbody id="all-task-table"></tbody></table></div></section></section>
+      <section class="page" id="page-orchestrator">
+        <div class="page-heading"><div><p class="eyebrow">AUTONOMOUS WORKFLOW CONTROL</p><h1>Agents Orchestrator</h1><p class="subheading">One goal from the Owner. One coordinated pipeline from planning to release readiness.</p></div></div>
+        <section class="panel orchestrator-intro"><div><p class="eyebrow">OWNER GOAL INPUT</p><h2>What do you want the company to accomplish?</h2><p>Orchestrator will create a plan, define architecture and UX tasks, assign development and independent QA work, then prepare integration tasks. Release always waits for your approval.</p></div>
+          <form id="orchestrator-form" class="orchestrator-form">
+            <label for="orchestrator-goal">Your goal</label>
+            <textarea id="orchestrator-goal" minlength="8" maxlength="5000" rows="4" placeholder="Example: Build a customer portal where clients can submit video projects, track progress, and approve final deliverables." required></textarea>
+            <div class="orchestrator-form-row"><label for="orchestrator-type">Project type</label><select id="orchestrator-type"><option value="software">Software / Product</option><option value="business">Business initiative</option><option value="content">Content campaign</option><option value="operations">Operations improvement</option></select><button class="primary-btn" id="orchestrator-submit" type="submit">Generate pipeline →</button></div>
+            <p class="muted" id="orchestrator-message" aria-live="polite">Maximum 3 QA correction cycles. Failed checks cannot be marked as passed.</p>
+          </form>
+        </section>
+        <div class="orchestrator-section-head"><div><p class="eyebrow">WORKFLOW MONITOR</p><h2>Pipeline runs</h2></div><span class="pill blue">OWNER CONTROLLED</span></div>
+        <div id="orchestrator-runs" class="orchestrator-runs"><p class="muted">Loading workflows…</p></div>
+        <section class="orchestrator-rule-grid"><article><strong>1 · Planning & task breakdown</strong><p>Goal, deliverables, priorities, dependencies, and agent assignments.</p></article><article><strong>2 · Architecture & UX</strong><p>System components, decisions, user flows, and interface screens.</p></article><article><strong>3 · Development & QA</strong><p>Implementation work plus independent QA, with up to three fix-and-test cycles.</p></article><article><strong>4 · Integration & release</strong><p>Module integration, regression checks, release notes, and Owner approval.</p></article></section>
+      </section>
       <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div><div class="pipeline-board" id="pipeline-board"></div></section>
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
       <section class="page" id="page-virtual-hq">
@@ -139,6 +154,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-06"></script>
+  <script type="module" src="./app.js?v=20261122-07"></script>
 </body>
 </html>
