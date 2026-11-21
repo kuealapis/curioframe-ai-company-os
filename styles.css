@@ -51,6 +51,7 @@
 
 .approval-open{width:100%;text-align:left;color:var(--text);font:inherit;cursor:pointer;transition:border-color .15s,background .15s}
 .approval-open:hover{border-color:#668fc7;background:#1b2a42}
+.approval-time{display:block;margin-top:5px;color:var(--muted);font-size:10px;letter-spacing:.02em}.approval-new-badge{display:inline-block;vertical-align:middle;margin-left:7px;padding:2px 6px;border-radius:5px;background:#254b3b;color:#a7f3c5;font-size:9px;font-weight:800;letter-spacing:.08em}
 .approval-copy{min-width:0;flex:1}.approval-copy strong,.approval-copy small{overflow-wrap:anywhere}
 .approval-dialog{width:min(860px,calc(100% - 24px));max-height:88vh;overflow:auto}
 .approval-dialog .dialog-head{position:sticky;top:-22px;background:#111a2d;padding:4px 0 12px;z-index:2}
