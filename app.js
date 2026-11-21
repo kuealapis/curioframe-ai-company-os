@@ -316,6 +316,30 @@ function runDispatcherQADryRun(){
  const status=$("#work-sample-batch-status");if(status)status.textContent="Dispatcher/QA dry run: "+ready+" structurally ready · "+blocked+" blocked · "+routed.length+" checked · 0 tasks created · 0 API calls.";
 }
 
+
+function runDepartmentIntegrationDryRun(){
+ const host=$("#safe-simulation-results");if(!host)return;
+ const flows=[
+  {name:"Research → Content",roles:["research","content"],purpose:"Transfer sourced research into a content brief."},
+  {name:"Content → Quality",roles:["content","quality"],purpose:"Submit a content draft for independent review."},
+  {name:"Quality → Distribution",roles:["quality","distribution"],purpose:"Allow only QA-approved content to enter the publishing queue.",gate:"quality"},
+  {name:"Marketing → Distribution",roles:["marketing","distribution"],purpose:"Coordinate campaign assets and distribution handoff."},
+  {name:"Finance → Operations",roles:["finance","operations"],purpose:"Share budget and resource-control information."},
+  {name:"AI CEO → Chief of Staff → Dispatcher",roles:["ai_ceo","chief_of_staff","operations"],purpose:"Translate executive direction into coordinated operational work."}
+ ];
+ const results=flows.map(flow=>{
+  const agents=flow.roles.map(role=>employees.find(e=>String(e.role_key||"").toLowerCase()===role));
+  const roleChecks=flow.roles.map((role,i)=>({label:role+" agent exists",ok:!!agents[i]}));
+  const deptChecks=agents.map((agent,i)=>({label:flow.roles[i]+" department registered",ok:!!agent?.department&&departments.some(d=>d.name===agent.department)}));
+  const checks=[...roleChecks,...deptChecks];
+  if(flow.gate)checks.push({label:"QA gate owner present (not an actual QA verdict)",ok:!!employees.find(e=>String(e.role_key||"").toLowerCase()===flow.gate)});
+  return {...flow,checks,passed:checks.every(c=>c.ok)};
+ });
+ const passed=results.filter(x=>x.passed).length,blocked=results.length-passed,esc=escapeHtml;
+ host.innerHTML='<div class="notice" style="margin:12px 0"><span>ⓘ</span><div><strong>DEPARTMENT INTEGRATION DRY RUN · SIMULATION ONLY</strong><p>'+results.length+' inter-department handoffs checked against registered agents and departments in browser memory. No tasks/messages were sent, no records changed, and no external API/provider was called.</p></div></div><div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">HANDOFFS CHECKED</div><div class="stat-value">'+results.length+'</div></article><article class="stat-card"><div class="stat-label">STRUCTURALLY CONNECTED</div><div class="stat-value">'+passed+'</div></article><article class="stat-card"><div class="stat-label">BLOCKED</div><div class="stat-value">'+blocked+'</div></article></div>'+results.map(flow=>'<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+esc(flow.name)+'</strong><small>'+esc(flow.purpose)+'</small></div><span class="pill '+(flow.passed?'green':'amber')+'">'+(flow.passed?'HANDOFF STRUCTURE PASSED':'HANDOFF BLOCKED')+'</span></div><p><strong>Route:</strong> '+esc(flow.roles.join(' → '))+'</p><ul>'+flow.checks.map(c=>'<li>'+esc(c.label)+' · <strong>'+(c.ok?'PASS':'FAIL')+'</strong></li>').join('')+'</ul>'+(flow.gate?'<p class="muted">QA approval is NOT evaluated by this dry run. This check only confirms a QA role exists; publishing must still be held until a real independent QA pass is recorded.</p>':'')+'</article>').join('');
+ const status=$("#work-sample-batch-status");if(status)status.textContent="Department integration dry run: "+passed+" structurally connected · "+blocked+" blocked · "+results.length+" handoffs · 0 messages/tasks · 0 API calls.";
+}
+
 function runSafeWorkSampleSimulation(){
  const host=$("#safe-simulation-results");if(!host)return;
  const queue=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
