@@ -289,6 +289,33 @@ async function runAllWorkSamples(button){
  }
 }
 
+
+function runDispatcherQADryRun(){
+ const host=$("#safe-simulation-results");if(!host)return;
+ const queue=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
+ if(!queue.length){host.innerHTML='<p class="muted">No eligible assignments for dry-run routing.</p>';return}
+ const routed=queue.map((item,index)=>{
+  const agent=employees.find(e=>e.id===item.employee_id);
+  const checks={
+   agent_exists:!!agent,
+   role_registered:!!agent?.role_key,
+   department_registered:!!agent?.department&&departments.some(d=>d.name===agent.department),
+   assignment_title:!!String(item.assignment_title||"").trim(),
+   task_brief: String(item.task_brief||"").trim().length>=20,
+   expected_artifact:!!String(item.expected_artifacts||"").trim()
+  };
+  const passed=Object.values(checks).every(Boolean);
+  return {index:index+1,item,agent,checks,passed};
+ });
+ const ready=routed.filter(x=>x.passed).length,blocked=routed.length-ready;
+ const esc=escapeHtml;
+ host.innerHTML='<div class="notice" style="margin:12px 0"><span>ⓘ</span><div><strong>DISPATCHER + QA DRY RUN · SIMULATION ONLY</strong><p>'+routed.length+' routing decision(s) evaluated in browser memory. No tasks were dispatched, no assignments changed, no QA verdict was recorded, and no API/provider was called.</p></div></div><div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">ROUTES CHECKED</div><div class="stat-value">'+routed.length+'</div></article><article class="stat-card"><div class="stat-label">STRUCTURALLY READY</div><div class="stat-value">'+ready+'</div></article><article class="stat-card"><div class="stat-label">BLOCKED BY CHECKS</div><div class="stat-value">'+blocked+'</div></article></div>'+routed.map(r=>{
+  const checkHtml=Object.entries(r.checks).map(([k,v])=>'<li>'+esc(k.replaceAll("_"," "))+' · <strong>'+(v?'PASS':'FAIL')+'</strong></li>').join("");
+  return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+esc(r.index+'. '+(r.agent?.name||"Unassigned agent"))+'</strong><small>'+esc(r.agent?.role_key||"no role")+' · '+esc(r.agent?.department||"no department")+'</small></div><span class="pill '+(r.passed?'green':'amber')+'">'+(r.passed?'ROUTE CHECK PASSED':'ROUTE BLOCKED')+'</span></div><h3>'+esc(r.item.assignment_title||"Untitled assignment")+'</h3><p>'+esc(r.item.task_brief||"No task brief")+'</p><p><strong>Dispatcher target:</strong> '+esc(r.agent?.name||"None")+' / '+esc(r.agent?.role_key||"unassigned")+'</p><p><strong>QA structural checklist:</strong></p><ul>'+checkHtml+'</ul><p class="muted">QA verdict: NOT PERFORMED. Passing these structural checks only means the route is eligible for a real work sample; output quality and factual correctness remain untested.</p></article>'
+ }).join("");
+ const status=$("#work-sample-batch-status");if(status)status.textContent="Dispatcher/QA dry run: "+ready+" structurally ready · "+blocked+" blocked · "+routed.length+" checked · 0 tasks created · 0 API calls.";
+}
+
 function runSafeWorkSampleSimulation(){
  const host=$("#safe-simulation-results");if(!host)return;
  const queue=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
@@ -977,6 +1004,7 @@ $("#organization-department-form")?.addEventListener("submit",addOrganizationDep
 $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
 $("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation);
+$("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
