@@ -24,18 +24,19 @@ Research → Content → Quality Review → Marketing → Owner approval when re
 - This public repository contains source code and non-sensitive documentation only.
 
 ## Implementation status
-This repository contains the first Company OS dashboard foundation. The dashboard code now includes Supabase email/password authentication and live database-backed company records. GitHub Pages deployment uses a custom Actions workflow; the repository's Pages source must be set to GitHub Actions once in Settings → Pages. AI agents, automated research/content execution, and publishing integrations are still future build stages.
+Company OS 2.0 adds an isometric Virtual Headquarters view. The scene renders the seven registered roles and reflects task assignment and review states from Supabase; it does not pretend that unconnected agents are autonomously working.  The dashboard code now includes Supabase email/password authentication and live database-backed company records. GitHub Pages deployment uses a custom Actions workflow; the repository's Pages source must be set to GitHub Actions once in Settings → Pages. AI agents, automated research/content execution, and publishing integrations are still future build stages.
 
 
 ## Repository structure
 - `index.html` — responsive Company OS dashboard shell.
-- `styles.css` — mobile-first dashboard styling.
+- `styles.css` — mobile-first dashboard styling and isometric Virtual HQ scene.
 - `app.js` — Supabase authentication, live company data, task creation, and dashboard rendering.
 - `supabase/schema.sql` — initial PostgreSQL schema with owner-scoped row-level security.
 
 ## Current build status
 - [x] Dashboard foundation committed.
 - [x] Responsive navigation and initial modules.
+- [x] Company OS 2.0 Virtual HQ with database-driven employee/task indicators.
 - [x] Initial database schema drafted.
 - [x] Supabase project connection and initial schema deployment.
 - [x] Owner authentication and live database-backed dashboard code.
