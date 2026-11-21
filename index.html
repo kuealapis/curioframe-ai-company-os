@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261122-04">
+  <link rel="stylesheet" href="./styles.css?v=20261122-05">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -32,6 +32,7 @@
         <a class="nav-link active" href="#overview" data-page="overview"><span>◫</span> Overview</a>
         <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#employees" data-page="employees"><span>♙</span> AI Employees</a>
+        <a class="nav-link" href="#organization" data-page="organization"><span>▦</span> Departments & Agents</a>
         <a class="nav-link" href="#tasks" data-page="tasks"><span>☷</span> Task Manager</a>
         <a class="nav-link" href="#orchestrator" data-page="orchestrator"><span>⌘</span> Agents Orchestrator</a>
         <a class="nav-link" href="#pipeline" data-page="pipeline"><span>⇢</span> Production Pipeline</a>
@@ -79,6 +80,33 @@
         </div>
       </section>
 
+      <section class="page" id="page-organization">
+        <div class="page-heading"><div><p class="eyebrow">DYNAMIC ORGANIZATION</p><h1>Departments & Agents</h1><p class="subheading">A modular company structure. Departments and specialist agents can be added as the workload grows.</p></div><button class="secondary-btn" id="organization-refresh-btn" type="button">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Zero-Cost First · Automation First</strong><p>All new departments and agents start as PLANNED. Registration does not mean the capability is operational. No paid tool, subscription, API usage, advertising spend, or payment commitment may be activated without Founder authorization.</p></div></div>
+        <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">DEPARTMENTS</div><div class="stat-value" id="org-department-count">00</div><div class="stat-foot">Registered company divisions</div></article><article class="stat-card"><div class="stat-label">AI AGENTS</div><div class="stat-value" id="org-agent-count">00</div><div class="stat-foot">Registered roles across departments</div></article><article class="stat-card"><div class="stat-label">ACTIVE AGENTS</div><div class="stat-value" id="org-active-count">00</div><div class="stat-foot">Only agents marked operational</div></article></div>
+        <div class="orchestrator-section-head"><div><p class="eyebrow">COMPANY STRUCTURE</p><h2>Department registry</h2></div><span class="pill blue">MODULAR</span></div>
+        <div class="org-department-grid" id="org-departments"><p class="muted">Loading departments…</p></div>
+        <div class="orchestrator-section-head"><div><p class="eyebrow">SPECIALIST WORKFORCE</p><h2>AI Agent directory</h2></div><span class="pill amber">PLANNED UNTIL TESTED</span></div>
+        <div class="org-agent-list" id="org-agents"><p class="muted">Loading agents…</p></div>
+        <div class="org-builder-grid">
+          <section class="panel"><div class="panel-head"><div><h2>＋ Add a department</h2><p>Create a new division when a business function is needed.</p></div></div>
+            <form id="organization-department-form" class="distribution-form">
+              <label>Department name<input id="org-department-name" maxlength="80" required placeholder="Example: Creator Partnerships"></label>
+              <label>Purpose<input id="org-department-description" maxlength="240" required placeholder="What this department is responsible for"></label>
+              <label>Mandate<textarea id="org-department-mandate" rows="3" maxlength="600" placeholder="Scope, responsibilities, and boundaries"></textarea></label>
+              <button class="primary-btn" type="submit">Register department</button><p class="form-note" id="org-department-message" aria-live="polite">New departments are created with PLANNED status.</p>
+            </form>
+          </section>
+          <section class="panel"><div class="panel-head"><div><h2>＋ Add an AI Agent</h2><p>Register a specialist role under an existing department.</p></div></div>
+            <form id="organization-agent-form" class="distribution-form">
+              <label>Agent name<input id="org-agent-name" maxlength="80" required placeholder="Example: Influencer Outreach Agent"></label>
+              <label>Department<select id="org-agent-department" required><option value="">Choose department</option></select></label>
+              <label>Responsibilities<textarea id="org-agent-responsibilities" rows="3" maxlength="600" required placeholder="Describe the work this agent owns"></textarea></label>
+              <button class="primary-btn" type="submit">Register AI Agent</button><p class="form-note" id="org-agent-message" aria-live="polite">Agent roles start as PLANNED and are not dispatched until implementation and QA are complete.</p>
+            </form>
+          </section>
+        </div>
+      </section>
       <section class="page" id="page-employees"><div class="page-heading"><div><p class="eyebrow">ORGANIZATION</p><h1>AI Employees</h1><p class="subheading">Defined roles and responsibilities. AI execution is available for assigned tasks once the Gemini key is connected.</p></div></div><div class="employee-grid" id="employee-grid"></div></section>
       <section class="page" id="page-tasks"><div class="page-heading"><div><p class="eyebrow">EXECUTION</p><h1>Task Manager</h1><p class="subheading">Track assigned work and deliverables across departments.</p></div><button class="primary-btn" id="new-task-btn-2">＋ Create task</button></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>TASK</th><th>ASSIGNED TO</th><th>DEPARTMENT</th><th>STATUS</th><th>PRIORITY</th><th>ACTION</th></tr></thead><tbody id="all-task-table"></tbody></table></div></section></section>
       <section class="page" id="page-orchestrator">
@@ -177,6 +205,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-10"></script>
+  <script type="module" src="./app.js?v=20261122-11"></script>
 </body>
 </html>
