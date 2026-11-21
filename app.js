@@ -31,7 +31,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -60,7 +60,8 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
+  const [departmentRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes]=await Promise.all([
+    supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
     supabase.from("tasks").select("*, ai_employees(name,department)").eq("company_id",company.id).order("created_at",{ascending:false}),
     supabase.from("approvals").select("*").eq("company_id",company.id).order("created_at",{ascending:false}),
@@ -74,12 +75,65 @@ async function loadData(){
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
     supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100)
   ]);
-  for(const result of [employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
-  employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  for(const result of [departmentRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes])if(result.error)throw result.error;
+  departments=departmentRes.data||[];employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
   agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];
   renderAll();
 }
 
+
+
+function slugifyRole(value){
+  return String(value||"").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,48);
+}
+function renderOrganization(){
+  const deptHost=$("#org-departments"),agentHost=$("#org-agents"),deptSelect=$("#org-agent-department");
+  if(!deptHost||!agentHost||!deptSelect)return;
+  $("#org-department-count").textContent=String(departments.length).padStart(2,"0");
+  $("#org-agent-count").textContent=String(employees.length).padStart(2,"0");
+  $("#org-active-count").textContent=String(employees.filter(e=>e.status==="ready"||e.status==="working").length).padStart(2,"0");
+  deptHost.innerHTML=departments.map(d=>{
+    const roster=employees.filter(e=>e.department===d.name);
+    const active=roster.filter(e=>e.status==="ready"||e.status==="working").length;
+    return '<article class="org-department-card"><div class="org-department-top"><span class="org-department-icon">▦</span><span class="pill '+(d.status==="active"?"green":d.status==="testing"?"blue":"amber")+'">'+escapeHtml(prettyStatus(d.status))+'</span></div><h3>'+escapeHtml(d.name)+'</h3><p>'+escapeHtml(d.description)+'</p><div class="org-department-mandate">'+escapeHtml(d.mandate)+'</div><footer><strong>'+roster.length+' agents</strong><span>'+active+' operational</span></footer></article>';
+  }).join("")||'<p class="muted">No departments registered.</p>';
+  agentHost.innerHTML=departments.map(d=>{
+    const roster=employees.filter(e=>e.department===d.name);
+    if(!roster.length)return "";
+    return '<section class="org-agent-group"><div class="org-agent-group-head"><strong>'+escapeHtml(d.name)+'</strong><span>'+roster.length+' roles</span></div><div class="org-agent-grid">'+roster.map(e=>'<article class="org-agent-card"><div><strong>'+escapeHtml(e.name)+'</strong><span class="pill '+(e.status==="ready"||e.status==="working"?"green":"amber")+'">'+escapeHtml(prettyStatus(e.status))+'</span></div><p>'+escapeHtml(e.responsibilities)+'</p><small>ROLE KEY · '+escapeHtml(e.role_key)+'</small></article>').join("")+'</div></section>';
+  }).join("")||'<p class="muted">No agents registered.</p>';
+  const selected=deptSelect.value;
+  deptSelect.innerHTML='<option value="">Choose department</option>'+departments.map(d=>'<option value="'+escapeHtml(d.name)+'">'+escapeHtml(d.name)+'</option>').join("");
+  if(departments.some(d=>d.name===selected))deptSelect.value=selected;
+}
+async function addOrganizationDepartment(event){
+  event.preventDefault();
+  const button=event.submitter;button.disabled=true;
+  const name=$("#org-department-name").value.trim(),description=$("#org-department-description").value.trim(),mandate=$("#org-department-mandate").value.trim();
+  const slug=slugifyRole(name);
+  try{
+    if(!slug)throw new Error("Department name is required.");
+    const {error}=await supabase.from("company_departments").insert({company_id:company.id,slug,name,description,mandate,status:"planned",priority:(departments.reduce((m,d)=>Math.max(m,Number(d.priority)||0),0)+10)});
+    if(error)throw error;
+    $("#organization-department-form").reset();$("#org-department-message").textContent="Department registered as PLANNED.";
+    await loadData();
+  }catch(error){$("#org-department-message").textContent=error.message||"Could not register department."}
+  finally{button.disabled=false}
+}
+async function addOrganizationAgent(event){
+  event.preventDefault();
+  const button=event.submitter;button.disabled=true;
+  const name=$("#org-agent-name").value.trim(),department=$("#org-agent-department").value,responsibilities=$("#org-agent-responsibilities").value.trim();
+  const role_key=slugifyRole(name);
+  try{
+    if(!role_key||!department||!responsibilities)throw new Error("Complete all agent fields.");
+    const {error}=await supabase.from("ai_employees").insert({company_id:company.id,name,role_key,department,responsibilities,status:"planned"});
+    if(error)throw error;
+    $("#organization-agent-form").reset();$("#org-agent-message").textContent="AI Agent registered as PLANNED. It will not execute work until its capability is implemented and tested.";
+    await loadData();
+  }catch(error){$("#org-agent-message").textContent=error.message||"Could not register agent."}
+  finally{button.disabled=false}
+}
 
 function renderDistribution(){
   const accountsHost=$("#distribution-accounts"),queueHost=$("#distribution-queue-list");
@@ -202,6 +256,7 @@ function renderAll(){
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
   renderOrchestrator();
   renderDistribution();
+  renderOrganization();
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
@@ -808,6 +863,9 @@ function openTaskDialog(){
 $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2").addEventListener("click",openTaskDialog);
 $("#orchestrator-form")?.addEventListener("submit",submitOrchestratorGoal);
 $("#distribution-publication-form")?.addEventListener("submit",createDistributionPublication);
+$("#organization-department-form")?.addEventListener("submit",addOrganizationDepartment);
+$("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
+$("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
 document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
