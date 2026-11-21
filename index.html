@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-13">
+  <link rel="stylesheet" href="./styles.css?v=20261121-14">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -35,6 +35,7 @@
         <a class="nav-link" href="#approvals" data-page="approvals"><span>✓</span> Approval Center <i id="approval-nav-count">2</i></a>
         <a class="nav-link" href="#virtual-hq" data-page="virtual-hq"><span>▦</span> Virtual HQ</a>
         <a class="nav-link" href="#activity" data-page="activity"><span>◷</span> Activity Log</a>
+        <a class="nav-link" href="#history" data-page="history"><span>↶</span> History &amp; Recovery</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="owner-card"><div class="avatar">A</div><div><strong id="owner-email">Owner</strong><small>OWNER / ADMIN</small></div><span class="online-dot"></span></div>
@@ -85,6 +86,14 @@
         <div class="notice hq-note"><span>ⓘ</span><div><strong>Operational truth</strong><p>The headquarters reflects real workspace records, not fabricated activity. Content tasks now pass through independent QC and QA agents with up to three automatic correction cycles. Only deliverables that pass both gates reach Owner final review; repeated failures are blocked and escalated. AI execution still requires the connected Gemini provider.</p></div></div>
       </section>
       <section class="page" id="page-activity"><div class="page-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h1>Activity Log</h1><p class="subheading">A transparent record of company operations.</p></div></div><div class="section-grid"><section class="panel"><div class="panel-head"><div><h2>Inter-agent communication</h2><p>Messages and handoffs between AI employees</p></div></div><div id="activity-feed" class="activity-feed"><p class="muted">Loading agent messages…</p></div></section><section class="panel"><div class="panel-head"><div><h2>Quality gate history</h2><p>Independent QC and QA decisions</p></div></div><div id="quality-feed" class="activity-feed"><p class="muted">Loading quality reviews…</p></div></section></div></section>
+      <section class="page" id="page-history">
+        <div class="page-heading"><div><p class="eyebrow">AUDIT &amp; RESTORE</p><h1>History &amp; Recovery</h1><p class="subheading">Review the company audit trail and safely reopen decisions without erasing prior records.</p></div><button class="secondary-btn" id="history-refresh-btn" type="button">↻ Refresh history</button></div>
+        <div class="stats-grid history-stats"><article class="stat-card"><div class="stat-label">RECOVERY SNAPSHOTS</div><div class="stat-value" id="recovery-snapshot-count">0</div><div class="stat-foot">Saved before owner decisions and recovery actions</div></article><article class="stat-card"><div class="stat-label">REJECTED APPROVALS</div><div class="stat-value" id="rejected-approval-count">0</div><div class="stat-foot">Decisions eligible for reopening</div></article></div>
+        <div class="section-grid history-layout">
+          <section class="panel"><div class="panel-head"><div><h2>Company activity timeline</h2><p>Task events and Owner decisions · newest first</p></div></div><div id="history-timeline" class="history-timeline"><p class="muted">Loading history…</p></div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Recovery actions</h2><p>Reopen a rejected approval for review</p></div></div><div id="recovery-list" class="recovery-list"><p class="muted">Loading recoverable items…</p></div><p class="form-note">Recovery preserves the previous state in an immutable snapshot and adds a new audit event. It does not erase the original decision.</p></section>
+        </div>
+      </section>
       <footer class="footer">CURIOFRAME AI COMPANY OS <span>·</span> FOUNDATION BUILD 0.1.0 <span>·</span> OWNER: ARYA</footer>
     </main>
   </div>
@@ -99,6 +108,6 @@
     <p class="form-note">Approval records your decision and updates the linked task and deliverable status.</p>
   </dialog>
   <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Save task</button></div><p class="form-note">Tasks are saved to your company database. Assigned tasks are dispatched automatically to the selected AI employee. QC and QA review content deliverables before Owner approval.</p></form></dialog>
-  <script type="module" src="./app.js?v=20261121-13"></script>
+  <script type="module" src="./app.js?v=20261121-14"></script>
 </body>
 </html>
