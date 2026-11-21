@@ -67,8 +67,29 @@ function renderAll(){
   $("#approval-page-list").innerHTML=pendingMarkup;
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
+  renderVirtualHQ();
   $("#today-label").textContent=new Intl.DateTimeFormat("en",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).format(new Date()).toUpperCase();
   $("#owner-email").textContent=currentUser.email||"OWNER";
+}
+
+function renderVirtualHQ(){
+  const icons={ai_ceo:"🧭",research:"🔎",content:"✍️",marketing:"📣",quality:"🛡️",finance:"💹",operations:"⚙️"};
+  const short={ai_ceo:"COMMAND",research:"RESEARCH",content:"CONTENT STUDIO",marketing:"GROWTH & SALES",quality:"QUALITY LAB",finance:"FINANCE",operations:"OPERATIONS"};
+  const assigned=employee=>tasks.filter(t=>t.assigned_employee_id===employee.id&&!["completed","cancelled"].includes(t.status));
+  const state=employee=>{
+    const open=assigned(employee);
+    if(open.some(t=>["review","pending"].includes(t.status)))return {key:"review",label:"REVIEW"};
+    if(open.length)return {key:"working",label:"TASK ASSIGNED"};
+    return {key:"idle",label:employee.status==="planned"?"READY TO ACTIVATE":"IDLE"};
+  };
+  const cards=employees.map((e,i)=>{
+    const s=state(e),open=assigned(e).length;
+    return '<article class="hq-station station-'+(i+1)+' '+s.key+'"><div class="hq-desk-top"></div><div class="hq-bot"><span class="bot-face">'+(icons[e.role_key]||"🤖")+'</span><span class="bot-body"></span></div><div class="hq-monitor"><i></i><i></i><i></i></div><div class="hq-station-copy"><strong>'+escapeHtml(short[e.role_key]||e.department.toUpperCase())+'</strong><span>'+escapeHtml(e.name)+'</span><small><b class="state-dot"></b>'+s.label+(open?' · '+open+' TASK'+(open>1?'S':''):'')+'</small></div></article>';
+  }).join("");
+  const scene='<div class="hq-backdrop"><div class="hq-world-map">✧ &nbsp; GLOBAL OPERATIONS &nbsp; ✧</div><div class="hq-floor"><div class="hq-grid-lines"></div><div class="hq-center"><div class="hq-orbit"></div><div class="hq-core"><span>CF</span><strong>AI COMMAND</strong><small>OWNER CONTROL</small></div></div>'+cards+'</div><div class="hq-caption"><span>CURIOFRAME AI</span><b>HEADQUARTERS / 01</b><span>7 DEPARTMENTS</span></div></div>';
+  ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(selector=>{const el=$(selector);if(el)el.innerHTML=scene;});
+  const grid=$("#hq-department-grid");
+  if(grid)grid.innerHTML=employees.map(e=>{const s=state(e),open=assigned(e);return '<article class="hq-dept-card"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+s.key+'">'+s.label+'</b><footer>'+open.length+' open task'+(open.length===1?'':'s')+'</footer></article>'}).join("");
 }
 function taskRow(t,all=false){
   const owner=t.ai_employees?.name||employees.find(e=>e.id===t.assigned_employee_id)?.name||"Unassigned";
@@ -118,6 +139,7 @@ function navigate(page){
 }
 $$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.page)}));
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
+$("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);
 $("#sign-out-btn").addEventListener("click",async()=>{await supabase.auth.signOut();company=null;showAuth();setMessage("You have been signed out.")});
 function openTaskDialog(){
