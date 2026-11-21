@@ -741,7 +741,7 @@ async function decideApproval(decision){
     dialog.close();
     if(decision==="revision_requested"){
       try{
-        const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:approval.task_id}});
+        const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:approval.task_id,company_id:company.id}});
         if(runError)throw runError;
         if(data?.error)throw new Error(data.error);
         alert("Revision dispatched automatically. Content Officer will revise, then QC and QA will run before the next Owner review.");
