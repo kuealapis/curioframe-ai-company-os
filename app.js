@@ -66,8 +66,8 @@ function renderAll(){
     const createdAt=a.created_at?new Date(a.created_at):null;
     const ageMs=createdAt&&!Number.isNaN(createdAt.getTime())?Date.now()-createdAt.getTime():null;
     const isNew=ageMs!==null&&ageMs>=0&&ageMs<24*60*60*1000;
-    const timeLabel=createdAt&&!Number.isNaN(createdAt.getTime())?new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(createdAt):"Waktu tidak tersedia";
-    return '<button class="approval-item approval-open" type="button" data-open-approval="'+escapeHtml(a.id)+'"><span class="approval-icon">✓</span><span class="approval-copy"><strong>'+escapeHtml(a.title)+(isNew?' <span class="approval-new-badge">BARU</span>':'')+'</strong><small>'+escapeHtml(a.description)+'</small><small class="approval-time">Diterima: '+escapeHtml(timeLabel)+(isNew?' · 24 jam terakhir':'')+'</small></span><span class="pill amber">Pending · Review</span></button>';
+    const timeLabel=createdAt&&!Number.isNaN(createdAt.getTime())?new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(createdAt)+" WIB":"Waktu tidak tersedia";
+    return '<button class="approval-item approval-open" type="button" data-open-approval="'+escapeHtml(a.id)+'"><span class="approval-icon">✓</span><span class="approval-copy"><strong>'+escapeHtml(a.title)+(isNew?' <span class="approval-new-badge">BARU</span>':'')+'</strong><small>'+escapeHtml(a.description)+'</small><small class="approval-time">🕒 TERBIT: '+escapeHtml(timeLabel)+(isNew?' · 24 jam terakhir':'')+'</small></span><span class="pill amber">Pending · Review</span></button>';
   }).join(""):'<p class="muted">No pending approvals.</p>';
   $("#overview-approvals").innerHTML=pendingMarkup;
   $("#approval-page-list").innerHTML=pendingMarkup;
