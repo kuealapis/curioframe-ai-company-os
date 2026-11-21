@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-23">
+  <link rel="stylesheet" href="./styles.css?v=20261121-24">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -127,6 +127,9 @@
       var message = document.getElementById("auth-message");
       if (message) message.textContent = "CurioFrame could not finish loading: " + detail + ". Please refresh. If it continues, tell the support team this exact message.";
     }
+    window.__curioBootTimer = setTimeout(function() {
+      if (!window.__curioAuthReady) showStartupError("the sign-in module did not finish initializing within 12 seconds");
+    }, 12000);
     window.addEventListener("error", function(event) {
       if (event.target && event.target.tagName === "SCRIPT") showStartupError("the app script could not be downloaded");
       else if (event.message) showStartupError(event.message);
@@ -136,6 +139,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261121-23"></script>
+  <script type="module" src="./app.js?v=20261121-24"></script>
 </body>
 </html>
