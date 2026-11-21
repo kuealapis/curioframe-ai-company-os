@@ -594,7 +594,6 @@ async function startWorkspace(user){
     setupHQRealtime();
     setSystem("DATABASE CONNECTED");
     showApp();
-    requestAnimationFrame(()=>renderVirtualHQ());
     const requestedPage=location.hash.replace(/^#/, "");
     if(requestedPage && document.getElementById("page-"+requestedPage)) navigate(requestedPage);
     setMessage("");
