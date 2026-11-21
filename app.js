@@ -317,6 +317,53 @@ function runDispatcherQADryRun(){
 }
 
 
+async function runResearchContentRealHandoff(){
+ const host=$("#safe-simulation-results"),status=$("#work-sample-batch-status");
+ if(!host)return;
+ const research=employees.find(e=>String(e.role_key||"").toLowerCase()==="research");
+ const content=employees.find(e=>String(e.role_key||"").toLowerCase()==="content");
+ const policy=operatingPolicy;
+ if(!company?.id||!currentUser?.id){host.innerHTML='<p class="notice">Sign in to the company workspace before running this handoff.</p>';return}
+ if(!research||!content){host.innerHTML='<p class="notice">BLOCKED: Research Officer or Content Officer is not registered.</p>';return}
+ if(!policy||policy.approval_mode!=="spending_only"||Number(policy.max_automatic_spend)!==0||policy.allow_paid_services!==false||policy.allow_paid_api_usage!==false){
+  host.innerHTML='<p class="notice">BLOCKED: zero-spend policy could not be positively verified. No records were written.</p>';return;
+ }
+ const button=$("#run-research-content-handoff");if(button){button.disabled=true;button.textContent="Creating handoff…"}
+ const packetTitle="Research → Content Handoff Test Packet (NOT VERIFIED)";
+ const packetBody=[
+  "HANDOFF TEST FIXTURE — NOT VERIFIED RESEARCH",
+  "This record exists only to test persistent inter-department data transfer.",
+  "It was not researched, fact-checked, or authored by an executing AI agent.",
+  "Topic: [TEST TOPIC — replace with a real research brief after agent execution is safely enabled].",
+  "Claims: [NO FACTUAL CLAIMS PROVIDED].",
+  "Source references: [NONE].",
+  "Required Content Officer action: confirm receipt, inspect source status, and do not draft factual narration until a real, independently reviewed research brief is available.",
+  "Publication status: BLOCKED / NOT APPROVED.",
+  "Cost/provider status: no AI provider or external API was called."
+ ].join("\n");
+ let assetId=null,taskId=null;
+ try{
+  const assetResult=await supabase.from("content_assets").insert({company_id:company.id,title:packetTitle,asset_type:"research_brief",status:"review",body:packetBody}).select("id").single();
+  if(assetResult.error)throw assetResult.error;
+  assetId=assetResult.data.id;
+  const objective="RECEIVE RESEARCH HANDOFF — source asset "+assetId+".\n\n"+packetBody+"\n\nDo not call any AI provider. This queued task is a persistent routing test only; await a genuine Owner-reviewed research asset before producing factual content.";
+  const taskResult=await supabase.from("tasks").insert({company_id:company.id,title:"Receive Research Handoff · "+new Date().toISOString().slice(0,10),objective,assigned_employee_id:content.id,status:"queued",priority:"normal",created_by:currentUser.id}).select("id").single();
+  if(taskResult.error)throw taskResult.error;
+  taskId=taskResult.data.id;
+  const eventResult=await supabase.from("task_events").insert([
+   {company_id:company.id,task_id:taskId,employee_id:research.id,event_type:"department_handoff_sent",message:"Research → Content handoff packet created as an explicitly unverified test fixture.",metadata:{from_role:"research",to_role:"content",source_asset_id:assetId,fixture:true,source_status:"review",provider_called:false}},
+   {company_id:company.id,task_id:taskId,employee_id:content.id,event_type:"department_handoff_received",message:"Content Officer queue received the Research handoff and source asset reference.",metadata:{from_role:"research",to_role:"content",source_asset_id:assetId,fixture:true,task_status:"queued",provider_called:false}}
+  ]);
+  if(eventResult.error)throw eventResult.error;
+  await loadData();
+  host.innerHTML='<div class="notice" style="margin:12px 0"><span>✓</span><div><strong>REAL HANDOFF RECORDS CREATED · 2/2 EVENTS SAVED</strong><p>Research packet persisted and routed into the Content Officer task queue. This is a real database handoff using a clearly labelled test fixture, not a claim that an AI agent performed research.</p></div></div><article class="capability-agent-card"><div class="capability-agent-head"><div><strong>Research → Content</strong><small>Persistent source-to-task transfer</small></div><span class="pill green">HANDOFF RECORDED</span></div><ul><li>Source asset: <code>'+escapeHtml(assetId)+'</code> · status <strong>review</strong></li><li>Receiving task: <code>'+escapeHtml(taskId)+'</code> · status <strong>queued</strong></li><li>Research event: <strong>SAVED</strong></li><li>Content receipt event: <strong>SAVED</strong></li><li>Provider/API calls: <strong>0</strong></li><li>Agent capability status changes: <strong>0</strong></li></ul><p class="muted">The Content task is intentionally not executed. The source packet is NOT VERIFIED and is not Owner-approved; existing content execution gates must not be bypassed.</p></article>';
+  if(status)status.textContent="Real Research → Content handoff recorded. 1 source asset, 1 queued Content task, 2 persisted events, 0 provider calls, 0 capability changes.";
+ }catch(error){
+  if(assetId&&!taskId)await supabase.from("content_assets").delete().eq("id",assetId).eq("company_id",company.id);
+  host.innerHTML='<p class="notice">HANDOFF FAILED: '+escapeHtml(error?.message||"Unknown database error")+'. Check the database before retrying; duplicate records may need inspection.</p>';
+  if(status)status.textContent="Research → Content handoff failed. No AI provider was called.";
+ }finally{if(button){button.disabled=false;button.textContent="⇢ Run Research → Content Real Handoff"}}
+}
 function runDepartmentIntegrationDryRun(){
  const host=$("#safe-simulation-results");if(!host)return;
  const flows=[
@@ -1029,7 +1076,7 @@ $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
 $("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation);
 $("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun);
-$("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);
+$("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);\n$("#run-research-content-handoff")?.addEventListener("click",runResearchContentRealHandoff);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
