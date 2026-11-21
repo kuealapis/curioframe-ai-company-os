@@ -685,7 +685,7 @@ function navigate(page){
     });
   }
 }
-$$("[data-page]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();navigate(a.dataset.page)}));
+document.addEventListener("click",e=>{const link=e.target instanceof Element?e.target.closest("[data-page]"):null;if(!link)return;e.preventDefault();navigate(link.dataset.page)},true);
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
