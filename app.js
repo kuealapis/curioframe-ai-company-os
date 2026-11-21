@@ -59,7 +59,7 @@ function renderAll(){
   $("#approval-nav-count").textContent=approvals.length;
   $("#approval-nav-count").hidden=approvals.length===0;
   $("#task-table").innerHTML=tasks.length?tasks.slice(0,5).map(taskRow).join(""):'<tr><td class="empty-row" colspan="4">No tasks yet. Create the first company task.</td></tr>';
-  $("#all-task-table").innerHTML=tasks.length?tasks.map(t=>taskRow(t,true)).join(""):'<tr><td class="empty-row" colspan="5">No tasks have been created.</td></tr>';
+  $("#all-task-table").innerHTML=tasks.length?tasks.map(t=>taskRow(t,true)).join(""):'<tr><td class="empty-row" colspan="6">No tasks have been created.</td></tr>';
   $("#employee-list").innerHTML=employees.slice(0,5).map(e=>employeeRow(e)).join("")||'<p class="muted">No roles configured.</p>';
   $("#employee-grid").innerHTML=employees.map(e=>'<article class="employee-card"><div class="employee-icon">✦</div><h3>'+escapeHtml(e.name)+'</h3><div class="role">'+escapeHtml(e.department)+'</div><p>'+escapeHtml(e.responsibilities)+'</p><div class="card-foot">ROLE REGISTERED · '+escapeHtml(e.status.toUpperCase())+' · AGENT EXECUTION NOT CONNECTED</div></article>').join("");
   const pendingMarkup=approvals.length?approvals.map(a=>'<div class="approval-item"><span class="approval-icon">✓</span><div><strong>'+escapeHtml(a.title)+'</strong><small>'+escapeHtml(a.description)+'</small></div><span class="pill amber">Pending</span></div>').join(""):'<p class="muted">No pending approvals.</p>';
@@ -93,7 +93,8 @@ function renderVirtualHQ(){
 }
 function taskRow(t,all=false){
   const owner=t.ai_employees?.name||employees.find(e=>e.id===t.assigned_employee_id)?.name||"Unassigned";
-  return '<tr><td><span class="task-name">'+escapeHtml(t.title)+'</span><span class="task-id">'+escapeHtml(t.id.slice(0,8))+'</span></td><td>'+escapeHtml(owner)+'</td>'+(all?'<td>'+escapeHtml(t.ai_employees?.department||"—")+'</td>':"")+'<td><span class="pill '+statusClass(t.status)+'">'+prettyStatus(t.status)+'</span></td><td><span class="priority '+escapeHtml(t.priority)+'">'+prettyStatus(t.priority)+'</span></td></tr>';
+  const action=all?(t.status==="queued"&&t.assigned_employee_id?'<button class="run-task-btn" type="button" data-run-task="'+escapeHtml(t.id)+'">▶ Run AI</button>':'<span class="muted task-action-note">'+(t.status==="review"?"Owner review":"—")+'</span>'):"";
+  return '<tr><td><span class="task-name">'+escapeHtml(t.title)+'</span><span class="task-id">'+escapeHtml(t.id.slice(0,8))+'</span></td><td>'+escapeHtml(owner)+'</td>'+(all?'<td>'+escapeHtml(t.ai_employees?.department||"—")+'</td>':"")+'<td><span class="pill '+statusClass(t.status)+'">'+prettyStatus(t.status)+'</span></td><td><span class="priority '+escapeHtml(t.priority)+'">'+prettyStatus(t.priority)+'</span></td>'+(all?'<td>'+action+'</td>':"")+'</tr>';
 }
 function employeeRow(e){return '<div class="employee-row"><div class="employee-icon">✦</div><div><strong>'+escapeHtml(e.name)+'</strong><small>'+escapeHtml(e.department)+'</small></div><span class="employee-state">'+escapeHtml(prettyStatus(e.status))+'</span></div>'}
 
@@ -147,6 +148,18 @@ function openTaskDialog(){
   $("#task-dialog").showModal();
 }
 $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2").addEventListener("click",openTaskDialog);
+$("#all-task-table").addEventListener("click",async e=>{
+  const button=e.target.closest("[data-run-task]");if(!button)return;
+  const taskId=button.dataset.runTask;
+  button.disabled=true;button.textContent="Running…";
+  try{
+    const {data,error}=await supabase.functions.invoke("execute-company-task",{body:{task_id:taskId}});
+    if(error)throw error;
+    if(data?.error)throw new Error(data.error+(data.needs_secret?" Add GEMINI_API_KEY in Supabase Edge Function Secrets first.":""));
+    alert(data.message||"AI deliverable sent for review.");
+    await loadData();
+  }catch(error){alert(error.message||"AI task could not run.");button.disabled=false;button.textContent="▶ Run AI"}
+});
 $("#task-form").addEventListener("submit",async e=>{
   if(e.submitter?.value==="cancel")return;e.preventDefault();
   const title=$("#task-title").value.trim();if(!title)return;
