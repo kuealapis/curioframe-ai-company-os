@@ -275,3 +275,10 @@
 .org-builder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .org-builder-grid .panel{min-width:0}
 @media(max-width:760px){.org-builder-grid{grid-template-columns:1fr}.org-agent-grid{grid-template-columns:1fr}}
+
+.org-policy-panel{margin:18px 0 24px}
+.org-policy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.org-policy-grid>div{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);font-size:.78rem;line-height:1.5;color:var(--muted)}
+.org-policy-grid strong{display:block;color:var(--text);margin-bottom:4px}
+.org-agent-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding-top:8px;border-top:1px solid var(--border);font-size:.68rem;color:var(--muted)}
+.org-agent-meta small{font-size:.62rem}
