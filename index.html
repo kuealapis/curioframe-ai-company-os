@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261122-02">
+  <link rel="stylesheet" href="./styles.css?v=20261122-03">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -30,11 +30,11 @@
       <div class="workspace-label">WORKSPACE</div>
       <nav class="nav">
         <a class="nav-link active" href="#overview" data-page="overview"><span>◫</span> Overview</a>
+        <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#employees" data-page="employees"><span>♙</span> AI Employees</a>
         <a class="nav-link" href="#tasks" data-page="tasks"><span>☷</span> Task Manager</a>
         <a class="nav-link" href="#orchestrator" data-page="orchestrator"><span>⌘</span> Agents Orchestrator</a>
         <a class="nav-link" href="#pipeline" data-page="pipeline"><span>⇢</span> Production Pipeline</a>
-        <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#approvals" data-page="approvals"><span>✓</span> Approval Center <i id="approval-nav-count">2</i></a>
         <a class="nav-link" href="#virtual-hq" data-page="virtual-hq"><span>▦</span> Virtual HQ</a>
         <a class="nav-link" href="#activity" data-page="activity"><span>◷</span> Activity Log</a>
@@ -56,6 +56,7 @@
       <section class="page active-page" id="page-overview">
         <div class="page-heading"><div><p class="eyebrow" id="today-label">OWNER WORKSPACE</p><h1>Company Overview</h1><p class="subheading">Your AI company command center. Monitor work, people, and production in one place.</p></div><button class="primary-btn" id="new-task-btn">＋ Create task</button></div>
         <div class="notice"><span>ⓘ</span><div><strong>Live workspace</strong><p>Metrics and records below are loaded from your private Supabase database. AI execution and channel publishing will be connected in later build stages.</p></div></div>
+        <a class="distribution-quick-link" href="#distribution" data-page="distribution"><span>⇄</span><span><strong>Distribution Network</strong><small>Manage YouTube, TikTok, Instagram & Facebook channels</small></span><b>Open →</b></a>
         <section class="hq-preview panel">
           <div class="panel-head"><div><p class="eyebrow">YOUR DIGITAL COMPANY</p><h2>AI Headquarters</h2><p>One team. Connected departments. Owner-controlled operations.</p></div><a href="#virtual-hq" data-page="virtual-hq">Enter headquarters →</a></div>
           <div class="hq-scene" id="virtual-hq-scene" aria-label="Interactive isometric AI company headquarters"></div>
@@ -176,6 +177,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-08"></script>
+  <script type="module" src="./app.js?v=20261122-09"></script>
 </body>
 </html>
