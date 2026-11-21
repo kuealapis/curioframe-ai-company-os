@@ -62,7 +62,7 @@ function renderAll(){
   $("#all-task-table").innerHTML=tasks.length?tasks.map(t=>taskRow(t,true)).join(""):'<tr><td class="empty-row" colspan="6">No tasks have been created.</td></tr>';
   $("#employee-list").innerHTML=employees.slice(0,5).map(e=>employeeRow(e)).join("")||'<p class="muted">No roles configured.</p>';
   $("#employee-grid").innerHTML=employees.map(e=>'<article class="employee-card"><div class="employee-icon">✦</div><h3>'+escapeHtml(e.name)+'</h3><div class="role">'+escapeHtml(e.department)+'</div><p>'+escapeHtml(e.responsibilities)+'</p><div class="card-foot">ROLE REGISTERED · '+escapeHtml(e.status.toUpperCase())+' · AGENT EXECUTION NOT CONNECTED</div></article>').join("");
-  const pendingMarkup=approvals.length?approvals.map(a=>'<div class="approval-item"><span class="approval-icon">✓</span><div><strong>'+escapeHtml(a.title)+'</strong><small>'+escapeHtml(a.description)+'</small></div><span class="pill amber">Pending</span></div>').join(""):'<p class="muted">No pending approvals.</p>';
+  const pendingMarkup=approvals.length?approvals.map(a=>'<button class="approval-item approval-open" type="button" data-open-approval="'+escapeHtml(a.id)+'"><span class="approval-icon">✓</span><span class="approval-copy"><strong>'+escapeHtml(a.title)+'</strong><small>'+escapeHtml(a.description)+'</small></span><span class="pill amber">Pending · Review</span></button>').join(""):'<p class="muted">No pending approvals.</p>';
   $("#overview-approvals").innerHTML=pendingMarkup;
   $("#approval-page-list").innerHTML=pendingMarkup;
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
@@ -97,6 +97,56 @@ function taskRow(t,all=false){
   return '<tr><td><span class="task-name">'+escapeHtml(t.title)+'</span><span class="task-id">'+escapeHtml(t.id.slice(0,8))+'</span></td><td>'+escapeHtml(owner)+'</td>'+(all?'<td>'+escapeHtml(t.ai_employees?.department||"—")+'</td>':"")+'<td><span class="pill '+statusClass(t.status)+'">'+prettyStatus(t.status)+'</span></td><td><span class="priority '+escapeHtml(t.priority)+'">'+prettyStatus(t.priority)+'</span></td>'+(all?'<td>'+action+'</td>':"")+'</tr>';
 }
 function employeeRow(e){return '<div class="employee-row"><div class="employee-icon">✦</div><div><strong>'+escapeHtml(e.name)+'</strong><small>'+escapeHtml(e.department)+'</small></div><span class="employee-state">'+escapeHtml(prettyStatus(e.status))+'</span></div>'}
+
+function openApproval(approvalId){
+  const approval=approvals.find(a=>a.id===approvalId);
+  if(!approval)return;
+  const asset=contentAssets.find(a=>a.task_id===approval.task_id);
+  $("#approval-detail-title").textContent=approval.title;
+  $("#approval-detail-description").textContent=approval.description||"Owner review requested.";
+  $("#approval-detail-body").textContent=asset?.body||"No deliverable body was attached to this approval.";
+  $("#approval-detail-note").value="";
+  $("#approval-detail-dialog").dataset.approvalId=approval.id;
+  $("#approval-detail-dialog").showModal();
+}
+async function decideApproval(decision){
+  const dialog=$("#approval-detail-dialog"),approvalId=dialog.dataset.approvalId;
+  const approval=approvals.find(a=>a.id===approvalId);
+  if(!approval)return;
+  const note=$("#approval-detail-note").value.trim();
+  const buttons=[$("#approval-approve-btn"),$("#approval-reject-btn")];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    const {error:approvalError}=await supabase.from("approvals").update({
+      status:decision,decided_by:currentUser.id,decided_at:new Date().toISOString(),decision_note:note||null
+    }).eq("id",approvalId).eq("status","pending");
+    if(approvalError)throw approvalError;
+    if(approval.task_id){
+      const asset=contentAssets.find(a=>a.task_id===approval.task_id);
+      if(asset){
+        const {error:assetError}=await supabase.from("content_assets").update({
+          status:decision==="approved"?"approved":"draft",updated_at:new Date().toISOString()
+        }).eq("id",asset.id);
+        if(assetError)throw assetError;
+      }
+      const {error:taskError}=await supabase.from("tasks").update({
+        status:decision==="approved"?"completed":"blocked",updated_at:new Date().toISOString()
+      }).eq("id",approval.task_id);
+      if(taskError)throw taskError;
+      await supabase.from("task_events").insert({
+        company_id:company.id,task_id:approval.task_id,event_type:"owner_"+decision,
+        message:"Owner "+decision+" deliverable: "+approval.title,
+        metadata:{decision_note:note||null}
+      });
+    }
+    dialog.close();
+    alert(decision==="approved"?"Deliverable approved.":"Deliverable rejected and returned for revision.");
+    await loadData();
+  }catch(error){
+    showError(error);
+    buttons.forEach(b=>b.disabled=false);
+  }
+}
 
 async function startWorkspace(user){
   currentUser=user;showApp();setSystem("SYNCING");
@@ -148,6 +198,13 @@ function openTaskDialog(){
   $("#task-dialog").showModal();
 }
 $("#new-task-btn").addEventListener("click",openTaskDialog);$("#new-task-btn-2").addEventListener("click",openTaskDialog);
+
+document.addEventListener("click",e=>{
+  const trigger=e.target.closest("[data-open-approval]");
+  if(trigger)openApproval(trigger.dataset.openApproval);
+});
+$("#approval-approve-btn").addEventListener("click",()=>decideApproval("approved"));
+$("#approval-reject-btn").addEventListener("click",()=>decideApproval("rejected"));
 $("#all-task-table").addEventListener("click",async e=>{
   const button=e.target.closest("[data-run-task]");if(!button)return;
   const taskId=button.dataset.runTask;
