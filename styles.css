@@ -48,3 +48,15 @@
 .run-task-btn{border:1px solid #477fc8;background:linear-gradient(135deg,#315f9d,#477fcb);color:#fff;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer}
 .run-task-btn:disabled{opacity:.6;cursor:wait}
 .task-action-note{font-size:10px;white-space:nowrap}
+
+.approval-open{width:100%;text-align:left;color:var(--text);font:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+.approval-open:hover{border-color:#668fc7;background:#1b2a42}
+.approval-copy{min-width:0;flex:1}.approval-copy strong,.approval-copy small{overflow-wrap:anywhere}
+.approval-dialog{width:min(860px,calc(100% - 24px));max-height:88vh;overflow:auto}
+.approval-dialog .dialog-head{position:sticky;top:-22px;background:#111a2d;padding:4px 0 12px;z-index:2}
+.approval-description{color:var(--muted);font-size:12px;margin:0 0 14px}
+.approval-document{background:#0c1424;border:1px solid var(--line);border-radius:12px;padding:18px;color:#dce6f5;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:48vh;overflow:auto}
+.approval-dialog textarea{display:block;width:100%;margin-top:7px;padding:11px 12px;border:1px solid #34445f;background:#0c1424;color:var(--text);border-radius:9px;font:inherit;font-size:12px;resize:vertical}
+.approval-actions{justify-content:space-between;flex-wrap:wrap}
+.reject-btn{background:#492a35;color:#ffd5dc}
+@media(max-width:700px){.approval-dialog{padding:16px}.approval-document{padding:13px;font-size:11px;max-height:45vh}.approval-actions{display:grid;grid-template-columns:1fr}.approval-actions button{width:100%}.approval-open .pill{font-size:8px}}
