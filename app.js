@@ -31,7 +31,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -60,7 +60,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes]=await Promise.all([
+  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes,workSampleRes]=await Promise.all([
     supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
     supabase.from("company_operating_policies").select("*").eq("company_id",company.id).maybeSingle(),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
@@ -75,11 +75,12 @@ async function loadData(){
     supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order"),
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
     supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
-    supabase.from("agent_capability_test_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(500)
+    supabase.from("agent_capability_test_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(500),
+    supabase.from("agent_work_sample_assignments").select("*").eq("company_id",company.id).order("assigned_at")
   ]);
-  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes])if(result.error)throw result.error;
+  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes,workSampleRes])if(result.error)throw result.error;
   departments=departmentRes.data||[];operatingPolicy=policyRes.data||null;employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];workSampleAssignments=workSampleRes.data||[];
   renderAll();
 }
 
@@ -255,6 +256,24 @@ function renderCapabilityLab(){
  }).join("")||'<p class="muted">No agents registered.</p>';
  const history=$("#capability-test-history");if(history)history.innerHTML=capabilityTestRuns.slice(0,30).map(r=>{const emp=employees.find(e=>e.id===r.employee_id);return '<article class="activity-item"><div><strong>'+escapeHtml(emp?.name||"Unknown agent")+' · '+escapeHtml(r.test_kind.replaceAll("_"," "))+'</strong><small>'+escapeHtml(new Date(r.created_at).toLocaleString("id-ID"))+' · '+escapeHtml(r.status)+'</small><p>'+escapeHtml(r.evidence_summary||"No evidence summary")+'</p></div><span class="pill '+(r.status==="passed"?"green":r.status==="failed"?"amber":"gray")+'">'+escapeHtml(r.status)+'</span></article>'}).join("")||'<p class="muted">No capability tests recorded yet.</p>';
 }
+function renderWorkSampleAssignments(){
+ const host=$("#work-sample-assignment-list");if(!host)return;
+ const queued=workSampleAssignments.filter(a=>a.status==="queued").length,active=workSampleAssignments.filter(a=>a.status==="in_progress").length,submitted=workSampleAssignments.filter(a=>["submitted","qa_passed","qa_failed"].includes(a.status)).length;
+ const q=$("#work-sample-queued-count"),a=$("#work-sample-active-count"),s=$("#work-sample-submitted-count");
+ if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
+ host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(item.status==="queued"?'<button class="primary-btn" type="button" data-work-sample-start="'+item.id+'">Start work sample</button>':item.status==="in_progress"?'<button class="secondary-btn" type="button" data-work-sample-record="'+item.employee_id+'">Record work evidence</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
+}
+async function startWorkSampleAssignment(id,button){
+ const item=workSampleAssignments.find(x=>x.id===id);if(!item||item.status!=="queued")return;
+ button.disabled=true;
+ try{const {error}=await supabase.from("agent_work_sample_assignments").update({status:"in_progress",started_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("company_id",company.id);if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
+}
+function openWorkSampleEvidence(employeeId){
+ const employeeSelect=$("#capability-employee"),kind=$("#capability-test-kind"),evidence=$("#capability-evidence");
+ if(employeeSelect)employeeSelect.value=employeeId;if(kind)kind.value="work_sample";
+ if(evidence)evidence.focus();
+ document.querySelector("#capability-test-form")?.scrollIntoView({behavior:"smooth",block:"center"});
+}
 async function runCapabilityPreflight(id,button){
  const agent=employees.find(e=>e.id===id);if(!agent)return;
  const checks={identity:!!agent.name&&!!agent.role_key,responsibilities:!!String(agent.responsibilities||"").trim(),department_registered:departments.some(d=>d.name===agent.department),role_key_unique:employees.filter(e=>e.role_key===agent.role_key).length===1,zero_cost_policy:operatingPolicy?.approval_mode==="spending_only"&&Number(operatingPolicy?.max_automatic_spend)===0&&operatingPolicy?.allow_paid_services===false&&operatingPolicy?.allow_paid_api_usage===false&&operatingPolicy?.allow_paid_advertising===false};
@@ -264,7 +283,10 @@ async function runCapabilityPreflight(id,button){
 async function recordCapabilityTest(event){
  event.preventDefault();const form=$("#capability-test-form"),button=$("#capability-test-submit"),id=$("#capability-employee").value,kind=$("#capability-test-kind").value,status=$("#capability-test-status").value,evidence=$("#capability-evidence").value.trim(),reference=$("#capability-reference").value.trim();
  if(evidence.length<20){alert("Evidence summary must contain at least 20 characters.");return}button.disabled=true;
- try{const {error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:kind,status,evidence_summary:evidence,evidence_reference:reference||null,test_payload:{recorded_as:"founder_evaluated_evidence"},tested_by:currentUser.id});if(error)throw error;
+ try{const {data:inserted,error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:kind,status,evidence_summary:evidence,evidence_reference:reference||null,test_payload:{recorded_as:"founder_evaluated_evidence"},tested_by:currentUser.id}).select("id").single();if(error)throw error;
+  const assignment=workSampleAssignments.find(x=>x.employee_id===id&&x.status==="in_progress");
+  if(kind==="work_sample"&&assignment){const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({status:"submitted",submission_summary:evidence,capability_test_run_id:inserted.id,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);if(updateError)throw updateError}
+  if(kind==="qa_review"&&assignment){const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({status:status==="passed"?"qa_passed":status==="failed"?"qa_failed":"blocked",qa_notes:evidence,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);if(updateError)throw updateError}
   if(status!=="passed")await supabase.from("ai_employees").update({capability_status:status==="blocked"?"blocked":"testing",capability_verified_at:null,capability_verified_by:null}).eq("id",id).eq("company_id",company.id);
   form.reset();await loadData()
  }catch(error){showError(error)}finally{button.disabled=false}
@@ -302,6 +324,7 @@ function renderAll(){
   renderDistribution();
   renderOrganization();
   renderCapabilityLab();
+  renderWorkSampleAssignments();
   renderVirtualHQ();
   const activity=$("#activity-feed");
   if(activity)activity.innerHTML=agentMessages.length?agentMessages.map(m=>'<article class="activity-item"><div><strong>'+escapeHtml(m.subject)+'</strong><small>'+escapeHtml(m.from_employee?.name||"Company OS")+' → '+escapeHtml(m.to_employee?.name||"System")+' · '+escapeHtml(prettyStatus(m.message_type))+'</small><p>'+escapeHtml(m.body)+'</p></div><time>'+escapeHtml(new Date(m.created_at).toLocaleString("id-ID"))+'</time></article>').join(""):'<p class="muted">No inter-agent messages yet. Messages will appear when the autonomous workflow runs.</p>';
@@ -914,7 +937,7 @@ $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
-document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify)});
+document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify);const start=e.target.closest("[data-work-sample-start]");if(start)startWorkSampleAssignment(start.dataset.workSampleStart,start);const record=e.target.closest("[data-work-sample-record]");if(record)openWorkSampleEvidence(record.dataset.workSampleRecord)});
 document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
