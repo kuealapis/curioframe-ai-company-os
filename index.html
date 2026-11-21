@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261122-01">
+  <link rel="stylesheet" href="./styles.css?v=20261122-02">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -34,6 +34,7 @@
         <a class="nav-link" href="#tasks" data-page="tasks"><span>☷</span> Task Manager</a>
         <a class="nav-link" href="#orchestrator" data-page="orchestrator"><span>⌘</span> Agents Orchestrator</a>
         <a class="nav-link" href="#pipeline" data-page="pipeline"><span>⇢</span> Production Pipeline</a>
+        <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#approvals" data-page="approvals"><span>✓</span> Approval Center <i id="approval-nav-count">2</i></a>
         <a class="nav-link" href="#virtual-hq" data-page="virtual-hq"><span>▦</span> Virtual HQ</a>
         <a class="nav-link" href="#activity" data-page="activity"><span>◷</span> Activity Log</a>
@@ -92,6 +93,27 @@
         <div class="orchestrator-section-head"><div><p class="eyebrow">WORKFLOW MONITOR</p><h2>Pipeline runs</h2></div><span class="pill blue">OWNER CONTROLLED</span></div>
         <div id="orchestrator-runs" class="orchestrator-runs"><p class="muted">Loading workflows…</p></div>
         <section class="orchestrator-rule-grid"><article><strong>1 · Planning & task breakdown</strong><p>Goal, deliverables, priorities, dependencies, and agent assignments.</p></article><article><strong>2 · Architecture & UX</strong><p>System components, decisions, user flows, and interface screens.</p></article><article><strong>3 · Development & QA</strong><p>Implementation work plus independent QA, with up to three fix-and-test cycles.</p></article><article><strong>4 · Integration & release</strong><p>Module integration, regression checks, release notes, and Owner approval.</p></article></section>
+      </section>
+
+      <section class="page" id="page-distribution">
+        <div class="page-heading"><div><p class="eyebrow">CHANNEL OPERATIONS</p><h1>Distribution Network</h1><p class="subheading">Manage official channel records, profile readiness, and the multi-platform publishing queue.</p></div><button class="secondary-btn" id="distribution-refresh-btn" type="button">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Founder-owned accounts</strong><p>Account records are prepared for YouTube, TikTok, Instagram, and Facebook. Platform accounts have not been created or connected by this app. Complete sign-up and verification directly on each platform; never enter passwords or OTPs here.</p></div></div>
+        <div class="distribution-summary-grid"><article class="stat-card"><div class="stat-label">REGISTERED CHANNELS</div><div class="stat-value" id="distribution-account-count">04</div><div class="stat-foot">Four platform records</div></article><article class="stat-card"><div class="stat-label">CONNECTED CHANNELS</div><div class="stat-value" id="distribution-connected-count">00</div><div class="stat-foot">Verified platform integrations</div></article><article class="stat-card"><div class="stat-label">PUBLISHING QUEUE</div><div class="stat-value" id="distribution-queue-count">00</div><div class="stat-foot">Draft and scheduled items</div></article></div>
+        <div class="orchestrator-section-head"><div><p class="eyebrow">ACCOUNT REGISTRY</p><h2>Official platform accounts</h2></div><span class="pill amber">SETUP REQUIRED</span></div>
+        <div class="distribution-account-grid" id="distribution-accounts"><p class="muted">Loading channel records…</p></div>
+        <div class="distribution-lower-grid">
+          <section class="panel"><div class="panel-head"><div><h2>Prepare a publication</h2><p>Create a draft or schedule a post. Publishing is not automated yet.</p></div></div>
+            <form id="distribution-publication-form" class="distribution-form">
+              <label for="distribution-platform">Platform<select id="distribution-platform"><option value="youtube">YouTube Shorts</option><option value="tiktok">TikTok</option><option value="instagram">Instagram Reels</option><option value="facebook">Facebook Reels</option></select></label>
+              <label for="distribution-title">Video title<input id="distribution-title" maxlength="180" required placeholder="Why do airplane windows have tiny holes?"></label>
+              <label for="distribution-caption">Caption<textarea id="distribution-caption" rows="4" maxlength="3000" placeholder="Write the platform-specific caption…"></textarea></label>
+              <label for="distribution-scheduled-at">Schedule (optional)<input id="distribution-scheduled-at" type="datetime-local"></label>
+              <button class="primary-btn" id="distribution-publication-submit" type="submit">Add to queue</button>
+            </form>
+          </section>
+          <section class="panel"><div class="panel-head"><div><h2>Publishing queue</h2><p>Publication status and planned schedule</p></div></div><div id="distribution-queue-list" class="distribution-queue-list"><p class="muted">Loading queue…</p></div></section>
+        </div>
+        <section class="panel distribution-roadmap"><h2>Connection & automation roadmap</h2><p>1. Founder creates and verifies each platform account. 2. Developer configures official OAuth/API integrations. 3. QA tests account scopes and publication workflow. 4. Founder approves the first live publication. Until those gates pass, queue items remain preparation records and no post is sent to a platform.</p></section>
       </section>
       <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div><div class="pipeline-board" id="pipeline-board"></div></section>
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
@@ -154,6 +176,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-07"></script>
+  <script type="module" src="./app.js?v=20261122-08"></script>
 </body>
 </html>
