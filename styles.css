@@ -140,3 +140,7 @@
 .recovery-entry .secondary-btn{white-space:nowrap;padding:9px 10px;font-size:10px}
 .history-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:700px){.history-layout{grid-template-columns:1fr}.history-entry-top{display:block}.history-entry time{display:block;margin-top:5px}.recovery-entry{align-items:flex-start;flex-direction:column}.recovery-entry .secondary-btn{align-self:flex-start}}
+
+.history-separated{margin-top:18px}
+.history-separated .panel{min-width:0}
+.history-entry-top strong{overflow-wrap:anywhere}
