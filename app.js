@@ -136,6 +136,8 @@ function setupHQRealtime(){
     .on("postgres_changes",{event:"*",schema:"public",table:"ai_employees",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
     .on("postgres_changes",{event:"*",schema:"public",table:"approvals",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
     .on("postgres_changes",{event:"*",schema:"public",table:"content_assets",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"agent_messages",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
+    .on("postgres_changes",{event:"*",schema:"public",table:"quality_reviews",filter:"company_id=eq."+company.id},()=>loadData().catch(console.error))
     .subscribe(status=>{
       const live=$("#hq-live-indicator");
       if(!live)return;
@@ -315,10 +317,21 @@ $("#task-form").addEventListener("submit",async e=>{
   const ownerId=$("#task-owner").value||null;
   const priority=$("#task-priority").value.toLowerCase();
   const button=$("#save-task");button.disabled=true;
-  const {error}=await supabase.from("tasks").insert({company_id:company.id,title,objective:"",assigned_employee_id:ownerId,priority,created_by:currentUser.id});
-  button.disabled=false;if(error){showError(error);return}
-  await supabase.from("task_events").insert({company_id:company.id,event_type:"task_created",message:"Task created: "+title});
-  $("#task-dialog").close();$("#task-form").reset();await loadData();
+  const {data:createdTask,error}=await supabase.from("tasks").insert({company_id:company.id,title,objective:"",assigned_employee_id:ownerId,priority,created_by:currentUser.id}).select("id").single();
+  if(error){button.disabled=false;showError(error);return}
+  await supabase.from("task_events").insert({company_id:company.id,task_id:createdTask.id,event_type:"task_created",message:"Task created: "+title});
+  $("#task-dialog").close();$("#task-form").reset();
+  if(ownerId){
+    try{
+      const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:createdTask.id}});
+      if(runError)throw runError;
+      if(data?.error)throw new Error(data.error+(data.needs_secret?" Add GEMINI_API_KEY in Supabase Edge Function Secrets first.":""));
+      alert(data.message||"Task dispatched. QC/QA checks will run automatically when applicable.");
+    }catch(runError){alert("Task saved, but automatic execution did not start: "+(runError.message||"Check the AI provider connection."));}
+  }else{
+    alert("Task saved. Assign it to an AI employee to enable automatic execution.");
+  }
+  button.disabled=false;await loadData();
 });
 supabase.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;company=null;showAuth()}});
 refreshSession().catch(error=>{setSystem("CONNECTION ERROR");setMessage(error.message||"Could not connect to the workspace.");showAuth()});
