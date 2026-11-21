@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261121-14">
+  <link rel="stylesheet" href="./styles.css?v=20261121-15">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
@@ -90,8 +90,12 @@
         <div class="page-heading"><div><p class="eyebrow">AUDIT &amp; RESTORE</p><h1>History &amp; Recovery</h1><p class="subheading">Review the company audit trail and safely reopen decisions without erasing prior records.</p></div><button class="secondary-btn" id="history-refresh-btn" type="button">↻ Refresh history</button></div>
         <div class="stats-grid history-stats"><article class="stat-card"><div class="stat-label">RECOVERY SNAPSHOTS</div><div class="stat-value" id="recovery-snapshot-count">0</div><div class="stat-foot">Saved before owner decisions and recovery actions</div></article><article class="stat-card"><div class="stat-label">REJECTED APPROVALS</div><div class="stat-value" id="rejected-approval-count">0</div><div class="stat-foot">Decisions eligible for reopening</div></article></div>
         <div class="section-grid history-layout">
-          <section class="panel"><div class="panel-head"><div><h2>Company activity timeline</h2><p>Task events and Owner decisions · newest first</p></div></div><div id="history-timeline" class="history-timeline"><p class="muted">Loading history…</p></div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Company activity timeline</h2><p>All recorded events · newest first</p></div></div><div id="history-timeline" class="history-timeline"><p class="muted">Loading history…</p></div></section>
           <section class="panel"><div class="panel-head"><div><h2>Recovery actions</h2><p>Reopen a rejected approval for review</p></div></div><div id="recovery-list" class="recovery-list"><p class="muted">Loading recoverable items…</p></div><p class="form-note">Recovery preserves the previous state in an immutable snapshot and adds a new audit event. It does not erase the original decision.</p></section>
+        </div>
+        <div class="section-grid history-layout history-separated">
+          <section class="panel"><div class="panel-head"><div><h2>Transferred as tasks</h2><p>TRF codes · AI Employee handoffs · newest first</p></div></div><div id="transferred-history" class="history-timeline"><p class="muted">Loading transfers…</p></div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Deleted records</h2><p>DEL codes · deletion events only · newest first</p></div></div><div id="deleted-history" class="history-timeline"><p class="muted">Loading deletion records…</p></div></section>
         </div>
       </section>
       <footer class="footer">CURIOFRAME AI COMPANY OS <span>·</span> FOUNDATION BUILD 0.1.0 <span>·</span> OWNER: ARYA</footer>
@@ -108,6 +112,6 @@
     <p class="form-note">Approval records your decision and updates the linked task and deliverable status.</p>
   </dialog>
   <dialog id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-head"><div><p class="eyebrow">WORK MANAGEMENT</p><h2>Create a task</h2></div><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label>Task title<input id="task-title" required maxlength="100" placeholder="e.g. Research 5 surprising science facts"></label><label>Assign to<select id="task-owner"><option>Research Officer</option><option>Content Officer</option><option>Marketing Officer</option><option>Quality Manager</option><option>AI CEO / Orchestrator</option><option>Operations Officer</option><option>Finance Officer</option></select></label><label>Priority<select id="task-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-task" value="default">Save task</button></div><p class="form-note">Tasks are saved to your company database. Assigned tasks are dispatched automatically to the selected AI employee. QC and QA review content deliverables before Owner approval.</p></form></dialog>
-  <script type="module" src="./app.js?v=20261121-14"></script>
+  <script type="module" src="./app.js?v=20261121-15"></script>
 </body>
 </html>
