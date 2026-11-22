@@ -436,3 +436,12 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
  #page-virtual-hq.hq-fullscreen-mode .hq-game-toolbar,
  #page-virtual-hq:fullscreen .hq-game-toolbar{gap:5px}
 }
+
+
+/* Correct full-screen 3D canvas sizing: expand the actual Three.js mount, not a guessed class */
+#page-virtual-hq.hq-fullscreen-mode .hq-viewport,
+#page-virtual-hq:fullscreen .hq-viewport{display:flex!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;position:relative}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene,
+#page-virtual-hq:fullscreen #virtual-hq-full-scene{display:block!important;flex:1 1 auto!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene canvas,
+#page-virtual-hq:fullscreen #virtual-hq-full-scene canvas{display:block;width:100%!important;height:100%!important}
