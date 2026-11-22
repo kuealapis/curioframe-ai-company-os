@@ -1123,7 +1123,7 @@ function renderHQMissionPanel(){
   if(!panel||!content)return;
   panel.hidden=!hqMissionOpen;
   viewport?.classList.toggle("panel-open",hqMissionOpen);
-  const tabs=$(".hq-mission-tabs [data-hq-panel-tab]");
+  const tabs=$$(".hq-mission-tabs [data-hq-panel-tab]");
   tabs.forEach(tab=>tab.classList.toggle("active",tab.dataset.hqPanelTab===hqMissionTab));
   const openTasks=tasks.filter(t=>!["completed","cancelled"].includes(t.status));
   const working=employees.filter(e=>hqStatus(e).key==="working").length;
