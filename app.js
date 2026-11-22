@@ -1113,6 +1113,32 @@ function launchHQ3D(el){
   const build=buildHQ3D(el).catch(err=>{console.error("3D HQ unavailable:",err);if(el)el.innerHTML='<div class="hq-3d-loading">3D view unavailable. Your company workspace and sign-in remain available. Please refresh to retry.</div>'}).finally(()=>hqBuilds.delete(el));
   hqBuilds.set(el,build);return build;
 }
+let hqMissionTab="crew",hqMissionOpen=true;
+function renderHQMissionPanel(){
+  const viewport=$("#virtual-hq-full-scene")?.parentElement;
+  const panel=$("#hq-mission-panel"),content=$("#hq-mission-content");
+  if(!panel||!content)return;
+  panel.hidden=!hqMissionOpen;
+  viewport?.classList.toggle("panel-open",hqMissionOpen);
+  const tabs=$(".hq-mission-tabs [data-hq-panel-tab]");
+  tabs.forEach(tab=>tab.classList.toggle("active",tab.dataset.hqPanelTab===hqMissionTab));
+  const openTasks=tasks.filter(t=>!["completed","cancelled"].includes(t.status));
+  const working=employees.filter(e=>hqStatus(e).key==="working").length;
+  const queued=openTasks.filter(t=>t.status==="queued").length;
+  const review=openTasks.filter(t=>["review","pending"].includes(t.status)).length;
+  const blocked=openTasks.filter(t=>t.status==="blocked").length;
+  if(hqMissionTab==="crew"){
+    content.innerHTML='<div class="hq-mission-section">CREW · '+employees.length+' REGISTERED AGENTS</div>'+employees.map(e=>{const st=hqStatus(e);return '<button type="button" class="hq-mission-row" data-hq-employee="'+escapeHtml(e.id)+'"><i class="hq-mission-dot '+st.key+'"></i><div><strong>'+escapeHtml(e.name)+'</strong><small>'+escapeHtml(e.department||"General")+'</small></div><b>'+escapeHtml(st.label)+'</b></button>'}).join("");
+  }else if(hqMissionTab==="stats"){
+    content.innerHTML='<div class="hq-mission-stat-grid">'+[
+      ["Crew active",working,"database-backed task status"],["Open tasks",openTasks.length,"excluding completed and cancelled"],["Queued",queued,"waiting to start"],["In review",review,"awaiting quality or owner review"],["Blocked",blocked,"requires intervention"],["Departments",new Set(employees.map(e=>e.department).filter(Boolean)).size,"registered departments"],["Completed",tasks.filter(t=>t.status==="completed").length,"recorded completed tasks"],["Agents registered",employees.length,"not equal to verified capabilities"]
+    ].map(x=>'<div class="hq-mission-stat"><span>'+x[0]+'</span><strong>'+x[1]+'</strong><small>'+x[2]+'</small></div>').join("")+'</div><div class="hq-mission-empty">Agent readiness is shown separately from task activity. Planned agents are not represented as autonomous workers.</div>';
+  }else if(hqMissionTab==="activity"){
+    content.innerHTML='<div class="hq-mission-section">RECENT DATABASE EVENTS</div>'+(taskEvents.slice(0,20).map(ev=>'<div class="hq-mission-row"><i class="hq-mission-dot"></i><div><strong>'+escapeHtml(ev.event_type||"Event")+'</strong><small>'+escapeHtml(ev.message||"")+'</small></div><b>'+escapeHtml(new Date(ev.created_at).toLocaleTimeString())+'</b></div>').join("")||'<div class="hq-mission-empty">No database activity has been recorded yet.</div>');
+  }else{
+    content.innerHTML='<div class="hq-mission-section">TASK QUEUE · '+openTasks.length+' OPEN</div>'+(openTasks.slice(0,30).map(t=>{const owner=employees.find(e=>e.id===t.assigned_employee_id);return '<div class="hq-mission-row"><i class="hq-mission-dot '+(t.status==="in_progress"?"working":t.status==="review"?"review":t.status==="blocked"?"blocked":"queued")+'"></i><div><strong>'+escapeHtml(t.title)+'</strong><small>'+escapeHtml(owner?.name||"Unassigned")+' · '+escapeHtml(t.priority||"normal")+'</small></div><b>'+escapeHtml(prettyStatus(t.status))+'</b></div>'}).join("")||'<div class="hq-mission-empty">No open tasks. Create a task from Task Manager.</div>');
+  }
+}
 function renderVirtualHQ(){
   const icons={ai_ceo:"🧭",research:"🔎",content:"✍️",marketing:"📣",quality:"🛡️",qc:"✓",qa:"◈",finance:"💹",operations:"⚙️"};
   ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(sel=>{
@@ -1144,6 +1170,7 @@ function renderVirtualHQ(){
   if(selectedHQEmployeeId&&!employees.some(e=>e.id===selectedHQEmployeeId))selectedHQEmployeeId=null;
   hqWorlds.forEach(world=>world.select(selectedHQEmployeeId));
   renderHQDetail(selectedHQEmployeeId);
+  renderHQMissionPanel();
 }
 function renderHQDetail(employeeId){
   const targets=["#hq-selected-detail-overview","#hq-selected-detail-full"].map($).filter(Boolean);
@@ -1461,6 +1488,10 @@ document.addEventListener("pointermove",ev=>{if(ev.pointerId===joystickPointer)u
 document.addEventListener("pointerup",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
 document.addEventListener("pointercancel",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
 document.addEventListener("click",e=>{
+  const panelTab=e.target.closest("[data-hq-panel-tab]");
+  if(panelTab){hqMissionTab=panelTab.dataset.hqPanelTab;renderHQMissionPanel();return}
+  if(e.target.closest("[data-hq-panel-close]")){hqMissionOpen=false;renderHQMissionPanel();return}
+  if(e.target.closest("#hq-panel-toggle")){hqMissionOpen=true;renderHQMissionPanel();return}
   const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===(action==="reset"?"orbit":action)&&(action==="walk"||action==="orbit"||action==="reset")));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
