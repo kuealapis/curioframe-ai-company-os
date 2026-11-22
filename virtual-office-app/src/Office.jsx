@@ -282,7 +282,8 @@ function Scene({ employees, tasks, selectedId, onSelect }) {
     <fog attach="fog" args={["#b9c9d3", 35, 90]} />
     <ambientLight intensity={1.15} />
     <directionalLight position={[14, 24, 12]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />\n    <SharedSpaces />
+    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />
+    <SharedSpaces />
     <ContactShadows position={[0, -0.25, 0]} opacity={0.24} scale={48} blur={2.5} far={12} />
   </>;
 }
