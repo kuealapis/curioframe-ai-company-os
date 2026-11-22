@@ -1145,8 +1145,8 @@ function renderHQMissionPanel(){
 function sendHQSnapshot(frame){
   if(!frame?.contentWindow)return;
   const payload={
-    employees:employees.map(e=>({id:e.id,name:e.name,role_key:e.role_key,department:e.department,responsibilities:e.responsibilities,status:e.status})),
-    tasks:tasks.map(t=>({id:t.id,title:t.title,status:t.status,assigned_employee_id:t.assigned_employee_id,priority:t.priority,ai_employees:t.ai_employees?{name:t.ai_employees.name}:null})),
+    employees:employees.map(e=>({id:e.id,name:e.name,role_key:e.role_key,department:e.department,responsibilities:e.responsibilities,status:e.status,capability_status:e.capability_status,capability_profile:e.capability_profile,capability_verified_at:e.capability_verified_at})),
+    tasks:tasks.map(t=>({id:t.id,title:t.title,objective:t.objective,status:t.status,assigned_employee_id:t.assigned_employee_id,priority:t.priority,deliverable_url:t.deliverable_url,created_at:t.created_at,updated_at:t.updated_at,ai_employees:t.ai_employees?{name:t.ai_employees.name}:null})),
     departments:departments.map(d=>({name:d.name,description:d.description}))
   };
   frame.contentWindow.postMessage({type:"curioframe:office-snapshot",payload},location.origin);
