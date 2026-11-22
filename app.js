@@ -884,7 +884,7 @@ async function buildHQ3D(el){
   const syncCamera=()=>{spherical.radius=clamp(spherical.radius,15,58);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
   const controls={
     target,
-    update(){syncCamera()},
+    update(){if(!gameMode)syncCamera()},
     dispose(){renderer.domElement.removeEventListener("pointerdown",cameraPointerDown);renderer.domElement.removeEventListener("pointermove",cameraPointerMove);renderer.domElement.removeEventListener("pointerup",cameraPointerEnd);renderer.domElement.removeEventListener("pointercancel",cameraPointerEnd);renderer.domElement.removeEventListener("wheel",cameraWheel);window.removeEventListener("keydown",onWalkKeyDown);window.removeEventListener("keyup",onWalkKeyUp)}
   };
   function cameraPointerDown(ev){if(ev.pointerType==="mouse"&&ev.button!==0)return;ev.preventDefault?.();try{renderer.domElement.setPointerCapture?.(ev.pointerId)}catch{}pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===2){const pts=[...pointers.values()];previousPinch=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);previousMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}}
