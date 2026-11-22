@@ -31,7 +31,13 @@ jobs:
         run: node --check --input-type=module < app.js
       - name: Verify authenticated Mission Control integration
         run: |
-          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const app=fs.readFileSync("app.js","utf8"); const html=fs.readFileSync("index.html","utf8"); const css=fs.readFileSync("styles.css","utf8"); for (const token of ["data-curioframe-office=\\"true\\"","src=\\"./virtual-office/index.html\\"","sendHQSnapshot(officeFrame)","event.source!==frame?.contentWindow"]) assert.ok(app.includes(token), "app.js missing "+token); assert.ok(html.includes("id=\\"virtual-hq-full-scene\\"")); assert.ok(css.includes("#virtual-hq-full-scene iframe[data-curioframe-office]")); console.log("Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified.");'
+          grep -Fq 'data-curioframe-office="true"' app.js
+          grep -Fq 'src="./virtual-office/index.html"' app.js
+          grep -Fq 'sendHQSnapshot(officeFrame)' app.js
+          grep -Fq 'event.source!==frame?.contentWindow' app.js
+          grep -Fq 'id="virtual-hq-full-scene"' index.html
+          grep -Fq '#virtual-hq-full-scene iframe[data-curioframe-office]' styles.css
+          echo "Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified."
       - name: Install free open-source dependencies
         run: npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
       - name: Build Virtual Office
