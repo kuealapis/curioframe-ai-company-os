@@ -590,6 +590,48 @@ async function verifyCapabilityAgent(id,button){
  button.disabled=true;try{const {error}=await supabase.from("ai_employees").update({capability_status:"verified",capability_verified_at:new Date().toISOString(),capability_verified_by:currentUser.id}).eq("id",id).eq("company_id",company.id);if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
 }
 
+
+function renderResearchQAPanel(){
+ const host=$("#research-qa-panel");if(!host)return;
+ const asset=contentAssets.find(x=>x.id==="31aa29f6-9555-4e06-955c-223d6517f90b");
+ const qaTask=tasks.find(x=>x.id==="7a282666-a15f-41d1-b9a5-5394e0aedd9f");
+ if(!asset||!qaTask){host.innerHTML='<p class="muted">Research QA assignment or asset not found. Refresh the workspace.</p>';return}
+ const prior=qualityReviews.find(x=>x.task_id===qaTask.id&&x.review_stage==="qa");
+ if(prior){
+  host.innerHTML='<div class="notice"><strong>HUMAN QA REVIEW RECORDED · '+escapeHtml(prettyStatus(prior.status))+'</strong><p>'+escapeHtml((prior.findings||[]).join(" · ")||prior.evidence||"Review record saved.")+'</p><p class="muted">This is a human-entered QA record, not an AI QA-agent execution. Research asset remains '+escapeHtml(asset.status)+'.</p></div>';
+  return;
+ }
+ host.innerHTML='<div class="notice"><strong>Independent review is awaiting a human reviewer</strong><p>QA Officer is still PLANNED. This form records a human review by the signed-in Owner/reviewer; it does not claim that the QA Officer executed the task or verify agent capability.</p></div><form id="research-qa-review-form" class="distribution-form"><input type="hidden" id="research-qa-task-id" value="'+escapeHtml(qaTask.id)+'"><label>Review verdict<select id="research-qa-verdict"><option value="needs_owner">Needs more evidence / escalation</option><option value="passed">PASS — all checks verified</option><option value="failed">FAIL — correction required</option></select></label><div class="activation-panel"><strong>Research brief QA checklist</strong><label class="activation-check"><input type="checkbox" data-research-qa-check="claim1"><span>Claim 1 definition and chemical-reaction explanation match the retrieved NOAA excerpt</span></label><label class="activation-check"><input type="checkbox" data-research-qa-check="chemistry"><span>Luciferin and luciferase / photoprotein detail matches the National Geographic Education excerpt</span></label><label class="activation-check"><input type="checkbox" data-research-qa-check="claim2"><span>Claim 2 is limited to luring/detecting prey, warning/evading predators, and communication</span></label><label class="activation-check"><input type="checkbox" data-research-qa-check="unsupported"><span>“Attract mates” is not presented as a supported fact</span></label><label class="activation-check"><input type="checkbox" data-research-qa-check="limitations"><span>Missing publication dates and limits of excerpt-level review are disclosed</span></label><label class="activation-check"><input type="checkbox" data-research-qa-check="traceability"><span>Every factual statement has traceable source support; no unsupported details were added</span></label></div><label>Findings / required corrections<textarea id="research-qa-findings" rows="3" placeholder="List any failed checks, uncertainty, or corrections required. For PASS, write “No outstanding findings”." required minlength="10"></textarea></label><label>Reviewer evidence summary<textarea id="research-qa-evidence" rows="4" minlength="50" required placeholder="Describe what you personally compared in the revised brief against the retrieved NOAA and National Geographic Education excerpts."></textarea></label><label class="activation-check"><input type="checkbox" id="research-qa-human-confirm" required><span>I personally reviewed the revised brief and the retrieved source excerpts; this is my human review, not an AI agent verdict.</span></label><button class="primary-btn" id="research-qa-submit" type="submit">Save Human QA Review</button><p class="form-note">A PASS completes this QA task only. It does not approve the research asset, authorize Content production, verify the QA Officer’s capability, or call an AI provider.</p></form>';
+}
+async function submitResearchQAReview(event){
+ event.preventDefault();
+ const form=$("#research-qa-review-form"),button=$("#research-qa-submit"),verdict=$("#research-qa-verdict").value,findings=$("#research-qa-findings").value.trim(),evidence=$("#research-qa-evidence").value.trim();
+ const taskId=$("#research-qa-task-id").value,task=tasks.find(x=>x.id===taskId),asset=contentAssets.find(x=>x.id==="31aa29f6-9555-5e06-955c-223d6517f90b");
+ const checks=[...document.querySelectorAll("[data-research-qa-check]")].map(x=>({key:x.dataset.researchQaCheck,checked:x.checked}));
+ if(!task||!asset||task.status!=="queued"||asset.status!=="review"){alert("QA task or asset state changed. Refresh and inspect the records before submitting.");return}
+ if(evidence.length<50||findings.length<10){alert("Add a detailed evidence summary and findings (at least 50 and 10 characters).");return}
+ if(!$("#research-qa-human-confirm").checked){alert("Confirm that you personally reviewed the brief and retrieved excerpts.");return}
+ if(verdict==="passed"&&checks.some(x=>!x.checked)){alert("A PASS requires all six QA checklist items to be checked.");return}
+ if(verdict!=="passed"&&checks.every(x=>x.checked)){alert("If every checklist item passes, select PASS. Otherwise record the unresolved checks.");return}
+ button.disabled=true;
+ try{
+  const missing=checks.filter(x=>!x.checked).map(x=>x.key);
+  const reviewStatus=verdict==="passed"?"passed":verdict==="failed"?"failed":"needs_owner";
+  const review=await supabase.from("quality_reviews").insert({company_id:company.id,task_id:task.id,reviewer_employee_id:null,review_stage:"qa",iteration:1,status:reviewStatus,findings:missing.concat(findings),evidence:evidence}).select("id").single();
+  if(review.error)throw review.error;
+  const nextTaskStatus=reviewStatus==="passed"?"completed":reviewStatus==="failed"?"blocked":"review";
+  const update=await supabase.from("tasks").update({status:nextTaskStatus,updated_at:new Date().toISOString()}).eq("id",task.id).eq("company_id",company.id).eq("status","queued").select("id,status").maybeSingle();
+  if(update.error)throw update.error;
+  if(!update.data)throw new Error("QA record saved, but task status was not updated. Refresh and inspect the review record.");
+  const event=await supabase.from("task_events").insert({company_id:company.id,task_id:task.id,employee_id:null,event_type:"research_brief_human_qa_recorded",message:"Human QA review recorded for revised bioluminescence research brief. This is not an AI QA-agent execution and does not approve the asset.",metadata:{source_asset_id:asset.id,quality_review_id:review.data.id,review_verdict:reviewStatus,checklist:checks,missing_checks:missing,reviewer_user_id:currentUser.id,reviewer_type:"human_owner",qa_agent_executed:false,asset_approved:false,provider_called:false,capability_status_changed:false}}).select("id").single();
+  if(event.error)throw event.error;
+  form.reset();
+  await loadData();
+  const host=$("#research-qa-panel");if(host)host.innerHTML='<div class="notice"><strong>HUMAN QA REVIEW SAVED · '+escapeHtml(reviewStatus.toUpperCase())+'</strong><p>Quality review: <code>'+escapeHtml(review.data.id)+'</code></p><p>Audit event: <code>'+escapeHtml(event.data.id)+'</code></p><p>QA task: '+escapeHtml(nextTaskStatus.toUpperCase())+' · Research asset remains REVIEW · Not approved for Content · Provider/API calls: 0.</p></div>';
+ }catch(error){showError(error)}
+ finally{if(button)button.disabled=false}
+}
+
 function renderAll(){
   $("#employee-total").textContent=String(employees.length).padStart(2,"0");
   $("#open-task-total").textContent=String(tasks.filter(t=>!["completed","cancelled"].includes(t.status)).length).padStart(2,"0");
