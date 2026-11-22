@@ -606,9 +606,20 @@ function renderResearchQAPanel(){
 async function submitResearchQAReview(event){
  event.preventDefault();
  const form=$("#research-qa-review-form"),button=$("#research-qa-submit"),verdict=$("#research-qa-verdict").value,findings=$("#research-qa-findings").value.trim(),evidence=$("#research-qa-evidence").value.trim();
- const taskId=$("#research-qa-task-id").value,task=tasks.find(x=>x.id===taskId),asset=contentAssets.find(x=>x.id==="31aa29f6-9555-5e06-955c-223d6517f90b");
+ const taskId=$("#research-qa-task-id").value;
+ let task=null,asset=null;
+ try{
+  const [taskResult,assetResult]=await Promise.all([
+   supabase.from("tasks").select("id,status,company_id").eq("id",taskId).eq("company_id",company.id).maybeSingle(),
+   supabase.from("content_assets").select("id,status,company_id").eq("id","31aa29f6-9555-4e06-955c-223d6517f90b").eq("company_id",company.id).maybeSingle()
+  ]);
+  if(taskResult.error)throw taskResult.error;
+  if(assetResult.error)throw assetResult.error;
+  task=taskResult.data;asset=assetResult.data;
+ }catch(error){showError(error);return}
  const checks=[...document.querySelectorAll("[data-research-qa-check]")].map(x=>({key:x.dataset.researchQaCheck,checked:x.checked}));
- if(!task||!asset||task.status!=="queued"||asset.status!=="review"){alert("QA task or asset state changed. Refresh and inspect the records before submitting.");return}
+ if(!task||!asset){alert("QA task or research asset was not found in the current workspace. No review was submitted.");return}
+ if(task.status!=="queued"||asset.status!=="review"){alert("Latest database state: QA task = "+String(task.status).toUpperCase()+"; research asset = "+String(asset.status).toUpperCase()+". No review was submitted. Refresh the panel and inspect the latest records.");await loadData();return}
  if(evidence.length<50||findings.length<10){alert("Add a detailed evidence summary and findings (at least 50 and 10 characters).");return}
  if(!$("#research-qa-human-confirm").checked){alert("Confirm that you personally reviewed the brief and retrieved excerpts.");return}
  if(verdict==="passed"&&checks.some(x=>!x.checked)){alert("A PASS requires all six QA checklist items to be checked.");return}
