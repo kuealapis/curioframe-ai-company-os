@@ -617,14 +617,40 @@ async function runCapabilityPreflight(id,button){
  try{const {error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:"preflight",status:passed?"passed":"blocked",evidence_summary:"Structural preflight only. "+Object.entries(checks).map(([k,v])=>k+": "+(v?"PASS":"FAIL")).join("; ")+". This does not test task execution.",test_payload:{checks,scope:"structural_only"},tested_by:currentUser.id});if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
 }
 async function recordCapabilityTest(event){
- event.preventDefault();const form=$("#capability-test-form"),button=$("#capability-test-submit"),id=$("#capability-employee").value,kind=$("#capability-test-kind").value,status=$("#capability-test-status").value,evidence=$("#capability-evidence").value.trim(),reference=$("#capability-reference").value.trim();
- if(evidence.length<20){alert("Evidence summary must contain at least 20 characters.");return}button.disabled=true;
- try{const {data:inserted,error}=await supabase.from("agent_capability_test_runs").insert({company_id:company.id,employee_id:id,test_kind:kind,status,evidence_summary:evidence,evidence_reference:reference||null,test_payload:{recorded_as:"founder_evaluated_evidence"},tested_by:currentUser.id}).select("id").single();if(error)throw error;
-  const assignment=workSampleAssignments.find(x=>x.employee_id===id&&(kind==="qa_review"?x.status==="submitted":x.status==="in_progress"));
-  if(kind==="work_sample"&&assignment){const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({status:"submitted",submission_summary:evidence,capability_test_run_id:inserted.id,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);if(updateError)throw updateError}
-  if(kind==="qa_review"&&assignment){const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({status:status==="passed"?"qa_passed":status==="failed"?"qa_failed":"blocked",qa_notes:evidence,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);if(updateError)throw updateError}
-  if(status!=="passed")await supabase.from("ai_employees").update({capability_status:status==="blocked"?"blocked":"testing",capability_verified_at:null,capability_verified_by:null}).eq("id",id).eq("company_id",company.id);
-  form.reset();await loadData()
+ event.preventDefault();
+ const form=$("#capability-test-form"),button=$("#capability-test-submit"),id=$("#capability-employee").value,kind=$("#capability-test-kind").value,status=$("#capability-test-status").value,evidence=$("#capability-evidence").value.trim(),reference=$("#capability-reference").value.trim();
+ if(evidence.length<20){alert("Evidence summary must contain at least 20 characters.");return}
+ if(!reference){alert("Enter the exact Task ID or Asset ID from a real submitted work sample.");return}
+ const assignment=workSampleAssignments.find(x=>x.employee_id===id&&x.status==="submitted");
+ if(!assignment){alert("A real Agent submission must exist before work-sample evidence or QA can be recorded.");return}
+ const taskId=assignment.submission?.task_id,assetId=assignment.submission?.asset_id;
+ if(!taskId||![taskId,assetId].includes(reference)){alert("The evidence reference must match this Agent's actual submitted Task ID or Asset ID.");return}
+ button.disabled=true;
+ try{
+  const {data:task,error:taskError}=await supabase.from("tasks").select("id,status").eq("id",taskId).eq("company_id",company.id).maybeSingle();
+  if(taskError)throw taskError;
+  if(!task||task.status!=="completed")throw new Error("The linked task is not completed. A plan or in-progress task is not a deliverable.");
+  const {data:asset,error:assetError}=await supabase.from("content_assets").select("id,status,body").eq("id",assetId).eq("company_id",company.id).maybeSingle();
+  if(assetError)throw assetError;
+  if(!asset||!String(asset.body||"").trim())throw new Error("The linked deliverable asset is missing or empty. Capability evidence cannot be recorded.");
+  const {data:inserted,error}=await supabase.from("agent_capability_test_runs").insert({
+   company_id:company.id,employee_id:id,test_kind:kind,status,evidence_summary:evidence,evidence_reference:reference,
+   test_payload:{recorded_as:"founder_evaluated_evidence",assignment_id:assignment.id,task_id:taskId,asset_id:assetId,task_completed:true,deliverable_nonempty:true},
+   tested_by:currentUser.id
+  }).select("id").single();
+  if(error)throw error;
+  if(kind==="work_sample"){
+   const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({capability_test_run_id:inserted.id,updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);
+   if(updateError)throw updateError;
+  }else{
+   const {error:updateError}=await supabase.from("agent_work_sample_assignments").update({status:status==="passed"?"qa_passed":status==="failed"?"qa_failed":"blocked",qa_notes:evidence,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",assignment.id).eq("company_id",company.id);
+   if(updateError)throw updateError;
+  }
+  if(status!=="passed"){
+   const {error:updateError}=await supabase.from("ai_employees").update({capability_status:status==="blocked"?"blocked":"testing",capability_verified_at:null,capability_verified_by:null}).eq("id",id).eq("company_id",company.id);
+   if(updateError)throw updateError;
+  }
+  form.reset();await loadData();
  }catch(error){showError(error)}finally{button.disabled=false}
 }
 async function verifyCapabilityAgent(id,button){
