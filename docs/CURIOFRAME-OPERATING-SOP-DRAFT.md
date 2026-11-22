@@ -2,7 +2,7 @@
 
 **Status:** Draft for Founder review  
 **Operating principle:** SOP → Integrasi → Automasi → Monitoring  
-**Budget constraint:** Rp0 start-up budget. No paid connector, API, scheduler, subscription, or billing commitment without explicit Founder approval.  
+**Budget constraint:** Rp0 start-up budget and free-only operating baseline. Use only genuinely free ongoing tiers; no paid connector, API, scheduler, subscription, auto-converting trial, payment method, or usage charge without separate explicit Founder approval.  
 **Publication rule:** No public post, client-facing delivery, profile change, or paid action without the required Founder approval.
 
 ## 1. Business operating model
@@ -32,7 +32,7 @@ The Founder sets direction, approves consequential decisions and final publicati
 2. **Data extraction**
    - Data Integration verifies connector availability, refresh schedule, quota, field coverage, account mapping, and plan limits before activation.
    - Windsor.ai documentation currently describes a 30-day expanded free trial (up to 10 sources and 15 accounts) that steps down to Forever Free with 1 user, 1 data source, and 1 account. Its pricing page says 10 Google Business Profile locations count as 1 account. Do not assume Forever Free can serve multiple independently authorized client Google accounts. Verify actual account counting and tenant arrangement before promising ongoing multi-client sync. Sources: https://windsor.ai/pricing/ and https://windsor.ai/documentation/how-to-start-for-free.
-   - The initial 30-day trial is not the long-term operating baseline. Design the pilot around post-trial limits or obtain explicit Founder approval before any paid upgrade.
+   - The initial 30-day trial is not the long-term operating baseline. The default is not to start a trial that requires a payment method or can auto-convert to a paid plan. Design the pilot around verified ongoing free limits.
    - If the free plan cannot cover required CurioFrame + client accounts at steady state, use an approved manual export or another verified Rp0 route; do not silently switch to a paid plan.
 3. **Normalization in Sheets**
    - Keep raw imports separate from cleaned reporting tables. Every row carries tenant_id/client_id and profile_location_id.
@@ -132,7 +132,7 @@ The intended experience is a full-screen, isometric 3D office inspired by Ruang'
 **Confirmed:** Google Business Profile scope includes both CurioFrame's own profile(s) and client profiles, with separate ownership, authorization, and data isolation.
 
 **Still to decide:**
-- Is Windsor.ai mandatory, or may the integration use another verified Rp0 source if its post-trial Forever Free limits cannot support the required number of separate accounts?
+- **Free-only decision confirmed by Founder:** use only services, connectors, APIs, and quotas that can be operated at Rp0 on an ongoing basis. Windsor.ai may be used only if its ongoing free tier genuinely supports the required workload; otherwise choose a verified free alternative or a manual export workflow. Do not start a paid trial that can auto-convert to billing, enter payment details, upgrade, or incur usage charges without separate explicit Founder approval.
 - Which content channels and scheduler are the first publishing targets?
 - What reporting cadence and timezone should be used?
 - What exact content types/services are included in the first pilot?
