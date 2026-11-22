@@ -31,7 +31,7 @@ jobs:
         run: node --check --input-type=module < app.js
       - name: Verify authenticated Mission Control integration
         run: |
-          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const app=fs.readFileSync("app.js","utf8"); const html=fs.readFileSync("index.html","utf8"); const css=fs.readFileSync("styles.css","utf8"); assert.match(app,/data-curioframe-office="true"/); assert.match(app,/src="\\.\\/virtual-office\\/index\\.html"/); assert.match(app,/sendHQSnapshot\\(officeFrame\\)/); assert.match(app,/event\\.source!==frame\\?\\.contentWindow/); assert.match(html,/id="virtual-hq-full-scene"/); assert.match(css,/#virtual-hq-full-scene iframe\\[data-curioframe-office\\]/); console.log("Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified.");'
+          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const app=fs.readFileSync("app.js","utf8"); const html=fs.readFileSync("index.html","utf8"); const css=fs.readFileSync("styles.css","utf8"); for (const token of ["data-curioframe-office=\\"true\\"","src=\\"./virtual-office/index.html\\"","sendHQSnapshot(officeFrame)","event.source!==frame?.contentWindow"]) assert.ok(app.includes(token), "app.js missing "+token); assert.ok(html.includes("id=\\"virtual-hq-full-scene\\"")); assert.ok(css.includes("#virtual-hq-full-scene iframe[data-curioframe-office]")); console.log("Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified.");'
       - name: Install free open-source dependencies
         run: npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
       - name: Build Virtual Office
