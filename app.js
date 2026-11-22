@@ -1052,6 +1052,7 @@ function renderVirtualHQ(){
     }
   });
   const grid=$("#hq-department-grid");
+  const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";
   if(grid)grid.innerHTML=employees.map(e=>{
     const st=hqStatus(e);
     return '<article class="hq-dept-card '+(selectedHQEmployeeId===e.id?'selected':'')+'" data-hq-employee="'+escapeHtml(e.id)+'" role="button" tabindex="0"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+st.key+'">'+st.label+'</b><footer>'+st.count+' open task'+(st.count===1?'':'s')+'</footer></article>'
@@ -1341,7 +1342,7 @@ document.addEventListener("change",e=>{const select=e.target.closest("#hq-depart
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
 document.addEventListener("click",e=>{
-  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===action&&(action==="walk"||action==="orbit")));return}
+  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===(action==="reset"?"orbit":action)&&(action==="walk"||action==="orbit"||action==="reset")));return}
   const move=e.target.closest("[data-hq-move]");if(move){hqWorlds.forEach(world=>world.move(move.dataset.hqMove));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
