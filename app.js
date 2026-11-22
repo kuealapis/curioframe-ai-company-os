@@ -382,6 +382,41 @@ async function submitResearchEvidencePack(event){
   if(status)status.textContent="Research evidence pack failed to save. No AI provider was called.";
  }finally{if(button){button.disabled=false;button.textContent="Save & Queue Research Verification"}}
 }
+async function runResearchSourceVerification(){
+ const button=$("#run-source-verification"),host=$("#source-verification-results"),status=$("#work-sample-batch-status");
+ if(!company?.id||!currentUser?.id){if(host)host.innerHTML='<p class="notice">Sign in to the company workspace first.</p>';return}
+ const policy=operatingPolicy;
+ if(!policy||policy.approval_mode!=="spending_only"||Number(policy.max_automatic_spend)!==0||policy.allow_paid_services!==false||policy.allow_paid_api_usage!==false){if(host)host.innerHTML='<p class="notice">BLOCKED: zero-spend policy could not be positively verified.</p>';return}
+ if(button){button.disabled=true;button.textContent="Retrieving public source pages…"}
+ if(host)host.innerHTML='<p class="muted">Loading the latest Research Evidence Draft…</p>';
+ try{
+  const {data:asset,error}=await supabase.from("content_assets").select("id,title,body,task_id,status").eq("company_id",company.id).eq("asset_type","research_brief").like("title","Research Evidence Draft%").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(error)throw error;
+  if(!asset?.id||!asset.task_id)throw new Error("No Research Evidence Draft found. Submit a Research Evidence Pack first.");
+  const matches=[...String(asset.body||"").matchAll(/Source URL \(not fetched or verified by this workflow\): (https:\/\/[^\\s]+)/g)];
+  const urls=[...new Set(matches.map(m=>m[1]))];
+  if(!urls.length)throw new Error("No source URLs were found in the latest evidence asset.");
+  if(urls.length>5)throw new Error("This safe retrieval run is limited to 5 URLs.");
+  const {data,error:invokeError}=await supabase.functions.invoke("verify-research-sources",{body:{source_urls:urls}});
+  if(invokeError)throw invokeError;
+  if(data?.error)throw new Error(data.error);
+  const results=Array.isArray(data?.results)?data.results:[];
+  const event=await supabase.from("task_events").insert({
+   company_id:company.id,task_id:asset.task_id,event_type:"research_source_retrieval_completed",
+   message:"Public source page retrieval completed. Results remain pending human source and claim review; no factual verification or approval was performed.",
+   metadata:{source_asset_id:asset.id,engine:data?.engine||"CurioFrame Source Retrieval v1",provider_called:false,source_pages_requested:urls.length,source_pages_fetched:results.filter(x=>x.fetched).length,verification_status:"retrieved_pending_human_review",results}
+  }).select("id").single();
+  if(event.error)throw event.error;
+  const fetched=results.filter(x=>x.fetched).length;
+  const cards=results.map(r=>'<article class="capability-agent-card" style="margin:10px 0"><strong>'+escapeHtml(r.status||"unknown")+'</strong><p><a href="'+escapeHtml(r.url||"#")+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(r.url||"")+'</a></p><ul><li>HTTP: '+escapeHtml(String(r.http_status??"—"))+'</li><li>Page title: '+escapeHtml(r.title||"Not detected")+'</li><li>Published date: '+escapeHtml(r.published_date||"Not detected")+'</li><li>Description: '+escapeHtml(r.description||"Not detected")+'</li></ul><p>'+escapeHtml(r.reason||r.notice||"")+'</p><p><strong>Retrieved excerpt:</strong> '+escapeHtml(r.excerpt||"No readable text extracted.")+'</p></article>').join("");
+  if(host)host.innerHTML='<div class="notice" style="margin:12px 0"><strong>SOURCE PAGES RETRIEVED · HUMAN REVIEW REQUIRED</strong><p>'+fetched+' of '+results.length+' pages retrieved. This is metadata/text retrieval only—not a source credibility check, fact-check, claim-support verdict, or approval.</p><p>Asset: <code>'+escapeHtml(asset.id)+'</code> · Task remains queued. Event: <code>'+escapeHtml(event.data.id)+'</code>. Provider/API calls: 0.</p></div>'+cards;
+  if(status)status.textContent="Source retrieval completed: "+fetched+"/"+results.length+" pages fetched. Human review still required; no provider/API calls.";
+  await loadData();
+ }catch(error){
+  if(host)host.innerHTML='<p class="notice">SOURCE RETRIEVAL FAILED: '+escapeHtml(error?.message||"Unknown error")+'. The research asset remains unapproved.</p>';
+  if(status)status.textContent="Source retrieval failed. No AI provider was called.";
+ }finally{if(button){button.disabled=false;button.textContent="↻ Run Source Verification (public page retrieval)"}}
+}
 async function runResearchContentRealHandoff(){
  const host=$("#safe-simulation-results"),status=$("#work-sample-batch-status");
  if(!host)return;
@@ -1197,6 +1232,7 @@ $("#run-department-integration-dry-run")?.addEventListener("click",runDepartment
 $("#run-research-content-handoff")?.addEventListener("click",runResearchContentRealHandoff);
 $("#run-content-intake-validation")?.addEventListener("click",runContentIntakeSourceValidation);
 $("#research-evidence-form")?.addEventListener("submit",submitResearchEvidencePack);
+$("#run-source-verification")?.addEventListener("click",runResearchSourceVerification);
 // Paid-provider batch execution remains intentionally locked pending verified billing status.
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
