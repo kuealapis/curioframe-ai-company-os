@@ -1341,9 +1341,16 @@ document.addEventListener("change",e=>{const input=e.target.closest("[data-activ
 document.addEventListener("change",e=>{const select=e.target.closest("#hq-department-select");if(!select||!select.value)return;const employee=employees.find(x=>x.department===select.value);if(employee)selectHQEmployee(employee.id)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
+const joystick=document.querySelector("#hq-virtual-joystick"),joystickKnob=document.querySelector("#hq-joystick-knob");
+let joystickPointer=null;
+function updateJoystick(ev){if(!joystick||!joystickKnob)return;const rect=joystick.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,max=rect.width*.34;let dx=ev.clientX-cx,dy=ev.clientY-cy;const len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}joystickKnob.style.transform="translate("+dx+"px,"+dy+"px)";const dead=8,keys=["w","a","s","d"];keys.forEach(k=>movementKeys.delete(k));if(Math.abs(dx)>dead)movementKeys.add(dx<0?"a":"d");if(Math.abs(dy)>dead)movementKeys.add(dy<0?"w":"s")}
+function endJoystick(){joystickPointer=null;["w","a","s","d"].forEach(k=>movementKeys.delete(k));if(joystickKnob)joystickKnob.style.transform="translate(0,0)"}
+document.addEventListener("pointerdown",ev=>{if(!ev.target.closest("#hq-virtual-joystick"))return;ev.preventDefault();joystickPointer=ev.pointerId;try{joystick.setPointerCapture(ev.pointerId)}catch{}updateJoystick(ev)});
+document.addEventListener("pointermove",ev=>{if(ev.pointerId===joystickPointer)updateJoystick(ev)});
+document.addEventListener("pointerup",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
+document.addEventListener("pointercancel",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
 document.addEventListener("click",e=>{
   const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===(action==="reset"?"orbit":action)&&(action==="walk"||action==="orbit"||action==="reset")));return}
-  const move=e.target.closest("[data-hq-move]");if(move){hqWorlds.forEach(world=>world.move(move.dataset.hqMove));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
   const qualityRestoreTrigger=e.target.closest("[data-restore-quality]");
