@@ -35,3 +35,10 @@ The Vite build writes static output to the repository's `virtual-office/` direct
 ## Third-party attribution
 
 See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the MIT attribution associated with the Ruang project that informed the visual direction.
+
+## Navigation
+
+- Orbit mode: mouse drag or one-finger drag rotates the camera; pinch zooms and two-finger drag pans.
+- Walk mode: mouse or finger drag looks around; WASD or arrow keys move the camera on desktop.
+- The on-screen joystick sends forward/back and strafe movement on touch devices; Q/E change floor on a keyboard.
+- The parent Mission Control toolbar controls orbit/walk mode, zoom, and reset through the same-origin iframe message bridge.
