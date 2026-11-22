@@ -297,33 +297,6 @@ async function runOneWorkSample(){
  return runWorkSampleAssignment(eligible[0].id,$("#run-one-work-sample"));
 }
 
-async function runAllWorkSamples(button){
- const confirmBox=$("#batch-zero-cost-confirm"),status=$("#work-sample-batch-status");
- if(!confirmBox?.checked){alert("Confirm the AI API free allowance and no-billing condition before execution.");return}
- if(!confirm("Start sequential execution of all queued and in-progress Work Samples? Each assignment will call the AI provider. You can resume later if interrupted."))return;
- const runButton=$("#run-all-work-samples"),resumeButton=$("#resume-work-samples");
- if(runButton)runButton.disabled=true;if(resumeButton)resumeButton.disabled=true;
- let completed=0,failed=0,stopped=false;
- try{
-  while(true){
-   if(status)status.textContent="Executing next Agent… Completed this session: "+completed+" · blocked: "+failed;
-   const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,confirmed_zero_cost:true}});
-   if(error)throw error;
-   if(data?.done){if(status)status.textContent="Queue finished. Submitted this session: "+completed+" · blocked: "+failed;break}
-   if(data?.ok&&data.status==="submitted"){completed++;await loadData();continue}
-   failed++;await loadData();
-   if(status)status.textContent="Queue paused. "+(data?.employee||"Agent")+" needs attention: "+(data?.error||data?.detail||"Execution did not complete.")+" · Submitted this session: "+completed;
-   stopped=true;break;
-  }
- }catch(error){stopped=true;if(status)status.textContent="Batch paused due to an execution error. You can resume after checking the issue.";showError(error)}
- finally{
-  if(runButton)runButton.disabled=!confirmBox?.checked;
-  if(resumeButton)resumeButton.disabled=false;
-  if(!stopped)await loadData();
- }
-}
-
-
 function runDispatcherQADryRun(){
  const host=$("#safe-simulation-results");if(!host)return;
  const queue=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
@@ -599,17 +572,6 @@ function runSafeWorkSampleSimulation(){
  const status=$("#work-sample-batch-status");if(status)status.textContent="Safe simulation completed: "+rows.length+" assignments · local only · 0 API calls · 0 database writes.";
 }
 
-async function startWorkSampleAssignment(id,button){
- const item=workSampleAssignments.find(x=>x.id===id);if(!item||item.status!=="queued")return;
- button.disabled=true;
- try{const {error}=await supabase.from("agent_work_sample_assignments").update({status:"in_progress",started_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("company_id",company.id);if(error)throw error;await loadData()}catch(error){showError(error)}finally{button.disabled=false}
-}
-function openWorkSampleEvidence(employeeId){
- const employeeSelect=$("#capability-employee"),kind=$("#capability-test-kind"),evidence=$("#capability-evidence");
- if(employeeSelect)employeeSelect.value=employeeId;if(kind)kind.value="work_sample";
- if(evidence)evidence.focus();
- document.querySelector("#capability-test-form")?.scrollIntoView({behavior:"smooth",block:"center"});
-}
 async function runCapabilityPreflight(id,button){
  const agent=employees.find(e=>e.id===id);if(!agent)return;
  const checks={identity:!!agent.name&&!!agent.role_key,responsibilities:!!String(agent.responsibilities||"").trim(),department_registered:departments.some(d=>d.name===agent.department),role_key_unique:employees.filter(e=>e.role_key===agent.role_key).length===1,zero_cost_policy:operatingPolicy?.approval_mode==="spending_only"&&Number(operatingPolicy?.max_automatic_spend)===0&&operatingPolicy?.allow_paid_services===false&&operatingPolicy?.allow_paid_api_usage===false&&operatingPolicy?.allow_paid_advertising===false};
