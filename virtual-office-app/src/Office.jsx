@@ -290,7 +290,7 @@ function Scene({ employees, tasks, selectedId, onSelect }) {
   </>;
 }
 
-function getAgentWorldPosition(employee, employees) {
+function getAgentWorldPosition(employee, employees, tasks = []) {
   const departments = [...new Set(employees.map(e => e.department || "Unassigned"))];
   const department = employee.department || "Unassigned";
   const index = departments.indexOf(department);
@@ -302,7 +302,10 @@ function getAgentWorldPosition(employee, employees) {
   const seat = team.findIndex(e => e.id === employee.id);
   const deskX = -2.65 + (seat % 3) * 2.55;
   const deskZ = -1.25 + Math.floor(seat / 3) * 2.25;
-  return [roomX + deskX, floor * 5.7 + 1.15, roomZ + deskZ + 0.45];
+  const status = getStatus(employee, tasks);
+  const targetX = status.key === "review" || status.key === "blocked" ? 18 + (seat % 3) * 0.42 : roomX + deskX;
+  const targetZ = status.key === "review" ? -5 + Math.floor(seat / 3) * 0.42 : status.key === "blocked" ? 11 + Math.floor(seat / 3) * 0.42 : roomZ + deskZ + 0.45;
+  return [targetX, floor * 5.7 + 1.15, targetZ];
 }
 
 function WalkController({ enabled, move }) {
