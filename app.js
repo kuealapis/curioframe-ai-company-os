@@ -948,6 +948,9 @@ async function buildHQ3D(el){
     for(let i=0;i<5;i++){const leaf=addSphere(scene,.22,mat(0x3f9c83),x+Math.sin(i*1.25)*.16,.58+(i%2)*.12,z+Math.cos(i*1.25)*.15,[.45,1.35,.45]);leaf.rotation.z=(i-2)*.22}
   };
   plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
+  // Paved outdoor courtyard pads keep reception and lounge furniture grounded outside the cutaway office.
+  addBox(scene,12,.18,8,mat(0xc4cbd0,.02,.92),0,-.14,16.2,false,true);
+  addBox(scene,9,.18,7,mat(0xc4cbd0,.02,.92),22,-.14,7.5,false,true);
   // Reception desk and visitor lounge furniture.
   const reception=new THREE.Group();reception.position.set(0,0,16.2);scene.add(reception);
   addBox(reception,4.2,.28,1.45,mat(0x9b6748,.08,.65),0,1.05,0,true);
