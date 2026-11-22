@@ -35,6 +35,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Validate application JavaScript
         run: node --check --input-type=module < app.js
+      - name: Build React Three Fiber virtual office
+        run: |
+          npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
+          npm run build --prefix virtual-office-app
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
