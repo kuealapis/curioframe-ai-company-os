@@ -151,7 +151,7 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
       <sphereGeometry args={[0.035, 8, 8]} />
       <meshBasicMaterial color="#ffffff" />
     </mesh>
-    <Html position={[0, 1.86, 0]} distanceFactor={11} center><div className={"agent-name-tag" + (selected ? " selected" : "")}>{employee.name}</div></Html>
+    <Html position={[0, 1.86, 0]} distanceFactor={11} center><button type="button" className={"agent-name-tag agent-select-target" + (selected ? " selected" : "")} aria-label={"Inspect " + employee.name} aria-pressed={selected} onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(employee.id); }}>{employee.name}</button></Html>
   </group>;
 }
 
