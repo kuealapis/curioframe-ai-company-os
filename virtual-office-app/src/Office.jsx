@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
+import { OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 
 const STATUS = {
@@ -184,14 +184,6 @@ function Building({ employees, tasks, selectedId, onSelect }) {
     {departments.map((department, index) =>
       <OfficeRoom key={department} department={department} index={index} employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />
     )}
-    <mesh position={[0, 2.95, 0]}>
-      <boxGeometry args={[28, 0.18, 18]} />
-      <meshStandardMaterial color="#9aa5b2" transparent opacity={0.1} />
-    </mesh>
-    <mesh position={[0, 8.65, 0]}>
-      <boxGeometry args={[28, 0.18, 18]} />
-      <meshStandardMaterial color="#9aa5b2" transparent opacity={0.1} />
-    </mesh>
     <group position={[13, 0, 5]}>
       {Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[0, i * 0.45 + 0.22, i * -0.32]} rotation={[0, 0, -0.55]}>
         <boxGeometry args={[2.2, 0.12, 0.8]} />
@@ -260,7 +252,7 @@ export function OfficeApp() {
       </div>
     </header>
     <section className="office-stage">
-      <Canvas dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
+      <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} onSelect={setSelectedId} />
         <OrbitControls ref={controls} makeDefault target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
       </Canvas>
