@@ -1142,27 +1142,51 @@ function renderHQMissionPanel(){
     content.innerHTML='<div class="hq-mission-section">TASK QUEUE · '+openTasks.length+' OPEN</div>'+(openTasks.slice(0,30).map(t=>{const owner=employees.find(e=>e.id===t.assigned_employee_id);return '<div class="hq-mission-row"><i class="hq-mission-dot '+(t.status==="in_progress"?"working":t.status==="review"?"review":t.status==="blocked"?"blocked":"queued")+'"></i><div><strong>'+escapeHtml(t.title)+'</strong><small>'+escapeHtml(owner?.name||"Unassigned")+' · '+escapeHtml(t.priority||"normal")+'</small></div><b>'+escapeHtml(prettyStatus(t.status))+'</b></div>'}).join("")||'<div class="hq-mission-empty">No open tasks. Create a task from Task Manager.</div>');
   }
 }
+function sendHQSnapshot(frame){
+  if(!frame?.contentWindow)return;
+  const payload={
+    employees:employees.map(e=>({id:e.id,name:e.name,role_key:e.role_key,department:e.department,responsibilities:e.responsibilities,status:e.status})),
+    tasks:tasks.map(t=>({id:t.id,title:t.title,status:t.status,assigned_employee_id:t.assigned_employee_id,priority:t.priority,ai_employees:t.ai_employees?{name:t.ai_employees.name}:null})),
+    departments:departments.map(d=>({name:d.name,description:d.description}))
+  };
+  frame.contentWindow.postMessage({type:"curioframe:office-snapshot",payload},location.origin);
+}
+window.addEventListener("message",event=>{
+  const frame=$("#virtual-hq-full-scene iframe[data-curioframe-office]");
+  if(event.origin!==location.origin||event.source!==frame?.contentWindow||event.data?.type!=="curioframe:office-ready")return;
+  sendHQSnapshot(frame);
+});
 function renderVirtualHQ(){
   const icons={ai_ceo:"🧭",research:"🔎",content:"✍️",marketing:"📣",quality:"🛡️",qc:"✓",qa:"◈",finance:"💹",operations:"⚙️"};
-  ["#virtual-hq-scene","#virtual-hq-full-scene"].forEach(sel=>{
-    const el=$(sel);if(!el)return;
-    el.classList.add("hq-3d-stage");
-    // Never create WebGL renderers for hidden pages or while the app shell is still hidden.
-    const visible=el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0;
+  // The full Virtual HQ is now an isolated React Three Fiber application.
+  // It receives a minimal, read-only snapshot from this authenticated Supabase app.
+  const overview=$("#virtual-hq-scene");
+  if(overview){
+    overview.classList.add("hq-3d-stage");
+    const visible=overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0;
     if(!visible){
-      if(!hqWorlds.has(el))el.innerHTML='<div class="hq-3d-loading">3D HEADQUARTERS READY · OPEN VIRTUAL HQ TO ENTER</div>';
-      return;
-    }
-    if(!hqWorlds.has(el)){
-      if(!el.querySelector(".hq-3d-loading"))el.innerHTML='<div class="hq-3d-loading">BUILDING LIVE 3D HEADQUARTERS…</div>';
-      requestAnimationFrame(()=>{if(el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0)launchHQ3D(el)});
+      if(!hqWorlds.has(overview))overview.innerHTML='<div class="hq-3d-loading">3D HEADQUARTERS READY · OPEN VIRTUAL HQ TO ENTER</div>';
+    }else if(!hqWorlds.has(overview)){
+      if(!overview.querySelector(".hq-3d-loading"))overview.innerHTML='<div class="hq-3d-loading">BUILDING COMPANY FLOOR…</div>';
+      requestAnimationFrame(()=>{if(overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0)launchHQ3D(overview)});
     }else{
-      const world=hqWorlds.get(el);
+      const world=hqWorlds.get(overview);
       const currentIds=(world.employeeIds||[]).join("|"),latestIds=employees.map(e=>e.id).join("|");
-      if(currentIds!==latestIds){world.dispose();hqWorlds.delete(el);el.innerHTML='<div class="hq-3d-loading">UPDATING COMPANY FLOOR…</div>';requestAnimationFrame(()=>{if(el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0)launchHQ3D(el)});}
+      if(currentIds!==latestIds){world.dispose();hqWorlds.delete(overview);overview.innerHTML='<div class="hq-3d-loading">UPDATING COMPANY FLOOR…</div>';requestAnimationFrame(()=>{if(overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0)launchHQ3D(overview)});}
       else world.refresh();
     }
-  });
+  }
+  const full=$("#virtual-hq-full-scene");
+  if(full){
+    full.classList.add("hq-3d-stage");
+    let frame=full.querySelector("iframe[data-curioframe-office]");
+    if(!frame){
+      full.innerHTML='<iframe data-curioframe-office title="CurioFrame interactive 3D virtual office" src="./virtual-office/index.html" loading="eager" allow="fullscreen" referrerpolicy="same-origin" style="display:block;width:100%;height:100%;min-height:620px;border:0;background:#b9c9d3"></iframe>';
+      frame=full.querySelector("iframe[data-curioframe-office]");
+      frame.addEventListener("load",()=>sendHQSnapshot(frame));
+    }
+    sendHQSnapshot(frame);
+  }
   const grid=$("#hq-department-grid");
   const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active"),deptTotal=$("#hq-department-total");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";if(deptTotal)deptTotal.textContent=[...new Set(employees.map(e=>e.department).filter(Boolean))].length+" DEPARTMENTS";
   if(grid)grid.innerHTML=employees.map(e=>{
