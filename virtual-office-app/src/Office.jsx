@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, ContactShadows } from "@react-three/drei";
-import * as THREE from "three";
 
 const STATUS = {
   working: { label: "IN PROGRESS", color: "#45d483" },
@@ -129,7 +128,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
   const x = -9 + col * 9;
   const z = -4 + row * 8;
   const y = floor * 5.7;
-  const agents = employees.filter(e => e.department === department);
+  const agents = employees.filter(e => (e.department || "Unassigned") === department);
   const wallColor = PALETTE[index % PALETTE.length];
   return <group position={[x, y, z]}>
     <mesh position={[0, -0.1, 0]} receiveShadow>
@@ -173,7 +172,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
 
 function Building({ employees, tasks, selectedId, onSelect }) {
   const departments = useMemo(() => {
-    const fromEmployees = [...new Set(employees.map(e => e.department).filter(Boolean))];
+    const fromEmployees = [...new Set(employees.map(e => e.department || "Unassigned"))];
     return fromEmployees.length ? fromEmployees : [];
   }, [employees]);
   return <>
@@ -266,7 +265,7 @@ export function OfficeApp() {
 
   const employees = snapshot.employees;
   const tasks = snapshot.tasks;
-  const departments = snapshot.departments.length ? snapshot.departments.map(d => d.name).filter(Boolean) : [...new Set(employees.map(e => e.department).filter(Boolean))];
+  const departments = snapshot.departments.length ? snapshot.departments.map(d => d.name).filter(Boolean) : [...new Set(employees.map(e => e.department || "Unassigned"))];
   const selected = employees.find(e => e.id === selectedId);
   const selectedStatus = selected ? getStatus(selected, tasks) : null;
   const openTasks = tasks.filter(t => !["completed", "cancelled"].includes(t.status));
