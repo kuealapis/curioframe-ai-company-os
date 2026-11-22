@@ -548,10 +548,20 @@ function runSafeWorkSampleSimulation(){
   const agent=employees.find(e=>e.id===item.employee_id);
   const role=agent?.role_key||"unassigned";
   const checks=["Role and responsibility mapped","Assignment brief loaded","Expected artifact checklist generated","QA handoff prepared","No external provider called"];
-  const artifact="SIMULATED OUTPUT — "+(item.expected_artifacts||"Role-specific deliverable placeholder");
+  const expected=item.expected_artifacts;
+  const expectedText=Array.isArray(expected)
+   ? expected.map(entry=>{
+      if(typeof entry==="string")return entry;
+      if(entry&&typeof entry==="object")return Object.entries(entry).map(([key,value])=>key.replace(/_/g," ")+": "+(Array.isArray(value)?value.join(", "):(value&&typeof value==="object"?JSON.stringify(value):String(value)))).join(" · ");
+      return String(entry);
+     }).join("; ")
+   : expected&&typeof expected==="object"
+    ? Object.entries(expected).map(([key,value])=>key.replace(/_/g," ")+": "+(Array.isArray(value)?value.join(", "):(value&&typeof value==="object"?JSON.stringify(value):String(value)))).join("; ")
+    : String(expected||"Role-specific deliverable requirements not supplied");
+  const artifact="SIMULATED CHECKLIST — "+expectedText;
   return {index:index+1,name:agent?.name||"Unknown agent",role,title:item.assignment_title,brief:item.task_brief,checks,artifact};
  });
- host.innerHTML='<div class="notice" style="margin:12px 0"><span>ⓘ</span><div><strong>SIMULATION ONLY · NOT REAL AGENT EXECUTION</strong><p>'+rows.length+' assignment(s) were processed locally in this browser. No Supabase records were changed, no Gemini/API request was made, and no capability gate was passed.</p></div></div>'+rows.map(r=>'<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(r.index+'. '+r.name)+'</strong><small>'+escapeHtml(r.role)+' · SIMULATED</small></div><span class="pill amber">NOT VERIFIED</span></div><h3>'+escapeHtml(r.title)+'</h3><p>'+escapeHtml(r.brief)+'</p><p><strong>Mock artifact:</strong> '+escapeHtml(r.artifact)+'</p><ul>'+r.checks.map(c=>'<li>'+escapeHtml(c)+'</li>').join("")+'</ul><p class="muted">QA status: NOT PERFORMED · Human/independent QA evidence required.</p></article>').join("");
+ host.innerHTML='<div class="notice" style="margin:12px 0"><span>ⓘ</span><div><strong>SIMULATION ONLY · NOT REAL AGENT EXECUTION</strong><p>'+rows.length+' assignment(s) were processed locally in this browser. No Supabase records were changed, no Gemini/API request was made, and no capability gate was passed.</p></div></div>'+rows.map(r=>'<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(r.index+'. '+r.name)+'</strong><small>'+escapeHtml(r.role)+' · SIMULATED</small></div><span class="pill amber">NOT VERIFIED</span></div><h3>'+escapeHtml(r.title)+'</h3><p>'+escapeHtml(r.brief)+'</p><p><strong>Expected artifact checklist (simulation only):</strong> '+escapeHtml(r.artifact)+'</p><ul>'+r.checks.map(c=>'<li>'+escapeHtml(c)+'</li>').join("")+'</ul><p class="muted">QA status: NOT PERFORMED · Human/independent QA evidence required.</p></article>').join("");
  const status=$("#work-sample-batch-status");if(status)status.textContent="Safe simulation completed: "+rows.length+" assignments · local only · 0 API calls · 0 database writes.";
 }
 
