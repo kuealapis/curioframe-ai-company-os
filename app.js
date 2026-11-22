@@ -33,6 +33,7 @@ const employeeSeed = [
 
 let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
 let aiProviderPreflightPassed=false;
+let workSamplePilotRunning=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -287,11 +288,14 @@ async function checkAIProviderPreflight(button){
 async function runWorkSampleAssignment(assignmentId,button){
  const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status");
  if(!confirmBox?.checked||!aiProviderPreflightPassed){if(status)status.textContent="Pilot locked: confirm the zero-cost condition and complete the no-cost provider preflight first.";return}
+ if(workSamplePilotRunning){if(status)status.textContent="Another Agent pilot is already running. Wait for it to finish.";return}
  const target=workSampleAssignments.find(x=>x.id===assignmentId&&["queued","in_progress"].includes(x.status));
  if(!target){if(status)status.textContent="This assignment is no longer eligible. Refresh the records before retrying.";return}
  const agent=employees.find(e=>e.id===target.employee_id),agentName=agent?.name||"the selected Agent";
  if(!confirm("Run exactly ONE real work sample for "+agentName+"? This calls the configured Gemini API. No other Agent will be started. The deliverable remains unapproved until independent QA."))return;
- const runButton=button||$("#run-one-work-sample");if(runButton)runButton.disabled=true;
+ workSamplePilotRunning=true;
+ const runButton=button||$("#run-one-work-sample");
+ $("#work-sample-assignment-list [data-work-sample-run],#run-one-work-sample,#check-ai-provider").forEach(control=>control.disabled=true);
  if(status)status.textContent="Running one real work sample: "+agentName+". Waiting for the deliverable…";
  try{
   const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,assignment_id:target.id,confirmed_zero_cost:true}});
@@ -308,8 +312,10 @@ async function runWorkSampleAssignment(assignmentId,button){
   console.error("One-agent work sample failed:",error);
   try{await loadData()}catch(refreshError){console.error("Could not refresh after pilot error:",refreshError)}
  }finally{
-  if(runButton)runButton.disabled=false;
-  const globalButton=$("#run-one-work-sample");if(globalButton)globalButton.disabled=!confirmBox?.checked;
+  workSamplePilotRunning=false;
+  $("#work-sample-assignment-list [data-work-sample-run]").forEach(control=>{const item=workSampleAssignments.find(x=>x.id===control.dataset.workSampleRun);control.disabled=!item||!["queued","in_progress"].includes(item.status)});
+  const globalButton=$("#run-one-work-sample");if(globalButton)globalButton.disabled=!confirmBox?.checked||!aiProviderPreflightPassed;
+  const preflightButton=$("#check-ai-provider");if(preflightButton)preflightButton.disabled=!confirmBox?.checked;
  }
 }
 async function runOneWorkSample(){
