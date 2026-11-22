@@ -20,7 +20,7 @@ permissions:
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: "pages-current"
   cancel-in-progress: false
 
 jobs:
@@ -40,15 +40,29 @@ jobs:
           npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
           npm run build --prefix virtual-office-app
           rm -rf virtual-office-app/node_modules
+      - name: Confirm this is the latest main revision
+        id: freshness
+        run: |
+          latest=$(git ls-remote https://github.com/kuealapis/curioframe-ai-company-os.git refs/heads/main | awk '{print $1}')
+          if [ "$GITHUB_SHA" = "$latest" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale Pages deployment for $GITHUB_SHA; main is $latest."
+          fi
       - name: Setup Pages
+        if: steps.freshness.outputs.latest == 'true'
         uses: actions/configure-pages@v5
       - name: Upload artifact
+        if: steps.freshness.outputs.latest == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
           path: '.'
       - name: Allow Pages artifact metadata to settle
+        if: steps.freshness.outputs.latest == 'true'
         run: sleep 15
       - name: Deploy to GitHub Pages
+        if: steps.freshness.outputs.latest == 'true'
         id: deployment
         uses: actions/deploy-pages@v5
