@@ -1201,6 +1201,9 @@ function renderVirtualHQ(){
       }
     }
   }
+  // Keep the embedded 3D scene synchronized after every authenticated Supabase refresh, not only on its initial ready handshake.
+  const officeFrame=full?.querySelector("iframe[data-curioframe-office]");
+  if(officeFrame)sendHQSnapshot(officeFrame);
   const grid=$("#hq-department-grid");
   const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active"),deptTotal=$("#hq-department-total");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";if(deptTotal)deptTotal.textContent=[...new Set(employees.map(e=>e.department).filter(Boolean))].length+" DEPARTMENTS";
   if(grid)grid.innerHTML=employees.map(e=>{
