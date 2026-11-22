@@ -1341,7 +1341,7 @@ document.addEventListener("change",e=>{const select=e.target.closest("#hq-depart
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
 document.addEventListener("click",e=>{
-  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===action&&(action==="walk"||action==="orbit")));return}
+  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===action&&(action==="walk"||action==="orbit")));return}
   const move=e.target.closest("[data-hq-move]");if(move){hqWorlds.forEach(world=>world.move(move.dataset.hqMove));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
