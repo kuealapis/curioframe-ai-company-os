@@ -288,10 +288,14 @@ export function OfficeApp() {
 
   useEffect(() => {
     const receive = event => {
-      if (event.origin !== window.location.origin || event.data?.type !== "curioframe:office-snapshot") return;
-      setSnapshot(normalizeState(event.data.payload));
-      setConnected(true);
-      setLastUpdate(new Date());
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "curioframe:office-snapshot") {
+        setSnapshot(normalizeState(event.data.payload));
+        setConnected(true);
+        setLastUpdate(new Date());
+      } else if (event.data?.type === "curioframe:select-agent" && typeof event.data.employeeId === "string") {
+        setSelectedId(event.data.employeeId);
+      }
     };
     window.addEventListener("message", receive);
     window.parent.postMessage({ type: "curioframe:office-ready" }, window.location.origin);
@@ -320,7 +324,7 @@ export function OfficeApp() {
     </header>
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
-        <Scene employees={employees} tasks={tasks} selectedId={selectedId} onSelect={setSelectedId} />
+        <Scene employees={employees} tasks={tasks} selectedId={selectedId} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
         <OrbitControls ref={controls} makeDefault target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
       </Canvas>
       <div className="office-hud">
