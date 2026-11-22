@@ -848,7 +848,7 @@ async function buildHQ3D(el){
   // Native pointer camera controller: avoids external OrbitControls touch quirks on mobile browsers.
   const target=new THREE.Vector3(0,1.15,0),spherical=new THREE.Spherical();
   const offset=new THREE.Vector3().subVectors(camera.position,target);spherical.setFromVector3(offset);
-  const pointers=new Map();let previousPinch=0,previousMid=null;let gameMode=false,walkYaw=0,walkPitch=-.12;const movementKeys=new Set();
+  const pointers=new Map();let previousPinch=0,previousMid=null;let gameMode=false,walkYaw=0,walkPitch=-.12;let joystickMoveX=0,joystickMoveY=0;const movementKeys=new Set();
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const syncCamera=()=>{spherical.radius=clamp(spherical.radius,15,58);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
   const controls={
@@ -1024,7 +1024,7 @@ async function buildHQ3D(el){
   window.addEventListener("keydown",onWalkKeyDown);window.addEventListener("keyup",onWalkKeyUp);
   const animate=()=>{
     if(!alive||!isVisible){raf=0;return}raf=requestAnimationFrame(animate);const t=performance.now()/1000;
-    if(gameMode&&movementKeys.size){const forward=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw));const right=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const move=new THREE.Vector3();if(movementKeys.has("w")||movementKeys.has("arrowup"))move.add(forward);if(movementKeys.has("s")||movementKeys.has("arrowdown"))move.sub(forward);if(movementKeys.has("d")||movementKeys.has("arrowright"))move.add(right);if(movementKeys.has("a")||movementKeys.has("arrowleft"))move.sub(right);if(move.lengthSq())move.normalize().multiplyScalar(.105);camera.position.add(move);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5);camera.position.y=1.72;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}
+    if(gameMode&&(movementKeys.size||Math.abs(joystickMoveX)>.015||Math.abs(joystickMoveY)>.015)){const forward=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw));const right=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const move=new THREE.Vector3();if(movementKeys.has("w")||movementKeys.has("arrowup"))move.add(forward);if(movementKeys.has("s")||movementKeys.has("arrowdown"))move.sub(forward);if(movementKeys.has("d")||movementKeys.has("arrowright"))move.add(right);if(movementKeys.has("a")||movementKeys.has("arrowleft"))move.sub(right);if(Math.abs(joystickMoveX)>.015)move.addScaledVector(right,joystickMoveX);if(Math.abs(joystickMoveY)>.015)move.addScaledVector(forward,-joystickMoveY);const strength=Math.min(1,move.length());if(strength>0)move.normalize().multiplyScalar(.105*strength);camera.position.add(move);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5);camera.position.y=1.72;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}
     figures.forEach(figure=>{
       const data=figure.userData;
       figure.position.y=Math.sin(t*1.3+data.phase)*.018;
@@ -1046,8 +1046,9 @@ async function buildHQ3D(el){
     select(id){figures.forEach(f=>f.userData.selection.material.opacity=f.userData.employeeId===id?.85:0)},
     reset(){gameMode=false;target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()},
     zoom(factor){if(gameMode){camera.position.add(new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)).multiplyScalar(factor<1?1.2:-1.2));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)}else{spherical.radius*=factor;controls.update()}},
-    setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
+    setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();joystickMoveX=0;joystickMoveY=0;if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
     focusEmployee(id){const pos=employeePositionMap.get(id);if(!pos)return;const [x,z]=pos;if(gameMode){camera.position.set(x,1.72,z+4.8);walkYaw=0;walkPitch=-.12;camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(x,1.2,z);spherical.radius=10;controls.update()}},
+    setJoystickMovement(x,y){if(!gameMode){joystickMoveX=0;joystickMoveY=0;return}joystickMoveX=clamp(Number(x)||0,-1,1);joystickMoveY=clamp(Number(y)||0,-1,1)},
     move(direction){if(!gameMode)return;const v=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)),r=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const delta=direction==="forward"?v:direction==="back"?v.clone().negate():direction==="left"?r.clone().negate():r;camera.position.add(delta.multiplyScalar(1.25));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)},
     dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();visibilityObserver?.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
   };
@@ -1112,13 +1113,13 @@ let hqLastEventAt=null,hqEventCount=0;
 function updateHQLiveIndicator(state,message){
   const live=$("#hq-live-indicator");if(!live)return;
   live.dataset.state=state;
-  const stamp=hqLastEventAt?new Date(hqLastEventAt).toLocaleTimeString(): "no events yet";
+  const stamp=hqLastEventAt?new Date(hqLastEventAt).toLocaleTimeString():"no events yet";
   const count=hqEventCount+" database event"+(hqEventCount===1?"":"s");
-  live.textContent=state==="live"?"● REALTIME CONNECTED · "+count+" · LAST EVENT "+stamp:state==="offline"?"● REALTIME DISCONNECTED · "+(message||"check connection"):"● CONNECTING TO DATABASE EVENTS";
+  live.textContent=state==="event"?"● REALTIME ACTIVE · "+count+" · LAST EVENT "+stamp:state==="connected"?"● CHANNEL CONNECTED · 0 DATABASE EVENTS · WAITING FOR CHANGE":state==="offline"?"● REALTIME DISCONNECTED · "+(message||"check connection"):"● CONNECTING TO DATABASE EVENTS";
 }
 function onHQDatabaseEvent(payload){
   hqEventCount++;hqLastEventAt=new Date().toISOString();
-  updateHQLiveIndicator("live");scheduleHQRefresh();
+  updateHQLiveIndicator("event");scheduleHQRefresh();
   const last=$("#hq-live-last-event");if(last){const table=payload?.table||"database";const event=payload?.eventType||"UPDATE";last.textContent="Last change: "+table+" · "+event+" · "+new Date(hqLastEventAt).toLocaleTimeString();}
 }
 function scheduleHQRefresh(){
@@ -1134,7 +1135,7 @@ function setupHQRealtime(){
   const tables=["tasks","ai_employees","company_departments","approvals","content_assets","agent_messages","quality_reviews","task_events","agent_work_sample_assignments","workflow_runs","workflow_steps","distribution_accounts","distribution_publications"];
   tables.forEach(table=>channel.on("postgres_changes",{event:"*",schema:"public",table,filter:"company_id=eq."+company.id},onHQDatabaseEvent));
   hqChannel=channel.subscribe(status=>{
-    if(status==="SUBSCRIBED")updateHQLiveIndicator("live");
+    if(status==="SUBSCRIBED")updateHQLiveIndicator("connected");
     else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")updateHQLiveIndicator("offline",status);
     else updateHQLiveIndicator("connecting",status);
   });
@@ -1375,8 +1376,8 @@ document.addEventListener("click",e=>{const button=e.target.closest("[data-verif
 
 const joystick=document.querySelector("#hq-virtual-joystick"),joystickKnob=document.querySelector("#hq-joystick-knob");
 let joystickPointer=null;
-function updateJoystick(ev){if(!joystick||!joystickKnob)return;const rect=joystick.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,max=rect.width*.34;let dx=ev.clientX-cx,dy=ev.clientY-cy;const len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}joystickKnob.style.transform="translate("+dx+"px,"+dy+"px)";const dead=8,keys=["w","a","s","d"];keys.forEach(k=>movementKeys.delete(k));if(Math.abs(dx)>dead)movementKeys.add(dx<0?"a":"d");if(Math.abs(dy)>dead)movementKeys.add(dy<0?"w":"s")}
-function endJoystick(){joystickPointer=null;["w","a","s","d"].forEach(k=>movementKeys.delete(k));if(joystickKnob)joystickKnob.style.transform="translate(0,0)"}
+function updateJoystick(ev){if(!joystick||!joystickKnob)return;const rect=joystick.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,max=rect.width*.34;let dx=ev.clientX-cx,dy=ev.clientY-cy;const len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}joystickKnob.style.transform="translate("+dx+"px,"+dy+"px)";const dead=8,nx=Math.abs(dx)<dead?0:dx/max,ny=Math.abs(dy)<dead?0:dy/max;const stage=$("#virtual-hq-full-scene"),world=stage?hqWorlds.get(stage):null;world?.setJoystickMovement(nx,ny)}
+function endJoystick(){joystickPointer=null;const stage=$("#virtual-hq-full-scene"),world=stage?hqWorlds.get(stage):null;world?.setJoystickMovement(0,0);if(joystickKnob)joystickKnob.style.transform="translate(0,0)"}
 document.addEventListener("pointerdown",ev=>{if(!ev.target.closest("#hq-virtual-joystick"))return;ev.preventDefault();joystickPointer=ev.pointerId;try{joystick.setPointerCapture(ev.pointerId)}catch{}updateJoystick(ev)});
 document.addEventListener("pointermove",ev=>{if(ev.pointerId===joystickPointer)updateJoystick(ev)});
 document.addEventListener("pointerup",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
