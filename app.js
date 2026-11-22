@@ -263,6 +263,35 @@ function renderWorkSampleAssignments(){
  if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
  host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(item.status==="queued"?'<button class="primary-btn" type="button" data-work-sample-start="'+item.id+'">Start work sample</button>':item.status==="in_progress"?'<button class="secondary-btn" type="button" data-work-sample-record="'+item.employee_id+'">Record work evidence</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
 }
+async function runOneWorkSample(){
+ const confirmBox=$("#pilot-zero-cost-confirm"),button=$("#run-one-work-sample"),status=$("#work-sample-batch-status");
+ if(!confirmBox?.checked){if(status)status.textContent="Pilot locked: confirm the verified zero-cost condition first.";return}
+ const eligible=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
+ if(!eligible.length){if(status)status.textContent="No queued or in-progress work sample remains.";return}
+ const target=eligible[0],agent=employees.find(e=>e.id===target.employee_id);
+ const agentName=agent?.name||"the next assigned Agent";
+ if(!confirm("Run exactly ONE real work sample for "+agentName+"? This calls the configured Gemini API. No batch will run, and the result will remain unapproved until independent QA."))return;
+ button.disabled=true;
+ if(status)status.textContent="Running one pilot: "+agentName+". Waiting for the real deliverable…";
+ try{
+  const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,confirmed_zero_cost:true}});
+  if(error)throw error;
+  await loadData();
+  if(data?.done){if(status)status.textContent="No eligible assignment was found by the executor.";return}
+  if(data?.ok&&data.status==="submitted"){
+   if(status)status.textContent="PILOT SUBMITTED · "+(data.employee||agentName)+". Task: "+(data.task_id||"saved")+". Inspect the linked deliverable and require independent QA before marking capability verified.";
+  }else{
+   if(status)status.textContent="PILOT STOPPED · "+(data?.employee||agentName)+": "+(data?.error||data?.detail||"Execution did not complete.")+". Check the assignment record before retrying.";
+  }
+ }catch(error){
+  if(status)status.textContent="PILOT ERROR · "+(error?.message||"The executor could not be reached.")+". No additional Agent was started.";
+  console.error("One-agent pilot failed:",error);
+  try{await loadData()}catch(refreshError){console.error("Could not refresh after pilot error:",refreshError)}
+ }finally{
+  button.disabled=!confirmBox?.checked;
+ }
+}
+
 async function runAllWorkSamples(button){
  const confirmBox=$("#batch-zero-cost-confirm"),status=$("#work-sample-batch-status");
  if(!confirmBox?.checked){alert("Confirm the AI API free allowance and no-billing condition before execution.");return}
@@ -1332,7 +1361,10 @@ $("#run-research-content-handoff")?.addEventListener("click",runResearchContentR
 $("#run-content-intake-validation")?.addEventListener("click",runContentIntakeSourceValidation);
 $("#research-evidence-form")?.addEventListener("submit",submitResearchEvidencePack);
 $("#run-source-verification")?.addEventListener("click",runResearchSourceVerification);
-// Paid-provider batch execution remains intentionally locked pending verified billing status.
+// Real execution is limited to one explicitly confirmed zero-cost pilot.
+const pilotConfirm=$("#pilot-zero-cost-confirm"),pilotButton=$("#run-one-work-sample");
+pilotConfirm?.addEventListener("change",()=>{if(pilotButton)pilotButton.disabled=!pilotConfirm.checked});
+pilotButton?.addEventListener("click",runOneWorkSample);
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
