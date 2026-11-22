@@ -70,6 +70,14 @@ async function exerciseViewport(page, label) {
   });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   assert.equal(await page.locator(".inspector-status").textContent(), "IN REVIEW");
+
+  await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "walk" }, window.location.origin));
+  await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Walk mode:"));
+  await page.evaluate(() => window.postMessage({ type: "curioframe:office-move", x: 0.6, y: -0.8 }, window.location.origin));
+  await page.waitForTimeout(350);
+  await page.evaluate(() => window.postMessage({ type: "curioframe:office-move", x: 0, y: 0 }, window.location.origin));
+  await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "orbit" }, window.location.origin));
+  await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Orbit mode:"));
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
   return metrics;
 }
