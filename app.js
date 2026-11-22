@@ -1184,7 +1184,7 @@ function renderVirtualHQ(){
     full.classList.add("hq-3d-stage");
     let frame=full.querySelector("iframe[data-curioframe-office]");
     if(!frame){
-      full.innerHTML='<iframe data-curioframe-office title="CurioFrame interactive 3D virtual office" src="./virtual-office/index.html" loading="eager" allow="fullscreen" referrerpolicy="same-origin" style="display:block;width:100%;height:100%;min-height:620px;border:0;background:#b9c9d3"></iframe>';
+      full.innerHTML='<iframe data-curioframe-office title="CurioFrame interactive 3D virtual office" src="./virtual-office/index.html" loading="eager" allow="fullscreen" referrerpolicy="same-origin" style="display:block;width:100%;height:100%;min-height:0;border:0;background:#b9c9d3"></iframe>';
       frame=full.querySelector("iframe[data-curioframe-office]");
       frame.addEventListener("load",()=>sendHQSnapshot(frame));
     }
