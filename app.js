@@ -1222,7 +1222,7 @@ function selectHQEmployee(employeeId){
   officeFrame?.contentWindow?.postMessage({type:"curioframe:select-agent",employeeId},location.origin);
   renderHQDetail(employeeId);
 }
-let hqLastEventAt=null,hqEventCount=0;
+let hqLastEventAt=null,hqEventCount=0,hqPendingDiagnostic=null;
 function updateHQLiveIndicator(state,message){
   const live=$("#hq-live-indicator");if(!live)return;
   live.dataset.state=state;
@@ -1234,17 +1234,35 @@ async function testHQRealtimeFeed(button){
  if(!company||!currentUser)return;
  const last=$("#hq-live-last-event"),original=button?.textContent||"Test live feed";
  if(button)button.disabled=true;
- if(last)last.textContent="Saving a clearly labeled diagnostic event…";
+ const token=(globalThis.crypto?.randomUUID?.()||("hq-"+Date.now()+"-"+Math.random().toString(36).slice(2)));
+ if(last)last.textContent="Saving a labeled diagnostic and verifying its live delivery…";
+ let deliveryPromise;
  try{
+  deliveryPromise=new Promise(resolve=>{
+   const timer=setTimeout(()=>{
+    if(hqPendingDiagnostic?.token===token)hqPendingDiagnostic=null;
+    resolve(false);
+   },10000);
+   hqPendingDiagnostic={token,resolve,timer};
+  });
   const {error}=await supabase.from("task_events").insert({
    company_id:company.id,
    event_type:"hq_realtime_test",
    message:"Founder-triggered Realtime diagnostic. This is a system test, not AI Agent work.",
-   metadata:{diagnostic:true,source:"virtual_hq",actor:"founder"}
+   metadata:{diagnostic:true,diagnostic_token:token,source:"virtual_hq",actor:"founder"}
   });
-  if(error)throw error;
-  if(last)last.textContent="Diagnostic saved · waiting for Realtime delivery…";
+  if(error){
+   if(hqPendingDiagnostic?.token===token){clearTimeout(hqPendingDiagnostic.timer);hqPendingDiagnostic=null}
+   throw error;
+  }
+  const delivered=await deliveryPromise;
+  if(delivered){
+   if(last)last.textContent="REALTIME VERIFIED · diagnostic row was received live from Supabase.";
+  }else{
+   if(last)last.textContent="Diagnostic saved, but no matching live event arrived within 10 seconds. Database write works; Realtime delivery still needs investigation.";
+  }
  }catch(error){
+  if(hqPendingDiagnostic?.token===token){clearTimeout(hqPendingDiagnostic.timer);hqPendingDiagnostic=null}
   if(last)last.textContent="Realtime diagnostic could not be saved: "+(error?.message||"unknown error");
   console.error("HQ Realtime diagnostic failed:",error);
  }finally{if(button){button.disabled=false;button.textContent=original}}
@@ -1252,6 +1270,12 @@ async function testHQRealtimeFeed(button){
 function onHQDatabaseEvent(payload){
   hqEventCount++;hqLastEventAt=new Date().toISOString();
   updateHQLiveIndicator("event");scheduleHQRefresh();
+  if(hqPendingDiagnostic&&payload?.new?.metadata?.diagnostic_token===hqPendingDiagnostic.token){
+    clearTimeout(hqPendingDiagnostic.timer);
+    const resolve=hqPendingDiagnostic.resolve;
+    hqPendingDiagnostic=null;
+    resolve(true);
+  }
   const last=$("#hq-live-last-event");if(last){const table=payload?.table||"database";const event=payload?.eventType||"UPDATE";last.textContent="Last change: "+table+" · "+event+" · "+new Date(hqLastEventAt).toLocaleTimeString();}
 }
 function scheduleHQRefresh(){
