@@ -166,7 +166,7 @@
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
       <section class="page" id="page-virtual-hq">
         <div class="page-heading"><div><p class="eyebrow">COMPANY FLOOR / LIVE WORKSPACE</p><h1>Virtual Headquarters</h1><p class="subheading">Explore the 3D office. Orbit, zoom, and select employees to inspect their live assignments.</p></div><button class="secondary-btn" id="hq-refresh-btn" type="button">↻ Refresh workspace</button></div>
-        <section class="panel hq-main-panel"><div class="hq-live-line"><span class="hq-live-indicator" id="hq-live-indicator">● SYNCING WITH WORKSPACE</span><span>Drag to orbit · Pinch or scroll to zoom · Tap an employee to inspect</span></div><div class="hq-scene hq-scene-large" id="virtual-hq-full-scene" aria-label="Interactive isometric CurioFrame AI headquarters"></div><div class="hq-selected-detail" id="hq-selected-detail-full" hidden></div><div class="hq-legend"><span><i class="legend-dot idle"></i> Idle</span><span><i class="legend-dot queued"></i> Queued</span><span><i class="legend-dot working"></i> In progress</span><span><i class="legend-dot review"></i> Review</span><span><i class="legend-dot blocked"></i> Blocked</span></div></section>
+        <section class="panel hq-main-panel"><div class="hq-live-line"><span class="hq-live-indicator" id="hq-live-indicator" data-state="connecting">● CONNECTING TO DATABASE EVENTS</span><span id="hq-live-last-event">Waiting for the first database change…</span><span>Drag to orbit · Pinch to zoom · Tap an employee to inspect</span></div><div class="hq-scene hq-scene-large" id="virtual-hq-full-scene" aria-label="Interactive isometric CurioFrame AI headquarters"></div><div class="hq-selected-detail" id="hq-selected-detail-full" hidden></div><div class="hq-legend"><span><i class="legend-dot idle"></i> Idle</span><span><i class="legend-dot queued"></i> Queued</span><span><i class="legend-dot working"></i> In progress</span><span><i class="legend-dot review"></i> Review</span><span><i class="legend-dot blocked"></i> Blocked</span></div></section>
         <div class="hq-department-grid" id="hq-department-grid"></div>
         <div class="notice hq-note"><span>ⓘ</span><div><strong>Operational truth</strong><p>The headquarters reflects real workspace records, not fabricated activity. Content tasks now pass through independent QC and QA agents with up to three automatic correction cycles. Only deliverables that pass both gates reach Owner final review; repeated failures are blocked and escalated. AI execution still requires the connected Gemini provider.</p></div></div>
       </section>
@@ -223,6 +223,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-27"></script>
+  <script type="module" src="./app.js?v=20261122-28"></script>
 </body>
 </html>
