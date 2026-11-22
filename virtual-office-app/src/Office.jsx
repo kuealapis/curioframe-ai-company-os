@@ -15,9 +15,9 @@ const PALETTE = ["#6b9cff", "#48c9bd", "#e7a45e", "#b28be8", "#e87991", "#8dbb70
 
 function getStatus(employee, tasks) {
   const own = tasks.filter(t => t.assigned_employee_id === employee.id && !["completed", "cancelled"].includes(t.status));
-  if (own.some(t => t.status === "in_progress")) return { key: "working", tasks: own };
+  if (own.some(t => t.status === "in_progress") || employee.status === "working") return { key: "working", tasks: own };
   if (own.some(t => ["review", "pending"].includes(t.status))) return { key: "review", tasks: own };
-  if (own.some(t => t.status === "blocked")) return { key: "blocked", tasks: own };
+  if (own.some(t => t.status === "blocked") || employee.status === "error") return { key: "blocked", tasks: own };
   if (own.some(t => t.status === "queued")) return { key: "queued", tasks: own };
   return { key: employee.status === "planned" ? "planned" : "idle", tasks: own };
 }
@@ -72,17 +72,38 @@ function Chair({ position }) {
   </group>;
 }
 
-function AgentAvatar({ employee, status, position, onSelect, selected, color, variant }) {
+function AgentAvatar({ employee, status, position, destination, onSelect, selected, color, variant }) {
   const group = useRef();
   const leftArm = useRef();
   const rightArm = useRef();
+  const leftLeg = useRef();
+  const rightLeg = useRef();
   const tint = color || "#6b9cff";
-  const active = status.key === "working" || status.key === "review";
-  useFrame(({ clock }) => {
+  const active = status.key === "working";
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime;
-    if (leftArm.current) leftArm.current.rotation.x = active ? -0.72 + Math.sin(t * 10) * 0.12 : -0.08;
-    if (rightArm.current) rightArm.current.rotation.x = active ? -0.72 + Math.cos(t * 10) * 0.12 : -0.08;
-    if (group.current) group.current.position.y = position[1] + (status.key === "planned" ? 0 : Math.sin(t * 1.7) * 0.018);
+    if (group.current) {
+      const target = destination || position;
+      const dx = target[0] - group.current.position.x;
+      const dz = target[2] - group.current.position.z;
+      const distance = Math.hypot(dx, dz);
+      const moving = distance > 0.08;
+      const step = Math.min(1, delta * 1.8);
+      group.current.position.x += dx * step;
+      group.current.position.z += dz * step;
+      group.current.position.y = position[1] + (moving ? Math.abs(Math.sin(t * 8)) * 0.045 : status.key === "planned" ? 0 : Math.sin(t * 1.7) * 0.018);
+      if (moving) {
+        const targetYaw = Math.atan2(dx, dz);
+        let angle = targetYaw - group.current.rotation.y;
+        angle = ((angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+        group.current.rotation.y += angle * Math.min(1, delta * 4);
+      }
+      const walk = moving ? Math.sin(t * 9) * 0.65 : 0;
+      if (leftLeg.current) leftLeg.current.rotation.x = walk;
+      if (rightLeg.current) rightLeg.current.rotation.x = -walk;
+      if (leftArm.current) leftArm.current.rotation.x = moving ? -walk * 0.55 : active ? -0.72 + Math.sin(t * 10) * 0.12 : -0.08;
+      if (rightArm.current) rightArm.current.rotation.x = moving ? walk * 0.55 : active ? -0.72 + Math.cos(t * 10) * 0.12 : -0.08;
+    }
   });
   return <group ref={group} position={position} onClick={e => { e.stopPropagation(); onSelect(employee.id); }}>
     <mesh position={[0, 0.48, 0]} castShadow>
@@ -105,8 +126,12 @@ function AgentAvatar({ employee, status, position, onSelect, selected, color, va
       <capsuleGeometry args={[0.075, 0.36, 4, 7]} />
       <meshStandardMaterial color={tint} />
     </mesh>
-    <mesh position={[0, 0.14, 0]}>
-      <boxGeometry args={[0.38, 0.26, 0.28]} />
+    <mesh ref={leftLeg} position={[-0.11, 0.12, 0]}>
+      <capsuleGeometry args={[0.075, 0.22, 4, 7]} />
+      <meshStandardMaterial color="#27384d" />
+    </mesh>
+    <mesh ref={rightLeg} position={[0.11, 0.12, 0]}>
+      <capsuleGeometry args={[0.075, 0.22, 4, 7]} />
       <meshStandardMaterial color="#27384d" />
     </mesh>
     {variant === 0 && <mesh position={[0, 1.02, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.235, 0.025, 7, 18]} /><meshStandardMaterial color="#303b4b" /></mesh>}
@@ -175,7 +200,20 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
       return <group key={employee.id}>
         <Desk position={[sx, 0, sz - 0.5]} />
         <Chair position={[sx, 0, sz + 0.8]} />
-        <AgentAvatar employee={employee} status={status} position={[sx, 0, sz + 0.45]} selected={selectedId === employee.id} onSelect={onSelect} color={avatarColor} variant={employeeIndex % 4} />
+        <AgentAvatar
+        employee={employee}
+        status={status}
+        position={[sx, 0, sz + 0.45]}
+        destination={status.key === "review"
+          ? [18 - x + (employeeIndex % 3) * 0.42, 0, -5 - z + Math.floor(employeeIndex / 3) * 0.42]
+          : status.key === "blocked"
+            ? [18 - x + (employeeIndex % 3) * 0.42, 0, 3 - z + Math.floor(employeeIndex / 3) * 0.42]
+            : [sx, 0, sz + 0.45]}
+        selected={selectedId === employee.id}
+        onSelect={onSelect}
+        color={avatarColor}
+        variant={employeeIndex % 4}
+      />
       </group>;
     })}
   </group>;
@@ -210,7 +248,7 @@ function SharedSpaces() {
     { x: 18, z: 11, color: "#c9b9b0" }
   ];
   return <>
-    {rooms.map((r, i) => <group key={i} position={[r.x, 0, r.z]}>
+    {rooms.flatMap((r, i) => [0, 5.7].map(floorY => <group key={i + ":" + floorY} position={[r.x, floorY, r.z]}>
       <mesh position={[0, -0.08, 0]} receiveShadow><boxGeometry args={[7.2, 0.16, 7.2]} /><meshStandardMaterial color={r.color} roughness={0.9} /></mesh>
       <mesh position={[0, 1.35, -3.55]}><boxGeometry args={[7.2, 2.7, 0.12]} /><meshStandardMaterial color="#e8e6df" /></mesh>
       <mesh position={[-3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#e8e6df" /></mesh>
@@ -234,7 +272,7 @@ function SharedSpaces() {
         <mesh position={[-2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#c38a61" /></mesh>
         <mesh position={[2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#8b9f72" /></mesh>
       </>}
-    </group>)}
+    </group>))}
   </>;
 }
 
