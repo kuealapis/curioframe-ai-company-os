@@ -227,12 +227,18 @@ function renderOrchestrator(){
     return '<article class="orchestrator-run"><div class="orchestrator-run-head"><div><span class="eyebrow">WORKFLOW · '+escapeHtml(run.project_type.toUpperCase())+'</span><h3>'+escapeHtml(run.goal)+'</h3></div><span class="pill '+(run.status==="release_ready"?"green":run.status==="blocked"||run.status==="failed"?"amber":"blue")+'">'+escapeHtml(run.status.replaceAll("_"," "))+'</span></div><div class="orchestrator-progress"><span style="width:'+progress+'%"></span></div><small class="muted">'+progress+'% task completion · '+steps.length+' tasks · QA retries '+run.iteration+'/3</small><div class="orchestrator-steps">'+stageOrder.map(stage=>{const rows=steps.filter(s=>s.stage===stage);if(!rows.length)return "";return '<div class="orchestrator-stage"><strong>'+labels[stage]+'</strong>'+rows.map(st=>'<div class="orchestrator-task"><span class="status-dot '+escapeHtml(st.status)+'"></span><span>'+escapeHtml(st.title)+'</span><small>'+escapeHtml(st.assigned_role_key)+' · '+escapeHtml(st.status)+'</small></div>').join("")+'</div>'}).join("")+'</div></article>';
   }).join("");
 }
+function askZeroCostExecution(purpose){
+  const confirmed=$("#pilot-zero-cost-confirm")?.checked&&aiProviderPreflightPassed;
+  if(!confirmed){alert("AI execution is locked. Confirm the verified zero-cost allowance and run the no-API provider preflight first.");return false;}
+  return confirm(purpose+" will send a Gemini API request. Continue only if you have verified this key is within an active free allowance and no billing or paid usage is enabled.");
+}
 async function submitOrchestratorGoal(event){
   event.preventDefault();const button=$("#orchestrator-submit"),goal=$("#orchestrator-goal").value.trim(),type=$("#orchestrator-type").value;
+  if(!askZeroCostExecution("Generating this workflow plan"))return;
   if(goal.length<8){$("#orchestrator-message").textContent="Write a more specific goal (at least 8 characters).";return}
   button.disabled=true;button.textContent="Planning…";$("#orchestrator-message").textContent="Orchestrator is breaking down your goal. This can take a short while.";
   try{
-    const {data,error}=await supabase.functions.invoke("orchestrate-company-goal",{body:{goal,project_type:type,company_id:company.id}});
+    const {data,error}=await supabase.functions.invoke("orchestrate-company-goal",{body:{goal,project_type:type,company_id:company.id,confirmed_zero_cost:true}});
     if(error)throw error;if(data?.error)throw new Error(data.error);
     $("#orchestrator-goal").value="";$("#orchestrator-message").textContent=data.message||"Plan created.";
     await loadData();
@@ -1265,10 +1271,14 @@ async function decideApproval(decision){
     dialog.close();
     if(decision==="revision_requested"){
       try{
-        const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:approval.task_id,company_id:company.id}});
+      if(askZeroCostExecution("Running the requested revision")){
+        const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:approval.task_id,company_id:company.id,confirmed_zero_cost:true}});
         if(runError)throw runError;
         if(data?.error)throw new Error(data.error);
         alert("Revision dispatched automatically. Content Officer will revise, then QC and QA will run before the next Owner review.");
+      }else{
+        alert("Revision request saved. The task remains queued; no Gemini request was made.");
+      }
       }catch(runError){
         alert("Revision saved, but automatic execution did not start: "+(runError.message||"Check the AI provider connection.")+". The task remains queued.");
       }
@@ -1451,7 +1461,8 @@ $("#all-task-table").addEventListener("click",async e=>{
   const taskId=button.dataset.runTask;
   button.disabled=true;button.textContent="Running…";
   try{
-    const {data,error}=await supabase.functions.invoke("execute-company-task",{body:{task_id:taskId}});
+    if(!askZeroCostExecution("Running this assigned AI task")){button.disabled=false;button.textContent="▶ Run AI";return;}
+    const {data,error}=await supabase.functions.invoke("execute-company-task",{body:{task_id:taskId,company_id:company.id,confirmed_zero_cost:true}});
     if(error)throw error;
     if(data?.error)throw new Error(data.error+(data.needs_secret?" Add GEMINI_API_KEY in Supabase Edge Function Secrets first.":""));
     alert(data.message||"AI deliverable sent for review.");
@@ -1470,7 +1481,8 @@ $("#task-form").addEventListener("submit",async e=>{
   $("#task-dialog").close();$("#task-form").reset();
   if(ownerId){
     try{
-      const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:createdTask.id}});
+      if(!askZeroCostExecution("Running the newly created task")){alert("Task saved in the queue. No Gemini request was made.");button.disabled=false;await loadData();return;}
+      const {data,error:runError}=await supabase.functions.invoke("execute-company-task",{body:{task_id:createdTask.id,company_id:company.id,confirmed_zero_cost:true}});
       if(runError)throw runError;
       if(data?.error)throw new Error(data.error+(data.needs_secret?" Add GEMINI_API_KEY in Supabase Edge Function Secrets first.":""));
       alert(data.message||"Task dispatched. QC/QA checks will run automatically when applicable.");
