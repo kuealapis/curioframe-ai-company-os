@@ -403,11 +403,12 @@ function WalkController({ enabled, move }) {
 function normalizeState(payload) {
   const employees = Array.isArray(payload?.employees) ? payload.employees : [];
   const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
-  return { employees, tasks, departments: Array.isArray(payload?.departments) ? payload.departments : [] };
+  const events = Array.isArray(payload?.events) ? payload.events : [];
+  return { employees, tasks, events, departments: Array.isArray(payload?.departments) ? payload.departments : [] };
 }
 
 export function OfficeApp() {
-  const [snapshot, setSnapshot] = useState({ employees: [], tasks: [], departments: [] });
+  const [snapshot, setSnapshot] = useState({ employees: [], tasks: [], events: [], departments: [] });
   const [selectedId, setSelectedId] = useState(null);
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -508,6 +509,10 @@ export function OfficeApp() {
         {selected.capability_profile && typeof selected.capability_profile === "object" && Object.keys(selected.capability_profile).length > 0
           ? <article><b>Capability profile</b><small>{Object.entries(selected.capability_profile).map(([key, value]) => key.replaceAll("_", " ") + ": " + (typeof value === "string" ? value : JSON.stringify(value))).join(" · ")}</small></article>
           : <p className="empty-state">No capability details recorded.</p>}
+        <h3>Recent activity</h3>
+        {snapshot.events.filter(event => event.employee_id === selected.id).slice(0, 6).length
+          ? snapshot.events.filter(event => event.employee_id === selected.id).slice(0, 6).map(event => <article key={event.id}><b>{String(event.event_type || "activity").replaceAll("_", " ")}</b><small>{event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"}</small>{event.message ? <small>{event.message}</small> : null}</article>)
+          : <p className="empty-state">No recorded activity events for this Agent.</p>}
         <h3>Task history</h3>
         {tasks.filter(t => t.assigned_employee_id === selected.id).sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)).slice(0, 6).length
           ? tasks.filter(t => t.assigned_employee_id === selected.id).sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)).slice(0, 6).map(t => <article key={t.id}><b>{t.title}</b><small>{String(t.status || "unknown").replaceAll("_", " ")} · {t.updated_at ? new Date(t.updated_at).toLocaleDateString() : "date unavailable"}</small>{t.deliverable_url ? <a href={t.deliverable_url} target="_blank" rel="noreferrer">Open deliverable ↗</a> : null}</article>)
