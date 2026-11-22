@@ -393,7 +393,7 @@ async function runResearchSourceVerification(){
   const {data:asset,error}=await supabase.from("content_assets").select("id,title,body,task_id,status").eq("company_id",company.id).eq("asset_type","research_brief").like("title","Research Evidence Draft%").order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(error)throw error;
   if(!asset?.id||!asset.task_id)throw new Error("No Research Evidence Draft found. Submit a Research Evidence Pack first.");
-  const matches=[...String(asset.body||"").matchAll(/Source URL \(not fetched or verified by this workflow\): (https:\/\/[^\\s]+)/g)];
+  const matches=[...String(asset.body||"").matchAll(/Source URL \(not fetched or verified by this workflow\): (https:\/\/\S+)/g)];
   const urls=[...new Set(matches.map(m=>m[1]))];
   if(!urls.length)throw new Error("No source URLs were found in the latest evidence asset.");
   if(urls.length>5)throw new Error("This safe retrieval run is limited to 5 URLs.");
