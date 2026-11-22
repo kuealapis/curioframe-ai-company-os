@@ -1052,7 +1052,7 @@ function renderVirtualHQ(){
     }
   });
   const grid=$("#hq-department-grid");
-  const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";
+  const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active"),deptTotal=$("#hq-department-total");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";if(deptTotal)deptTotal.textContent=[...new Set(employees.map(e=>e.department).filter(Boolean))].length+" DEPARTMENTS";
   if(grid)grid.innerHTML=employees.map(e=>{
     const st=hqStatus(e);
     return '<article class="hq-dept-card '+(selectedHQEmployeeId===e.id?'selected':'')+'" data-hq-employee="'+escapeHtml(e.id)+'" role="button" tabindex="0"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+st.key+'">'+st.label+'</b><footer>'+st.count+' open task'+(st.count===1?'':'s')+'</footer></article>'
