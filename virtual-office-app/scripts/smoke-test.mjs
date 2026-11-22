@@ -73,6 +73,11 @@ async function exerciseViewport(page, label) {
   assert.equal(await page.locator(".inspector-status").textContent(), "IN REVIEW");
   assert.equal(await page.locator(".agent-inspector").getByText("review started").count(), 1, label + ": task-linked events must appear in the assigned Agent activity");
 
+  const refreshedPayload = { ...payload, tasks: tasks.map(task => task.id === "task-working" ? { ...task, status: "review" } : task) };
+  await page.evaluate(snapshot => window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin), refreshedPayload);
+  await page.evaluate(() => window.postMessage({ type: "curioframe:select-agent", employeeId: "agent-01" }, window.location.origin));
+  await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 01" && document.querySelector(".inspector-status")?.textContent === "IN REVIEW");
+
   await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "walk" }, window.location.origin));
   await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Walk mode:"));
   await page.evaluate(() => window.postMessage({ type: "curioframe:office-move", x: 0.6, y: -0.8 }, window.location.origin));
