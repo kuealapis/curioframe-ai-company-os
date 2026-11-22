@@ -949,18 +949,18 @@ async function buildHQ3D(el){
   };
   plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
   // Reception desk and visitor lounge furniture.
-  const reception=new THREE.Group();reception.position.set(0,0,9.2);scene.add(reception);
+  const reception=new THREE.Group();reception.position.set(0,0,16.2);scene.add(reception);
   addBox(reception,4.2,.28,1.45,mat(0x9b6748,.08,.65),0,1.05,0,true);
   addBox(reception,3.95,.08,1.28,mat(0xe7c39c,.04,.7),0,1.22,0);
   addBox(reception,.18,.9,.18,mat(0x9b6748),-1.75,.48,-.48);addBox(reception,.18,.9,.18,mat(0x9b6748),1.75,.48,-.48);
   const receptionSign=hqTextSprite(THREE,"CURIOFRAME  /  RECEPTION","#3b83bd");receptionSign.position.set(0,2.15,-.05);receptionSign.scale.set(3.8,.85,1);reception.add(receptionSign);
-  const lounge=new THREE.Group();lounge.position.set(13,0,8.6);scene.add(lounge);
+  const lounge=new THREE.Group();lounge.position.set(22,0,7.5);scene.add(lounge);
   const sofaMat=mat(0x527c9b,.02,.82),sofaSeat=mat(0x6f98b3,.02,.86);
   addBox(lounge,3.2,.52,1.05,sofaMat,0,.42,0,true);addBox(lounge,3.2,.95,.24,sofaMat,0,.78,-.42,true);
   addBox(lounge,.25,.75,1.0,sofaMat,-1.48,.63,0,true);addBox(lounge,.25,.75,1.0,sofaMat,1.48,.63,0,true);
   addBox(lounge,2.1,.12,.8,sofaSeat,0,.72,.08);
   addBox(lounge,1.65,.18,1.05,mat(0xe4c49d,.02,.75),0,.36,1.35,true);
-  const loungePlant=()=>plant(15,10.7);loungePlant();
+  const loungePlant=()=>plant(25,10.5);loungePlant();
   const figures=[];
   const departmentNames=[...new Set(employees.map(e=>e.department||"General"))];
   const departmentSpots=departmentNames.map((name,index)=>({name,x:-13.5+(index%4)*9,z:-8.1+Math.floor(index/4)*8.1}));
