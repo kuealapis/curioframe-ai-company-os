@@ -150,6 +150,7 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
       <sphereGeometry args={[0.035, 8, 8]} />
       <meshBasicMaterial color="#ffffff" />
     </mesh>
+    <Html position={[0, 1.86, 0]} distanceFactor={11} center><div className={"agent-name-tag" + (selected ? " selected" : "")}>{employee.name}</div></Html>
   </group>;
 }
 
@@ -196,7 +197,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
       if (!employee) return null;
       const status = getStatus(employee, tasks);
       const employeeIndex = employees.findIndex(item => item.id === employee.id);
-      const avatarColor = "hsl(" + ((employeeIndex * 137.508) % 360) + ", 58%, 58%)";
+      const avatarColor = roundedColor(employee.role_key || employee.department || employee.id);
       return <group key={employee.id}>
         <Desk position={[sx, 0, sz - 0.5]} />
         <Chair position={[sx, 0, sz + 0.8]} />
