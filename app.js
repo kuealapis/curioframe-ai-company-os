@@ -1146,7 +1146,7 @@ function setupHQRealtime(){
   hqEventCount=0;hqLastEventAt=null;
   updateHQLiveIndicator("connecting");
   const channel=supabase.channel("hq-live-"+company.id);
-  const tables=["tasks","ai_employees","company_departments","approvals","content_assets","agent_messages","quality_reviews","task_events","agent_work_sample_assignments","workflow_runs","workflow_steps","distribution_accounts","distribution_publications"];
+  const tables=["tasks","ai_employees","company_departments","company_operating_policies","approvals","content_assets","research_sources","agent_messages","quality_reviews","task_events","agent_work_sample_assignments","agent_capability_test_runs","workflow_runs","workflow_steps","distribution_accounts","distribution_publications","finance_entries","recovery_snapshots"];
   tables.forEach(table=>channel.on("postgres_changes",{event:"*",schema:"public",table,filter:"company_id=eq."+company.id},onHQDatabaseEvent));
   hqChannel=channel.subscribe(status=>{
     if(status==="SUBSCRIBED")updateHQLiveIndicator("connected");
