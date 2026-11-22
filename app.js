@@ -799,7 +799,7 @@ async function buildHQ3D(el){
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x081525);
   scene.fog=new THREE.FogExp2(0x081525,.012);
   const camera=new THREE.PerspectiveCamera(42,el.clientWidth/el.clientHeight,.1,120);
-  camera.position.set(19,16,23);
+  camera.position.set(29,22,34);
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:"high-performance"});
   const isSmallScreen=window.matchMedia?.("(max-width:700px)").matches||false;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmallScreen?1.2:1.65));
@@ -812,7 +812,7 @@ async function buildHQ3D(el){
   const offset=new THREE.Vector3().subVectors(camera.position,target);spherical.setFromVector3(offset);
   const pointers=new Map();let previousPinch=0,previousMid=null;
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-  const syncCamera=()=>{spherical.radius=clamp(spherical.radius,9,38);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
+  const syncCamera=()=>{spherical.radius=clamp(spherical.radius,15,58);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
   const controls={
     target,
     update(){syncCamera()},
@@ -839,23 +839,23 @@ async function buildHQ3D(el){
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,24,18),material);mesh.position.set(x,y,z);
     if(scale)mesh.scale.set(...scale);mesh.castShadow=true;parent.add(mesh);return mesh;
   };
-  const floor=addBox(scene,24,.5,19,mat(0x263b52,.18,.38),0,-.28,0,false,true);
-  const floorInset=addBox(scene,22,.035,17,mat(0x304b65,.12,.5),0,-.005,0,false,true);
-  for(let x=-10;x<=10;x+=2){const line=addBox(scene,.018,.012,16,mat(0x54718a,.25,.5),x,.02,0);line.material.transparent=true;line.material.opacity=.35}
-  for(let z=-7;z<=7;z+=2){const line=addBox(scene,22,.012,.018,mat(0x54718a,.25,.5),0,.021,z);line.material.transparent=true;line.material.opacity=.35}
+  const floor=addBox(scene,36,.5,26,mat(0x263b52,.18,.38),0,-.28,0,false,true);
+  const floorInset=addBox(scene,34,.035,24,mat(0x304b65,.12,.5),0,-.005,0,false,true);
+  for(let x=-16;x<=16;x+=2){const line=addBox(scene,.018,.012,23,mat(0x54718a,.25,.5),x,.02,0);line.material.transparent=true;line.material.opacity=.35}
+  for(let z=-11;z<=11;z+=2){const line=addBox(scene,34,.012,.018,mat(0x54718a,.25,.5),0,.021,z);line.material.transparent=true;line.material.opacity=.35}
   // Glass perimeter and architectural frame
-  addBox(scene,24,5.4,.22,mat(0x29445e,.35,.3),0,2.45,-9.35);
-  addBox(scene,.22,5.4,19,mat(0x29445e,.35,.3),-11.9,2.45,0);
-  addBox(scene,24,.2,.22,mat(0x6a8ba6,.55,.3),0,5.15,-9.2);
+  addBox(scene,36,5.4,.22,mat(0x29445e,.35,.3),0,2.45,-12.75);
+  addBox(scene,.22,5.4,26,mat(0x29445e,.35,.3),-17.9,2.45,0);
+  addBox(scene,36,.2,.22,mat(0x6a8ba6,.55,.3),0,5.15,-12.6);
   const glass=new THREE.MeshPhysicalMaterial({color:0x6db8d7,transparent:true,opacity:.13,metalness:.15,roughness:.12,side:THREE.DoubleSide});
-  for(let i=0;i<5;i++){
-    const x=-9.5+i*4.7;addBox(scene,4.25,3.25,.035,glass,x,2.8,-9.19);
-    addBox(scene,.055,3.35,.08,mat(0x6b91ac,.65,.28),x-2.15,2.8,-9.12);
+  for(let i=0;i<7;i++){
+    const x=-15+i*5;addBox(scene,4.55,3.25,.035,glass,x,2.8,-12.59);
+    addBox(scene,.055,3.35,.08,mat(0x6b91ac,.65,.28),x-2.3,2.8,-12.52);
   }
-  for(let z=-7;z<=7;z+=3.5)addBox(scene,.06,3.6,.08,mat(0x6b91ac,.65,.28),-11.77,2.8,z);
+  for(let z=-10;z<=10;z+=3.5)addBox(scene,.06,3.6,.08,mat(0x6b91ac,.65,.28),-17.77,2.8,z);
   // Ceiling beams and warm linear fixtures
-  for(let x=-9;x<=9;x+=6){
-    addBox(scene,.12,.18,18,mat(0x415b73,.45,.35),x,5.05,0);
+  for(let x=-12;x<=12;x+=6){
+    addBox(scene,.12,.18,24,mat(0x415b73,.45,.35),x,5.05,0);
     const lamp=addBox(scene,2.7,.045,.22,mat(0xbfeaff,.15,.25),x,4.91,0);
     const light=new THREE.PointLight(0x9bdcff,8,9);light.position.set(x,4.55,0);scene.add(light);
   }
@@ -869,12 +869,12 @@ async function buildHQ3D(el){
     const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.38,18),mat(0x536b82));pot.position.set(x,.2,z);scene.add(pot);
     for(let i=0;i<5;i++){const leaf=addSphere(scene,.22,mat(0x3f9c83),x+Math.sin(i*1.25)*.16,.58+(i%2)*.12,z+Math.cos(i*1.25)*.15,[.45,1.35,.45]);leaf.rotation.z=(i-2)*.22}
   };
-  plant(-10,-7.5);plant(10,-7.5);plant(-10,7.5);plant(10,7.5);
-  const employeeNames={ai_ceo:"ALEX  /  CEO",research:"THEO  /  RESEARCH",content:"OLIVER  /  CONTENT",marketing:"SOPHIA  /  MARKETING",quality:"VICTOR  /  QUALITY",qc:"EMMA  /  QC",qa:"DANIEL  /  QA",finance:"GRACE  /  FINANCE",operations:"ETHAN  /  OPERATIONS"};
-  const coords=[[-7,-5], [0,-5], [7,-5],[-7,1.5],[0,1.5],[7,1.5],[-7,7],[0,7],[7,7]];
+  plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
   const figures=[];
+  const columns=7,rows=Math.max(1,Math.ceil(employees.length/columns));
+  const coords=employees.map((_,index)=>[(index%columns-(Math.min(columns,employees.length)-1)/2)*4.45,(Math.floor(index/columns)-(rows-1)/2)*5.1]);
   const statusColor=key=>key==="working"?0x39d9a5:key==="review"?0xf2bd65:key==="blocked"?0xf17d8a:key==="queued"?0x78a9ff:0x6687a6;
-  employees.slice(0,9).forEach((employee,index)=>{
+  employees.forEach((employee,index)=>{
     const [x,z]=coords[index];const accent=hqColors[employee.role_key]||0x79b8ef;
     const station=new THREE.Group();station.position.set(x,0,z);scene.add(station);
     // desk, pedestal, ergonomic chair, display and accessories
@@ -900,9 +900,9 @@ async function buildHQ3D(el){
     const lampHead=addSphere(deskLamp,.13,mat(0x9edfff,.25,.25),-.09,.4,0,[1,.45,1]);
     // premium animated character with distinct hair, face, outfit and accessories
     const avatar=new THREE.Group();avatar.userData.employeeId=employee.id;avatar.position.set(x,0,z+2.35);scene.add(avatar);
-    const skin=mat([0xf0c5a3,0xd99f7e,0xe8b99a,0xc98d70,0xf1c9a7,0xd8a181,0xe7b99a,0xc99072,0xe9bd9c][index],0,.72);
+    const skin=mat([0xf0c5a3,0xd99f7e,0xe8b99a,0xc98d70,0xf1c9a7,0xd8a181,0xe7b99a,0xc99072,0xe9bd9c][index%9],0,.72);
     const hairColors=[0x33251f,0x3c2b25,0x493126,0x241f20,0x5a4030,0x29252a,0x473328,0x302b28,0x3a2922];
-    const hair=mat(hairColors[index],0,.86),shirt=mat(accent,.12,.46),pants=mat(index%2?0x263b56:0x34475c,.05,.66),shoe=mat(0x17263a,.12,.5),white=mat(0xf4f5f0,0,.45),eye=mat(0x26313e,0,.5);
+    const hair=mat(hairColors[index%hairColors.length],0,.86),shirt=mat(accent,.12,.46),pants=mat(index%2?0x263b56:0x34475c,.05,.66),shoe=mat(0x17263a,.12,.5),white=mat(0xf4f5f0,0,.45),eye=mat(0x26313e,0,.5);
     const capsule=(parent,radius,length,material,xp,yp,zp,radial=16)=>{
       const m=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,radial),material);m.position.set(xp,yp,zp);m.castShadow=true;parent.add(m);return m;
     };
@@ -947,7 +947,7 @@ async function buildHQ3D(el){
     const halo=new THREE.Mesh(new THREE.TorusGeometry(.78,.045,10,48),new THREE.MeshBasicMaterial({color:statusColor(hqStatus(employee).key)}));
     halo.rotation.x=Math.PI/2;halo.position.y=.07;avatar.add(halo);
     const selection=new THREE.Mesh(new THREE.TorusGeometry(.94,.035,8,48),new THREE.MeshBasicMaterial({color:0x8bdcff,transparent:true,opacity:0}));selection.rotation.x=Math.PI/2;selection.position.y=.035;avatar.add(selection);
-    const label=hqTextSprite(THREE,employeeNames[employee.role_key]||employee.name,"#"+new THREE.Color(accent).getHexString());
+    const label=hqTextSprite(THREE,(employee.name+" / "+employee.department).toUpperCase().slice(0,30),"#"+new THREE.Color(accent).getHexString());
     label.position.set(0,3.2,0);avatar.add(label);
     avatar.userData={employeeId:employee.id,status:hqStatus(employee).key,armL,armR,halo,selection,phase:index*.67,accent};
     figures.push(avatar);
@@ -989,7 +989,7 @@ async function buildHQ3D(el){
     ring.rotation.z=t*.13;controls.update();renderer.render(scene,camera);
   };animate();
   const world={
-    figures,controls,camera,
+    figures,controls,camera,employeeIds:employees.map(e=>e.id),
     refresh(){
       figures.forEach(figure=>{
         const employee=employees.find(e=>e.id===figure.userData.employeeId);if(!employee)return;
@@ -1022,9 +1022,14 @@ function renderVirtualHQ(){
       return;
     }
     if(!hqWorlds.has(el)){
-      if(!el.querySelector(".hq-3d-loading"))el.innerHTML='<div class="hq-3d-loading">BUILDING 3D HEADQUARTERS…</div>';
+      if(!el.querySelector(".hq-3d-loading"))el.innerHTML='<div class="hq-3d-loading">BUILDING LIVE 3D HEADQUARTERS…</div>';
       requestAnimationFrame(()=>{if(el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0)launchHQ3D(el)});
-    }else hqWorlds.get(el).refresh();
+    }else{
+      const world=hqWorlds.get(el);
+      const currentIds=(world.employeeIds||[]).join("|"),latestIds=employees.map(e=>e.id).join("|");
+      if(currentIds!==latestIds){world.dispose();hqWorlds.delete(el);el.innerHTML='<div class="hq-3d-loading">UPDATING COMPANY FLOOR…</div>';requestAnimationFrame(()=>{if(el.getClientRects().length>0&&el.clientWidth>0&&el.clientHeight>0)launchHQ3D(el)});}
+      else world.refresh();
+    }
   });
   const grid=$("#hq-department-grid");
   if(grid)grid.innerHTML=employees.map(e=>{
@@ -1052,6 +1057,19 @@ function selectHQEmployee(employeeId){
   hqWorlds.forEach(world=>world.select(employeeId));
   renderHQDetail(employeeId);
 }
+let hqLastEventAt=null,hqEventCount=0;
+function updateHQLiveIndicator(state,message){
+  const live=$("#hq-live-indicator");if(!live)return;
+  live.dataset.state=state;
+  const stamp=hqLastEventAt?new Date(hqLastEventAt).toLocaleTimeString(): "no events yet";
+  const count=hqEventCount+" database event"+(hqEventCount===1?"":"s");
+  live.textContent=state==="live"?"● REALTIME CONNECTED · "+count+" · LAST EVENT "+stamp:state==="offline"?"● REALTIME DISCONNECTED · "+(message||"check connection"):"● CONNECTING TO DATABASE EVENTS";
+}
+function onHQDatabaseEvent(payload){
+  hqEventCount++;hqLastEventAt=new Date().toISOString();
+  updateHQLiveIndicator("live");scheduleHQRefresh();
+  const last=$("#hq-live-last-event");if(last){const table=payload?.table||"database";const event=payload?.eventType||"UPDATE";last.textContent="Last change: "+table+" · "+event+" · "+new Date(hqLastEventAt).toLocaleTimeString();}
+}
 function scheduleHQRefresh(){
   if(hqRefreshTimer)clearTimeout(hqRefreshTimer);
   hqRefreshTimer=setTimeout(()=>{hqRefreshTimer=null;loadData().catch(error=>console.error("Live HQ refresh failed:",error))},240);
@@ -1059,22 +1077,16 @@ function scheduleHQRefresh(){
 function setupHQRealtime(){
   if(hqChannel){supabase.removeChannel(hqChannel);hqChannel=null}
   if(!company)return;
-  const indicator=$("#hq-live-indicator");
-  if(indicator)indicator.textContent="● CONNECTING TO LIVE DATA";
-  hqChannel=supabase.channel("hq-live-"+company.id)
-    .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"ai_employees",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"approvals",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"content_assets",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"agent_messages",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"quality_reviews",filter:"company_id=eq."+company.id},scheduleHQRefresh)
-    .subscribe(status=>{
-      const live=$("#hq-live-indicator");
-      if(!live)return;
-      if(status==="SUBSCRIBED"){live.textContent="● LIVE · DATABASE EVENTS CONNECTED";live.dataset.state="live"}
-      else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){live.textContent="● LIVE SYNC UNAVAILABLE · USE REFRESH";live.dataset.state="offline"}
-      else{live.textContent="● CONNECTING TO LIVE DATA";live.dataset.state="connecting"}
-    });
+  hqEventCount=0;hqLastEventAt=null;
+  updateHQLiveIndicator("connecting");
+  const channel=supabase.channel("hq-live-"+company.id);
+  const tables=["tasks","ai_employees","company_departments","approvals","content_assets","agent_messages","quality_reviews","task_events","agent_work_sample_assignments","workflow_runs","workflow_steps","distribution_accounts","distribution_publications"];
+  tables.forEach(table=>channel.on("postgres_changes",{event:"*",schema:"public",table,filter:"company_id=eq."+company.id},onHQDatabaseEvent));
+  hqChannel=channel.subscribe(status=>{
+    if(status==="SUBSCRIBED")updateHQLiveIndicator("live");
+    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")updateHQLiveIndicator("offline",status);
+    else updateHQLiveIndicator("connecting",status);
+  });
 }
 function taskRow(t,all=false){
   const owner=t.ai_employees?.name||employees.find(e=>e.id===t.assigned_employee_id)?.name||"Unassigned";
