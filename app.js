@@ -880,8 +880,12 @@ async function buildHQ3D(el){
   };
   plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
   const figures=[];
-  const columns=7,rows=Math.max(1,Math.ceil(employees.length/columns));
-  const coords=employees.map((_,index)=>[(index%columns-(Math.min(columns,employees.length)-1)/2)*4.45,(Math.floor(index/columns)-(rows-1)/2)*5.1]);
+  const departmentNames=[...new Set(employees.map(e=>e.department||"General"))];
+  const departmentSpots=departmentNames.map((name,index)=>({name,x:-13.5+(index%4)*9,z:-8.1+Math.floor(index/4)*8.1}));
+  const departmentCounts=new Map();
+  const coords=employees.map(employee=>{const department=employee.department||"General",spot=departmentSpots.find(d=>d.name===department)||departmentSpots[0],n=departmentCounts.get(department)||0;departmentCounts.set(department,n+1);const offsets=[[0,0],[-1.55,0],[1.55,0],[-1.55,1.65],[1.55,1.65],[0,-1.65]];const offset=offsets[n%offsets.length];return[spot.x+offset[0],spot.z+offset[1]]});
+  const employeePositionMap=new Map(employees.map((employee,index)=>[employee.id,coords[index]]));
+  departmentSpots.forEach(spot=>{const zone=addBox(scene,7.9,.025,6.8,mat(0x34536d,.12,.72),spot.x,.045,spot.z,false);zone.material.transparent=true;zone.material.opacity=.42;const marker=hqTextSprite(THREE,spot.name.toUpperCase().slice(0,24),"#72cfe3");marker.position.set(spot.x,4.05,spot.z-2.75);marker.scale.set(3.4,.72,1);scene.add(marker)});
   const statusColor=key=>key==="working"?0x39d9a5:key==="review"?0xf2bd65:key==="blocked"?0xf17d8a:key==="queued"?0x78a9ff:0x6687a6;
   employees.forEach((employee,index)=>{
     const [x,z]=coords[index];const accent=hqColors[employee.role_key]||0x79b8ef;
@@ -1014,7 +1018,7 @@ async function buildHQ3D(el){
     reset(){gameMode=false;target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()},
     zoom(factor){if(gameMode){camera.position.add(new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)).multiplyScalar(factor<1?1.2:-1.2));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)}else{spherical.radius*=factor;controls.update()}},
     setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
-    focusEmployee(id){const index=employees.findIndex(e=>e.id===id);if(index<0)return;const x=(index%7-3)*4.45,z=(Math.floor(index/7)-(Math.ceil(employees.length/7)-1)/2)*5.1;if(gameMode){camera.position.set(x,1.72,z+5);walkYaw=0;walkPitch=-.12;camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(x,1.2,z);spherical.radius=10;controls.update()}},
+    focusEmployee(id){const pos=employeePositionMap.get(id);if(!pos)return;const [x,z]=pos;if(gameMode){camera.position.set(x,1.72,z+4.8);walkYaw=0;walkPitch=-.12;camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(x,1.2,z);spherical.radius=10;controls.update()}},
     move(direction){if(!gameMode)return;const v=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)),r=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const delta=direction==="forward"?v:direction==="back"?v.clone().negate():direction==="left"?r.clone().negate():r;camera.position.add(delta.multiplyScalar(1.25));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)},
     dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();visibilityObserver?.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
   };
