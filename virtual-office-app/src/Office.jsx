@@ -499,6 +499,7 @@ export function OfficeApp() {
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
       <div className="office-help">{walkMode ? "Walk mode: drag to look · joystick / WASD to move · Q / E to change floor" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
+      {!connected && <div className="office-connection-card"><strong>Connect your company workspace</strong><p>This 3D view needs the authenticated CurioFrame workspace to load your 28 Agents, departments, tasks, and activity. Open Virtual HQ from your main dashboard after signing in.</p><a href="../index.html#virtual-hq">Open CurioFrame workspace ↗</a></div>}
       {selected && <aside className="agent-inspector">
         <button className="inspector-close" onClick={() => setSelectedId(null)}>×</button>
         <small>AGENT PROFILE</small><h2>{selected.name}</h2><p>{selected.department}</p>
