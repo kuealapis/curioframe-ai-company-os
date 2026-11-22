@@ -793,7 +793,16 @@ function hqTextSprite(THREE,text,accent="#70d9e8"){
 }
 async function buildHQ3D(el){
   if(!el||!el.clientWidth)return;
-  const THREE=await import("https://esm.sh/three@0.170.0");
+  let THREE;
+  try {
+    THREE=await import("https://esm.sh/three@0.170.0");
+  } catch(primaryImportError) {
+    try {
+      THREE=await import("https://cdn.jsdelivr.net/npm/three@0.170.0/+esm");
+    } catch(fallbackImportError) {
+      throw new Error("Three.js could not load from either CDN. Primary: "+(primaryImportError?.message||"unknown")+"; fallback: "+(fallbackImportError?.message||"unknown"));
+    }
+  }
   const old=hqWorlds.get(el);if(old)old.dispose();
   el.innerHTML="";
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x081525);
