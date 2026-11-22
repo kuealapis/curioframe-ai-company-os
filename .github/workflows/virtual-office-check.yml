@@ -1,0 +1,46 @@
+name: Verify Virtual Office Build
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "virtual-office-app/**"
+      - ".github/workflows/virtual-office-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: virtual-office-check
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate main application JavaScript
+        run: node --check --input-type=module < app.js
+      - name: Install free open-source dependencies
+        run: npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
+      - name: Build Virtual Office
+        run: npm run build --prefix virtual-office-app
+      - name: Verify generated Pages entry point
+        run: |
+          test -s virtual-office/index.html
+          test -n "$(find virtual-office/assets -type f | head -n 1)"
+      - name: Clean dependencies from workspace
+        if: always()
+        run: rm -rf virtual-office-app/node_modules
+      - name: Upload built Virtual Office preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: curioframe-virtual-office-preview
+          path: virtual-office/
+          if-no-files-found: error
+          retention-days: 3
