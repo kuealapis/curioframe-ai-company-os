@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
 import { OrbitControls, ContactShadows, Html } from "@react-three/drei";
 
 const STATUS = {
@@ -304,6 +305,98 @@ function getAgentWorldPosition(employee, employees) {
   return [roomX + deskX, floor * 5.7 + 1.15, roomZ + deskZ + 0.45];
 }
 
+function WalkController({ enabled, move }) {
+  const { camera, gl } = useThree();
+  const keys = useRef(new Set());
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+  const pointer = useRef(null);
+  const forward = useMemo(() => new THREE.Vector3(), []);
+  const right = useMemo(() => new THREE.Vector3(), []);
+
+  useEffect(() => {
+    if (!enabled) {
+      keys.current.clear();
+      pointer.current = null;
+      return;
+    }
+    camera.position.set(0, 2.4, 25);
+    camera.rotation.order = "YXZ";
+    camera.lookAt(0, 2.4, 0);
+    yaw.current = camera.rotation.y;
+    pitch.current = camera.rotation.x;
+
+    const onKeyDown = event => {
+      const key = event.key.toLowerCase();
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "q", "e"].includes(key)) {
+        event.preventDefault();
+        keys.current.add(key);
+      }
+    };
+    const onKeyUp = event => keys.current.delete(event.key.toLowerCase());
+    const onPointerDown = event => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+      try { gl.domElement.setPointerCapture(event.pointerId); } catch {}
+    };
+    const onPointerMove = event => {
+      if (!pointer.current || pointer.current.id !== event.pointerId) return;
+      const dx = event.clientX - pointer.current.x;
+      const dy = event.clientY - pointer.current.y;
+      pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+      yaw.current -= dx * 0.006;
+      pitch.current = THREE.MathUtils.clamp(pitch.current - dy * 0.0045, -0.72, 0.48);
+      camera.rotation.set(pitch.current, yaw.current, 0);
+    };
+    const onPointerUp = event => {
+      if (pointer.current?.id === event.pointerId) pointer.current = null;
+    };
+    gl.domElement.addEventListener("pointerdown", onPointerDown);
+    gl.domElement.addEventListener("pointermove", onPointerMove);
+    gl.domElement.addEventListener("pointerup", onPointerUp);
+    gl.domElement.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      gl.domElement.removeEventListener("pointerdown", onPointerDown);
+      gl.domElement.removeEventListener("pointermove", onPointerMove);
+      gl.domElement.removeEventListener("pointerup", onPointerUp);
+      gl.domElement.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [enabled, camera, gl]);
+
+  useFrame((_, delta) => {
+    if (!enabled) return;
+    const pressed = keys.current;
+    let horizontal = Number(move?.x || 0);
+    let vertical = -Number(move?.y || 0);
+    if (pressed.has("a") || pressed.has("arrowleft")) horizontal -= 1;
+    if (pressed.has("d") || pressed.has("arrowright")) horizontal += 1;
+    if (pressed.has("w") || pressed.has("arrowup")) vertical += 1;
+    if (pressed.has("s") || pressed.has("arrowdown")) vertical -= 1;
+    const magnitude = Math.hypot(horizontal, vertical);
+    if (magnitude > 1) {
+      horizontal /= magnitude;
+      vertical /= magnitude;
+    }
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    forward.normalize();
+    right.setFromMatrixColumn(camera.matrixWorld, 0);
+    right.y = 0;
+    right.normalize();
+    const speed = 8 * delta;
+    camera.position.addScaledVector(forward, vertical * speed);
+    camera.position.addScaledVector(right, horizontal * speed);
+    if (pressed.has("q")) camera.position.y -= 4 * delta;
+    if (pressed.has("e")) camera.position.y += 4 * delta;
+    camera.position.y = THREE.MathUtils.clamp(camera.position.y, 1.4, 10.5);
+  });
+  return null;
+}
+
 function normalizeState(payload) {
   const employees = Array.isArray(payload?.employees) ? payload.employees : [];
   const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
@@ -315,6 +408,8 @@ export function OfficeApp() {
   const [selectedId, setSelectedId] = useState(null);
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [walkMode, setWalkMode] = useState(false);
+  const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const controls = useRef();
   const employees = snapshot.employees;
   const tasks = snapshot.tasks;
@@ -323,10 +418,12 @@ export function OfficeApp() {
     if (!selectedId || !controls.current) return;
     const employee = employees.find(e => e.id === selectedId);
     if (!employee) return;
-    const target = getAgentWorldPosition(employee, employees);
-    controls.current.target.set(target[0], target[1], target[2]);
-    controls.current.update();
-  }, [selectedId, employees]);
+    const target = getAgentWorldPosition(employee, employees, tasks);
+    if (!walkMode && controls.current) {
+      controls.current.target.set(target[0], target[1], target[2]);
+      controls.current.update();
+    }
+  }, [selectedId, employees, tasks, walkMode]);
 
   useEffect(() => {
     const receive = event => {
@@ -337,6 +434,27 @@ export function OfficeApp() {
         setLastUpdate(new Date());
       } else if (event.data?.type === "curioframe:select-agent" && typeof event.data.employeeId === "string") {
         setSelectedId(event.data.employeeId);
+      } else if (event.data?.type === "curioframe:office-control") {
+        const action = event.data.action;
+        if (action === "walk") setWalkMode(true);
+        if (action === "orbit") setWalkMode(false);
+        if (action === "reset") {
+          setWalkMode(false);
+          controls.current?.reset?.();
+        }
+        if (action === "zoom-in" && !walkMode) {
+          controls.current?.dollyIn?.(1.2);
+          controls.current?.update?.();
+        }
+        if (action === "zoom-out" && !walkMode) {
+          controls.current?.dollyOut?.(1.2);
+          controls.current?.update?.();
+        }
+      } else if (event.data?.type === "curioframe:office-move") {
+        setJoystickMove({
+          x: THREE.MathUtils.clamp(Number(event.data.x) || 0, -1, 1),
+          y: THREE.MathUtils.clamp(Number(event.data.y) || 0, -1, 1)
+        });
       }
     };
     window.addEventListener("message", receive);
@@ -359,13 +477,14 @@ export function OfficeApp() {
       <div className="office-brand"><span className="brand-mark">CF</span><div><strong>CURIOFRAME AI</strong><small>VIRTUAL HEADQUARTERS · 3D FLOORPLAN</small></div></div>
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "DATABASE SNAPSHOT RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
-        <button onClick={() => controls.current?.reset?.()}>Reset view</button>
+        <button onClick={() => { setWalkMode(false); controls.current?.reset?.(); }}>Reset view</button>
       </div>
     </header>
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
-        <OrbitControls ref={controls} makeDefault target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
+        <OrbitControls ref={controls} makeDefault enabled={!walkMode} target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
+        <WalkController enabled={walkMode} move={joystickMove} />
       </Canvas>
       <div className="office-hud">
         <span><b>{employees.length}</b> REGISTERED AGENTS</span>
@@ -375,7 +494,7 @@ export function OfficeApp() {
         <span className="hud-review"><b>{counts.review}</b> REVIEW</span>
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
-      <div className="office-help">Drag to orbit · Pinch to zoom · Two-finger drag to pan · Tap an Agent to inspect</div>
+      <div className="office-help">{walkMode ? "Walk mode: drag to look · joystick / WASD to move · Q / E to change floor" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
       {selected && <aside className="agent-inspector">
         <button className="inspector-close" onClick={() => setSelectedId(null)}>×</button>
         <small>AGENT PROFILE</small><h2>{selected.name}</h2><p>{selected.department}</p>
