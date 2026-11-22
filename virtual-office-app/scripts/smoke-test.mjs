@@ -27,7 +27,8 @@ const tasks = [
   { id: "task-blocked", title: "Blocked sample", assigned_employee_id: "agent-03", status: "blocked", priority: "high" },
   { id: "task-queued", title: "Queued sample", assigned_employee_id: "agent-04", status: "queued", priority: "normal" }
 ];
-const payload = { employees, tasks, departments };
+const events = [{ id: "event-task-only", employee_id: null, task_id: "task-review", event_type: "review_started", message: "Task-linked activity event", created_at: "2026-11-22T08:00:00Z" }];
+const payload = { employees, tasks, events, departments };
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 40; attempt++) {
@@ -70,6 +71,7 @@ async function exerciseViewport(page, label) {
   });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   assert.equal(await page.locator(".inspector-status").textContent(), "IN REVIEW");
+  assert.equal(await page.locator(".agent-inspector").getByText("review started").count(), 1, label + ": task-linked events must appear in the assigned Agent activity");
 
   await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "walk" }, window.location.origin));
   await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Walk mode:"));
