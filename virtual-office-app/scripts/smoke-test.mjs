@@ -58,7 +58,7 @@ async function exerciseViewport(page, label) {
     departments: document.querySelector(".office-hud")?.textContent?.match(/11\s*DEPARTMENTS/) !== null,
     canvasWidth: document.querySelector("canvas")?.width || 0,
     canvasHeight: document.querySelector("canvas")?.height || 0,
-    connected: document.querySelector(".office-live")?.textContent?.includes("DATABASE SNAPSHOT RECEIVED") || false
+    connected: document.querySelector(".office-live")?.textContent?.includes("COMPANY DATA RECEIVED") || false
   }));
   assert.equal(metrics.agents, 28, label + ": all 28 Agent labels must render");
   assert.equal(metrics.departments, true, label + ": all 11 departments must be counted");
