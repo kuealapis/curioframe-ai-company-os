@@ -248,6 +248,21 @@ function Scene({ employees, tasks, selectedId, onSelect }) {
   </>;
 }
 
+function getAgentWorldPosition(employee, employees) {
+  const departments = [...new Set(employees.map(e => e.department || "Unassigned"))];
+  const department = employee.department || "Unassigned";
+  const index = departments.indexOf(department);
+  const floor = index < 6 ? 0 : 1;
+  const local = index % 6;
+  const roomX = -9 + (local % 3) * 9;
+  const roomZ = -4 + Math.floor(local / 3) * 8;
+  const team = employees.filter(e => (e.department || "Unassigned") === department);
+  const seat = team.findIndex(e => e.id === employee.id);
+  const deskX = -2.65 + (seat % 3) * 2.55;
+  const deskZ = -1.25 + Math.floor(seat / 3) * 2.25;
+  return [roomX + deskX, floor * 5.7 + 1.15, roomZ + deskZ + 0.45];
+}
+
 function normalizeState(payload) {
   const employees = Array.isArray(payload?.employees) ? payload.employees : [];
   const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
@@ -260,6 +275,15 @@ export function OfficeApp() {
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const controls = useRef();
+
+  useEffect(() => {
+    if (!selectedId || !controls.current) return;
+    const employee = employees.find(e => e.id === selectedId);
+    if (!employee) return;
+    const target = getAgentWorldPosition(employee, employees);
+    controls.current.target.set(target[0], target[1], target[2]);
+    controls.current.update();
+  }, [selectedId, employees]);
 
   useEffect(() => {
     const receive = event => {
