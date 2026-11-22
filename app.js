@@ -1131,6 +1131,25 @@ function updateHQLiveIndicator(state,message){
   const count=hqEventCount+" database event"+(hqEventCount===1?"":"s");
   live.textContent=state==="event"?"● REALTIME ACTIVE · "+count+" · LAST EVENT "+stamp:state==="connected"?"● CHANNEL CONNECTED · 0 DATABASE EVENTS · WAITING FOR CHANGE":state==="offline"?"● REALTIME DISCONNECTED · "+(message||"check connection"):"● CONNECTING TO DATABASE EVENTS";
 }
+async function testHQRealtimeFeed(button){
+ if(!company||!currentUser)return;
+ const last=$("#hq-live-last-event"),original=button?.textContent||"Test live feed";
+ if(button)button.disabled=true;
+ if(last)last.textContent="Saving a clearly labeled diagnostic event…";
+ try{
+  const {error}=await supabase.from("task_events").insert({
+   company_id:company.id,
+   event_type:"hq_realtime_test",
+   message:"Founder-triggered Realtime diagnostic. This is a system test, not AI Agent work.",
+   metadata:{diagnostic:true,source:"virtual_hq",actor:"founder"}
+  });
+  if(error)throw error;
+  if(last)last.textContent="Diagnostic saved · waiting for Realtime delivery…";
+ }catch(error){
+  if(last)last.textContent="Realtime diagnostic could not be saved: "+(error?.message||"unknown error");
+  console.error("HQ Realtime diagnostic failed:",error);
+ }finally{if(button){button.disabled=false;button.textContent=original}}
+}
 function onHQDatabaseEvent(payload){
   hqEventCount++;hqLastEventAt=new Date().toISOString();
   updateHQLiveIndicator("event");scheduleHQRefresh();
@@ -1352,6 +1371,7 @@ function navigate(page){
 document.addEventListener("click",e=>{const link=e.target instanceof Element?e.target.closest("[data-page]"):null;if(!link)return;e.preventDefault();navigate(link.dataset.page)},true);
 $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
 $("#hq-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#hq-realtime-test-btn")?.addEventListener("click",event=>testHQRealtimeFeed(event.currentTarget));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#distribution-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
