@@ -50,6 +50,8 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
+  await page.locator(".agent-select-target[aria-label=\"Inspect Agent 02\"]").click();
+  await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
     return canvas && canvas.width > 0 && canvas.height > 0;
