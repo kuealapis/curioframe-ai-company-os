@@ -819,16 +819,16 @@ async function buildHQ3D(el){
   // Native pointer camera controller: avoids external OrbitControls touch quirks on mobile browsers.
   const target=new THREE.Vector3(0,1.15,0),spherical=new THREE.Spherical();
   const offset=new THREE.Vector3().subVectors(camera.position,target);spherical.setFromVector3(offset);
-  const pointers=new Map();let previousPinch=0,previousMid=null;
+  const pointers=new Map();let previousPinch=0,previousMid=null;let gameMode=false,walkYaw=0,walkPitch=-.12;const movementKeys=new Set();
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const syncCamera=()=>{spherical.radius=clamp(spherical.radius,15,58);spherical.phi=clamp(spherical.phi,.18,Math.PI*.48);camera.position.copy(target).add(new THREE.Vector3().setFromSpherical(spherical));camera.lookAt(target)};
   const controls={
     target,
     update(){syncCamera()},
-    dispose(){renderer.domElement.removeEventListener("pointerdown",cameraPointerDown);renderer.domElement.removeEventListener("pointermove",cameraPointerMove);renderer.domElement.removeEventListener("pointerup",cameraPointerEnd);renderer.domElement.removeEventListener("pointercancel",cameraPointerEnd);renderer.domElement.removeEventListener("wheel",cameraWheel)}
+    dispose(){renderer.domElement.removeEventListener("pointerdown",cameraPointerDown);renderer.domElement.removeEventListener("pointermove",cameraPointerMove);renderer.domElement.removeEventListener("pointerup",cameraPointerEnd);renderer.domElement.removeEventListener("pointercancel",cameraPointerEnd);renderer.domElement.removeEventListener("wheel",cameraWheel);window.removeEventListener("keydown",onWalkKeyDown);window.removeEventListener("keyup",onWalkKeyUp)}
   };
   function cameraPointerDown(ev){if(ev.pointerType==="mouse"&&ev.button!==0)return;ev.preventDefault?.();try{renderer.domElement.setPointerCapture?.(ev.pointerId)}catch{}pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===2){const pts=[...pointers.values()];previousPinch=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);previousMid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}}
-  function cameraPointerMove(ev){if(!pointers.has(ev.pointerId))return;ev.preventDefault?.();const prev=pointers.get(ev.pointerId),dx=ev.clientX-prev.x,dy=ev.clientY-prev.y;pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===1){spherical.theta-=dx*.008;spherical.phi-=dy*.008;syncCamera()}else if(pointers.size>=2){const pts=[...pointers.values()],dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};if(previousPinch>0)spherical.radius*=previousPinch/Math.max(1,dist);if(previousMid){const scale=spherical.radius*.0018;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);target.addScaledVector(right,-(mid.x-previousMid.x)*scale).addScaledVector(up,(mid.y-previousMid.y)*scale)}previousPinch=dist;previousMid=mid;syncCamera()}}
+  function cameraPointerMove(ev){if(!pointers.has(ev.pointerId))return;ev.preventDefault?.();const prev=pointers.get(ev.pointerId),dx=ev.clientX-prev.x,dy=ev.clientY-prev.y;pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(pointers.size===1){if(gameMode){walkYaw-=dx*.006;walkPitch=clamp(walkPitch-dy*.005,-.72,.48);camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{spherical.theta-=dx*.008;spherical.phi-=dy*.008;syncCamera()}}else if(pointers.size>=2&&!gameMode){const pts=[...pointers.values()],dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};if(previousPinch>0)spherical.radius*=previousPinch/Math.max(1,dist);if(previousMid){const scale=spherical.radius*.0018;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);target.addScaledVector(right,-(mid.x-previousMid.x)*scale).addScaledVector(up,(mid.y-previousMid.y)*scale)}previousPinch=dist;previousMid=mid;syncCamera()}}
   function cameraPointerEnd(ev){pointers.delete(ev.pointerId);if(pointers.size<2){previousPinch=0;previousMid=null}}
   function cameraWheel(ev){ev.preventDefault();spherical.radius*=Math.exp(ev.deltaY*.001);syncCamera()}
   renderer.domElement.addEventListener("pointerdown",cameraPointerDown);renderer.domElement.addEventListener("pointermove",cameraPointerMove);renderer.domElement.addEventListener("pointerup",cameraPointerEnd);renderer.domElement.addEventListener("pointercancel",cameraPointerEnd);renderer.domElement.addEventListener("wheel",cameraWheel,{passive:false});
@@ -986,8 +986,12 @@ async function buildHQ3D(el){
     if(isVisible&&alive&&!raf)animate();
   },{threshold:.01}):null;
   if(visibilityObserver){isVisible=false;visibilityObserver.observe(el)}
+  function onWalkKeyDown(ev){if(!gameMode)return;const tag=ev.target?.tagName;if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT")return;const key=ev.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)){movementKeys.add(key);ev.preventDefault()}}
+  function onWalkKeyUp(ev){movementKeys.delete(ev.key.toLowerCase())}
+  window.addEventListener("keydown",onWalkKeyDown);window.addEventListener("keyup",onWalkKeyUp);
   const animate=()=>{
     if(!alive||!isVisible){raf=0;return}raf=requestAnimationFrame(animate);const t=performance.now()/1000;
+    if(gameMode&&movementKeys.size){const forward=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw));const right=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const move=new THREE.Vector3();if(movementKeys.has("w")||movementKeys.has("arrowup"))move.add(forward);if(movementKeys.has("s")||movementKeys.has("arrowdown"))move.sub(forward);if(movementKeys.has("d")||movementKeys.has("arrowright"))move.add(right);if(movementKeys.has("a")||movementKeys.has("arrowleft"))move.sub(right);if(move.lengthSq())move.normalize().multiplyScalar(.105);camera.position.add(move);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5);camera.position.y=1.72;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}
     figures.forEach(figure=>{
       const data=figure.userData;
       figure.position.y=Math.sin(t*1.3+data.phase)*.018;
@@ -1007,8 +1011,11 @@ async function buildHQ3D(el){
       });
     },
     select(id){figures.forEach(f=>f.userData.selection.material.opacity=f.userData.employeeId===id?.85:0)},
-    reset(){target.set(0,1.15,0);spherical.setFromVector3(new THREE.Vector3(19,16,23).sub(target));controls.update()},
-    zoom(factor){spherical.radius*=factor;controls.update()},
+    reset(){gameMode=false;target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()},
+    zoom(factor){if(gameMode){camera.position.add(new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)).multiplyScalar(factor<1?1.2:-1.2));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)}else{spherical.radius*=factor;controls.update()}},
+    setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
+    focusEmployee(id){const index=employees.findIndex(e=>e.id===id);if(index<0)return;const x=(index%7-3)*4.45,z=(Math.floor(index/7)-(Math.ceil(employees.length/7)-1)/2)*5.1;if(gameMode){camera.position.set(x,1.72,z+5);walkYaw=0;walkPitch=-.12;camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(x,1.2,z);spherical.radius=10;controls.update()}},
+    move(direction){if(!gameMode)return;const v=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)),r=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const delta=direction==="forward"?v:direction==="back"?v.clone().negate():direction==="left"?r.clone().negate():r;camera.position.add(delta.multiplyScalar(1.25));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)},
     dispose(){alive=false;cancelAnimationFrame(raf);resize.disconnect();visibilityObserver?.disconnect();controls.dispose();renderer.dispose();scene.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();if(obj.material){const materials=Array.isArray(obj.material)?obj.material:[obj.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});el.innerHTML=""}
   };
   hqWorlds.set(el,world);world.select(selectedHQEmployeeId);world.refresh();
@@ -1045,6 +1052,7 @@ function renderVirtualHQ(){
     const st=hqStatus(e);
     return '<article class="hq-dept-card '+(selectedHQEmployeeId===e.id?'selected':'')+'" data-hq-employee="'+escapeHtml(e.id)+'" role="button" tabindex="0"><div class="hq-dept-icon">'+(icons[e.role_key]||"🤖")+'</div><div><strong>'+escapeHtml(e.name)+'</strong><span>'+escapeHtml(e.department)+'</span><small>'+escapeHtml(e.responsibilities)+'</small></div><b class="hq-status '+st.key+'">'+st.label+'</b><footer>'+st.count+' open task'+(st.count===1?'':'s')+'</footer></article>'
   }).join("");
+  const deptSelect=$("#hq-department-select");if(deptSelect){const depts=[...new Set(employees.map(e=>e.department).filter(Boolean))].sort();const selected=deptSelect.value;deptSelect.innerHTML='<option value="">Jump to department…</option>'+depts.map(d=>'<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join("");if(depts.includes(selected))deptSelect.value=selected}
   if(selectedHQEmployeeId&&!employees.some(e=>e.id===selectedHQEmployeeId))selectedHQEmployeeId=null;
   hqWorlds.forEach(world=>world.select(selectedHQEmployeeId));
   renderHQDetail(selectedHQEmployeeId);
@@ -1063,7 +1071,7 @@ function renderHQDetail(employeeId){
 function selectHQEmployee(employeeId){
   selectedHQEmployeeId=employeeId;
   $$(".hq-dept-card").forEach(card=>card.classList.toggle("selected",card.dataset.hqEmployee===employeeId));
-  hqWorlds.forEach(world=>world.select(employeeId));
+  hqWorlds.forEach(world=>{world.select(employeeId);world.focusEmployee?.(employeeId)});
   renderHQDetail(employeeId);
 }
 let hqLastEventAt=null,hqEventCount=0;
@@ -1325,9 +1333,12 @@ $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(sh
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
 document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify);const start=e.target.closest("[data-work-sample-start]");if(start)startWorkSampleAssignment(start.dataset.workSampleStart,start);const record=e.target.closest("[data-work-sample-record]");if(record)openWorkSampleEvidence(record.dataset.workSampleRecord)});
 document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
+document.addEventListener("change",e=>{const select=e.target.closest("#hq-department-select");if(!select||!select.value)return;const employee=employees.find(x=>x.department===select.value);if(employee)selectHQEmployee(employee.id)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
 
 document.addEventListener("click",e=>{
+  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===action&&(action==="walk"||action==="orbit")));return}
+  const move=e.target.closest("[data-hq-move]");if(move){hqWorlds.forEach(world=>world.move(move.dataset.hqMove));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
   const qualityRestoreTrigger=e.target.closest("[data-restore-quality]");
