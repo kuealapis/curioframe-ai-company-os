@@ -1147,6 +1147,7 @@ function sendHQSnapshot(frame){
   const payload={
     employees:employees.map(e=>({id:e.id,name:e.name,role_key:e.role_key,department:e.department,responsibilities:e.responsibilities,status:e.status,capability_status:e.capability_status,capability_profile:e.capability_profile,capability_verified_at:e.capability_verified_at})),
     tasks:tasks.map(t=>({id:t.id,title:t.title,objective:t.objective,status:t.status,assigned_employee_id:t.assigned_employee_id,priority:t.priority,deliverable_url:t.deliverable_url,created_at:t.created_at,updated_at:t.updated_at,ai_employees:t.ai_employees?{name:t.ai_employees.name}:null})),
+    events:taskEvents.map(e=>({id:e.id,employee_id:e.employee_id,task_id:e.task_id,event_type:e.event_type,message:e.message,created_at:e.created_at})),
     departments:departments.map(d=>({name:d.name,description:d.description}))
   };
   frame.contentWindow.postMessage({type:"curioframe:office-snapshot",payload},location.origin);
