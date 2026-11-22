@@ -276,6 +276,8 @@ export function OfficeApp() {
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const controls = useRef();
+  const employees = snapshot.employees;
+  const tasks = snapshot.tasks;
 
   useEffect(() => {
     if (!selectedId || !controls.current) return;
@@ -302,8 +304,6 @@ export function OfficeApp() {
     return () => window.removeEventListener("message", receive);
   }, []);
 
-  const employees = snapshot.employees;
-  const tasks = snapshot.tasks;
   const departments = snapshot.departments.length ? snapshot.departments.map(d => d.name).filter(Boolean) : [...new Set(employees.map(e => e.department || "Unassigned"))];
   const selected = employees.find(e => e.id === selectedId);
   const selectedStatus = selected ? getStatus(selected, tasks) : null;
