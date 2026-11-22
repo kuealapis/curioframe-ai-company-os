@@ -260,10 +260,11 @@ function renderCapabilityLab(){
 }
 function renderWorkSampleAssignments(){
  const host=$("#work-sample-assignment-list");if(!host)return;
+ const canRun=a=>a.status==="queued"||(a.status==="in_progress"&&!!a.submission?.task_id);
  const queued=workSampleAssignments.filter(a=>a.status==="queued").length,active=workSampleAssignments.filter(a=>a.status==="in_progress").length,submitted=workSampleAssignments.filter(a=>["submitted","qa_passed","qa_failed"].includes(a.status)).length;
  const q=$("#work-sample-queued-count"),a=$("#work-sample-active-count"),s=$("#work-sample-submitted-count");
  if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
- host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(["queued","in_progress"].includes(item.status)?'<button class="primary-btn" type="button" data-work-sample-run="'+item.id+'">Run this Agent</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
+ host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(canRun(item)?'<button class="primary-btn" type="button" data-work-sample-run="'+item.id+'">Run this Agent</button>':item.status==="in_progress"&&!item.submission?.task_id?'<span class="muted">Execution lock · recovery required</span>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
 }
 async function checkAIProviderPreflight(button){
  const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status"),pilotButton=$("#run-one-work-sample");
@@ -289,7 +290,7 @@ async function runWorkSampleAssignment(assignmentId,button){
  const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status");
  if(!confirmBox?.checked||!aiProviderPreflightPassed){if(status)status.textContent="Pilot locked: confirm the zero-cost condition and complete the no-cost provider preflight first.";return}
  if(workSamplePilotRunning){if(status)status.textContent="Another Agent pilot is already running. Wait for it to finish.";return}
- const target=workSampleAssignments.find(x=>x.id===assignmentId&&["queued","in_progress"].includes(x.status));
+ const target=workSampleAssignments.find(x=>x.id===assignmentId&&(x.status==="queued"||(x.status==="in_progress"&&!!x.submission?.task_id)));
  if(!target){if(status)status.textContent="This assignment is no longer eligible. Refresh the records before retrying.";return}
  const agent=employees.find(e=>e.id===target.employee_id),agentName=agent?.name||"the selected Agent";
  if(!confirm("Run exactly ONE real work sample for "+agentName+"? This calls the configured Gemini API. No other Agent will be started. The deliverable remains unapproved until independent QA."))return;
@@ -313,13 +314,13 @@ async function runWorkSampleAssignment(assignmentId,button){
   try{await loadData()}catch(refreshError){console.error("Could not refresh after pilot error:",refreshError)}
  }finally{
   workSamplePilotRunning=false;
-  $("#work-sample-assignment-list [data-work-sample-run]").forEach(control=>{const item=workSampleAssignments.find(x=>x.id===control.dataset.workSampleRun);control.disabled=!item||!["queued","in_progress"].includes(item.status)});
+  $("#work-sample-assignment-list [data-work-sample-run]").forEach(control=>{const item=workSampleAssignments.find(x=>x.id===control.dataset.workSampleRun);control.disabled=!item||!(item.status==="queued"||(item.status==="in_progress"&&!!item.submission?.task_id))});
   const globalButton=$("#run-one-work-sample");if(globalButton)globalButton.disabled=!confirmBox?.checked||!aiProviderPreflightPassed;
   const preflightButton=$("#check-ai-provider");if(preflightButton)preflightButton.disabled=!confirmBox?.checked;
  }
 }
 async function runOneWorkSample(){
- const eligible=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
+ const eligible=workSampleAssignments.filter(x=>x.status==="queued"||(x.status==="in_progress"&&!!x.submission?.task_id));
  if(!eligible.length){const status=$("#work-sample-batch-status");if(status)status.textContent="No queued or in-progress work sample remains.";return}
  return runWorkSampleAssignment(eligible[0].id,$("#run-one-work-sample"));
 }
