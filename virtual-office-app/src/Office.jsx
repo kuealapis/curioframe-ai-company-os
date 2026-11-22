@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, ContactShadows } from "@react-three/drei";
+import { OrbitControls, ContactShadows, Html } from "@react-three/drei";
 
 const STATUS = {
   working: { label: "IN PROGRESS", color: "#45d483" },
@@ -163,6 +163,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
       <boxGeometry args={[1.3, 0.48, 0.12]} />
       <meshStandardMaterial color={wallColor} emissive={wallColor} emissiveIntensity={0.18} />
     </mesh>
+    <Html position={[-3.45, 2.74, -3.47]} distanceFactor={9} center><div className="room-sign">{department}</div></Html>
     {Array.from({ length: Math.max(1, agents.length) }, (_, seat) => {
       const sx = -2.65 + (seat % 3) * 2.55;
       const sz = -1.25 + Math.floor(seat / 3) * 2.25;
