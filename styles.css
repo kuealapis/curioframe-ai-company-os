@@ -389,3 +389,50 @@ label{color:#53647b}input,select{border-color:#d6dfeb;background:#fff;color:#172
  .hq-mission-stat{padding:9px}.hq-mission-stat strong{font-size:18px}
  .hq-game-stats{flex-wrap:wrap}
 }
+
+
+/* Immersive Virtual HQ fullscreen mode */
+#page-virtual-hq.hq-fullscreen-mode,
+#page-virtual-hq:fullscreen{position:fixed!important;inset:0!important;z-index:10000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:12px 16px 16px!important;overflow:auto!important;background:#f3f6fa!important}
+body:has(#page-virtual-hq.hq-fullscreen-mode) .sidebar,
+body:has(#page-virtual-hq:fullscreen) .sidebar,
+body:has(#page-virtual-hq.hq-fullscreen-mode) .main>.topbar,
+body:has(#page-virtual-hq:fullscreen) .main>.topbar{display:none!important}
+body:has(#page-virtual-hq.hq-fullscreen-mode) .main,
+body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:none!important;padding:0!important}
+#page-virtual-hq.hq-fullscreen-mode .page-heading,
+#page-virtual-hq:fullscreen .page-heading{margin:0 0 8px;align-items:center}
+#page-virtual-hq.hq-fullscreen-mode .page-heading h1,
+#page-virtual-hq:fullscreen .page-heading h1{font-size:20px}
+#page-virtual-hq.hq-fullscreen-mode .page-heading .subheading,
+#page-virtual-hq:fullscreen .page-heading .subheading{display:none}
+#page-virtual-hq.hq-fullscreen-mode .hq-main-panel,
+#page-virtual-hq:fullscreen .hq-main-panel{height:calc(100dvh - 76px);min-height:0;display:flex;flex-direction:column;padding:10px}
+#page-virtual-hq.hq-fullscreen-mode .hq-viewport,
+#page-virtual-hq:fullscreen .hq-viewport{flex:1;min-height:0;height:auto}
+#page-virtual-hq.hq-fullscreen-mode .hq-3d-stage,
+#page-virtual-hq:fullscreen .hq-3d-stage{height:100%!important;min-height:0!important}
+#page-virtual-hq.hq-fullscreen-mode .hq-game-hint,
+#page-virtual-hq:fullscreen .hq-game-hint,
+#page-virtual-hq.hq-fullscreen-mode .hq-legend,
+#page-virtual-hq:fullscreen .hq-legend,
+#page-virtual-hq.hq-fullscreen-mode #hq-department-grid,
+#page-virtual-hq:fullscreen #hq-department-grid,
+#page-virtual-hq.hq-fullscreen-mode .hq-note,
+#page-virtual-hq:fullscreen .hq-note{display:none!important}
+#page-virtual-hq.hq-fullscreen-mode .hq-fullscreen-btn,
+#page-virtual-hq:fullscreen .hq-fullscreen-btn{white-space:nowrap}
+@media(max-width:700px){
+ #page-virtual-hq.hq-fullscreen-mode,
+ #page-virtual-hq:fullscreen{padding:6px!important}
+ #page-virtual-hq.hq-fullscreen-mode .page-heading,
+ #page-virtual-hq:fullscreen .page-heading{margin-bottom:5px}
+ #page-virtual-hq.hq-fullscreen-mode .page-heading h1,
+ #page-virtual-hq:fullscreen .page-heading h1{font-size:16px}
+ #page-virtual-hq.hq-fullscreen-mode .hq-main-panel,
+ #page-virtual-hq:fullscreen .hq-main-panel{height:calc(100dvh - 54px);padding:6px}
+ #page-virtual-hq.hq-fullscreen-mode .hq-live-line,
+ #page-virtual-hq:fullscreen .hq-live-line{gap:5px;font-size:9px}
+ #page-virtual-hq.hq-fullscreen-mode .hq-game-toolbar,
+ #page-virtual-hq:fullscreen .hq-game-toolbar{gap:5px}
+}
