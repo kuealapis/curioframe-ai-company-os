@@ -462,3 +462,8 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
  #page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene,
  #page-virtual-hq:fullscreen #virtual-hq-full-scene{min-height:360px!important}
 }
+
+/* Authenticated React Three Fiber Virtual Office embedded in Mission Control */
+#virtual-hq-full-scene iframe[data-curioframe-office]{display:block;width:100%;height:100%;min-height:520px;border:0;border-radius:inherit;background:#b9cbd2}
+#page-virtual-hq .hq-viewport #virtual-hq-full-scene{overflow:hidden;position:relative}
+@media(max-width:700px){#virtual-hq-full-scene iframe[data-curioframe-office]{min-height:480px}}
