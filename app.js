@@ -32,6 +32,7 @@ const employeeSeed = [
 ];
 
 let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
+let aiProviderPreflightPassed=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}catch(error){console.warn("Local storage unavailable:",error);return ""}}
@@ -263,9 +264,29 @@ function renderWorkSampleAssignments(){
  if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
  host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(["queued","in_progress"].includes(item.status)?'<button class="primary-btn" type="button" data-work-sample-run="'+item.id+'">Run this Agent</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
 }
+async function checkAIProviderPreflight(button){
+ const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status"),pilotButton=$("#run-one-work-sample");
+ if(!confirmBox?.checked){if(status)status.textContent="Provider preflight locked: first confirm the verified zero-cost condition.";return}
+ aiProviderPreflightPassed=false;if(pilotButton)pilotButton.disabled=true;
+ button.disabled=true;if(status)status.textContent="Checking server configuration only. No Gemini API request will be made…";
+ try{
+  const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,confirmed_zero_cost:true,preflight_only:true}});
+  if(error)throw error;
+  if(data?.provider_configured&&data?.zero_cost_policy){
+   aiProviderPreflightPassed=true;
+   if(status)status.textContent="PREFLIGHT PASSED · Gemini key is present and company policy blocks paid usage. No Gemini call was made. IMPORTANT: Google AI Studio billing/free-tier status cannot be verified by this server; the Founder must confirm it before starting the pilot.";
+   if(pilotButton)pilotButton.disabled=false;
+  }else{
+   if(status)status.textContent="PREFLIGHT BLOCKED · "+(data?.message||"Gemini key or zero-cost policy is not ready.")+". No AI request was made.";
+  }
+ }catch(error){
+  if(status)status.textContent="PREFLIGHT ERROR · "+(error?.message||"Could not check server configuration.")+". No Gemini request was made.";
+ }finally{button.disabled=false}
+}
+
 async function runWorkSampleAssignment(assignmentId,button){
  const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status");
- if(!confirmBox?.checked){if(status)status.textContent="Pilot locked: first confirm the verified zero-cost condition.";return}
+ if(!confirmBox?.checked||!aiProviderPreflightPassed){if(status)status.textContent="Pilot locked: confirm the zero-cost condition and complete the no-cost provider preflight first.";return}
  const target=workSampleAssignments.find(x=>x.id===assignmentId&&["queued","in_progress"].includes(x.status));
  if(!target){if(status)status.textContent="This assignment is no longer eligible. Refresh the records before retrying.";return}
  const agent=employees.find(e=>e.id===target.employee_id),agentName=agent?.name||"the selected Agent";
@@ -1356,8 +1377,9 @@ $("#run-content-intake-validation")?.addEventListener("click",runContentIntakeSo
 $("#research-evidence-form")?.addEventListener("submit",submitResearchEvidencePack);
 $("#run-source-verification")?.addEventListener("click",runResearchSourceVerification);
 // Real execution is limited to one explicitly confirmed zero-cost pilot.
-const pilotConfirm=$("#pilot-zero-cost-confirm"),pilotButton=$("#run-one-work-sample");
-pilotConfirm?.addEventListener("change",()=>{if(pilotButton)pilotButton.disabled=!pilotConfirm.checked});
+const pilotConfirm=$("#pilot-zero-cost-confirm"),pilotButton=$("#run-one-work-sample"),preflightButton=$("#check-ai-provider");
+pilotConfirm?.addEventListener("change",()=>{aiProviderPreflightPassed=false;if(preflightButton)preflightButton.disabled=!pilotConfirm.checked;if(pilotButton)pilotButton.disabled=true});
+preflightButton?.addEventListener("click",()=>checkAIProviderPreflight(preflightButton));
 pilotButton?.addEventListener("click",runOneWorkSample);
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
