@@ -1183,13 +1183,23 @@ function renderVirtualHQ(){
   const full=$("#virtual-hq-full-scene");
   if(full){
     full.classList.add("hq-3d-stage");
-    let frame=full.querySelector("iframe[data-curioframe-office]");
-    if(!frame){
-      full.innerHTML='<iframe data-curioframe-office title="CurioFrame interactive 3D virtual office" src="./virtual-office/index.html" loading="eager" allow="fullscreen" referrerpolicy="same-origin" style="display:block;width:100%;height:100%;min-height:0;border:0;background:#b9c9d3"></iframe>';
-      frame=full.querySelector("iframe[data-curioframe-office]");
-      frame.addEventListener("load",()=>sendHQSnapshot(frame));
+    const visible=full.getClientRects().length>0&&full.clientWidth>0&&full.clientHeight>0;
+    if(!visible){
+      if(!hqWorlds.has(full))full.innerHTML='<div class="hq-3d-loading">3D HEADQUARTERS READY · OPEN VIRTUAL HQ TO ENTER</div>';
+    }else if(!hqWorlds.has(full)){
+      if(!full.querySelector(".hq-3d-loading"))full.innerHTML='<div class="hq-3d-loading">BUILDING LIVE COMPANY FLOOR…</div>';
+      requestAnimationFrame(()=>{if(full.getClientRects().length>0&&full.clientWidth>0&&full.clientHeight>0)launchHQ3D(full)});
+    }else{
+      const world=hqWorlds.get(full);
+      const currentIds=(world.employeeIds||[]).join("|"),latestIds=employees.map(e=>e.id).join("|");
+      if(currentIds!==latestIds){
+        world.dispose();hqWorlds.delete(full);
+        full.innerHTML='<div class="hq-3d-loading">UPDATING COMPANY FLOOR…</div>';
+        requestAnimationFrame(()=>{if(full.getClientRects().length>0&&full.clientWidth>0&&full.clientHeight>0)launchHQ3D(full)});
+      }else{
+        world.refresh();
+      }
     }
-    sendHQSnapshot(frame);
   }
   const grid=$("#hq-department-grid");
   const agentTotal=$("#hq-agent-total"),agentActive=$("#hq-agent-active"),deptTotal=$("#hq-department-total");if(agentTotal)agentTotal.textContent=employees.length+" AI AGENTS";if(agentActive)agentActive.textContent=employees.filter(e=>hqStatus(e).count>0).length+" WITH OPEN WORK";if(deptTotal)deptTotal.textContent=[...new Set(employees.map(e=>e.department).filter(Boolean))].length+" DEPARTMENTS";
