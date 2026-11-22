@@ -1350,7 +1350,7 @@ document.addEventListener("pointermove",ev=>{if(ev.pointerId===joystickPointer)u
 document.addEventListener("pointerup",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
 document.addEventListener("pointercancel",ev=>{if(ev.pointerId===joystickPointer)endJoystick()});
 document.addEventListener("click",e=>{
-  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===(action==="reset"?"orbit":action)&&(action==="walk"||action==="orbit"||action==="reset")));return}
+  const hqAction=e.target.closest("[data-hq-action]");if(hqAction){const action=hqAction.dataset.hqAction;hqWorlds.forEach(world=>{if(action==="walk")world.setGameMode(true);else if(action==="orbit")world.setGameMode(false);else if(action==="reset")world.reset();else if(action==="zoom-in")world.zoom(.82);else if(action==="zoom-out")world.zoom(1.22)});$$("[data-hq-action]").forEach(b=>b.classList.toggle("active",b.dataset.hqAction===(action==="reset"?"orbit":action)&&(action==="walk"||action==="orbit"||action==="reset")));return}
   const trigger=e.target.closest("[data-open-approval]");
   if(trigger){openApproval(trigger.dataset.openApproval);return}
   const qualityRestoreTrigger=e.target.closest("[data-restore-quality]");
