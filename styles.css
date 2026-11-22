@@ -342,3 +342,50 @@ label{color:#53647b}input,select{border-color:#d6dfeb;background:#fff;color:#172
 .chief-of-staff-strip{background:#edf5ff;border-color:#d6e5f7}.chief-of-staff-strip p{color:#506985}.chief-of-staff-strip strong{color:#203d63}
 .agent-mission-grid article{background:#fff;border-color:#e0e7f0}.mission-art{background:linear-gradient(145deg,#edf4ff,#dce9f8)}.agent-mission-grid h3{color:#26364c}.agent-mission-grid ul{color:#687990}
 @media(max-width:700px){.sidebar{box-shadow:20px 0 50px #233b5c20}}
+
+
+/* Virtual HQ: daylight dollhouse office + Ruang-inspired mission control */
+.hq-3d-stage{background:linear-gradient(180deg,#b8d8ef 0%,#eaf3f8 45%,#dce8e5 100%);border:1px solid #cad8e5}
+.hq-3d-stage canvas{touch-action:none;cursor:grab}
+.hq-viewport{position:relative;isolation:isolate;overflow:hidden;border-radius:16px}
+.hq-game-stats{position:relative;z-index:2}
+.hq-game-stats span{background:#f0f5fb;color:#47617e;border:1px solid #dbe5ef}
+.hq-mission-panel{position:absolute;z-index:5;right:12px;top:12px;bottom:12px;width:min(330px,34%);display:flex;flex-direction:column;overflow:hidden;border:1px solid #34483e;border-radius:13px;background:rgba(18,27,24,.94);color:#e8f0e9;box-shadow:0 18px 48px #172c3c35;backdrop-filter:blur(12px)}
+.hq-mission-panel[hidden]{display:none}
+.hq-mission-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid #33433a}
+.hq-mission-head div{display:grid;gap:3px}.hq-mission-head small{font-size:8px;letter-spacing:.18em;color:#9db5a5}.hq-mission-head strong{font-size:15px;color:#f2f7f1}
+.hq-mission-head button{width:30px;height:30px;border:1px solid #43564a;border-radius:7px;background:#202d26;color:#f1f5ef;font-size:19px}
+.hq-mission-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px;border-bottom:1px solid #33433a}
+.hq-mission-tabs button{border:1px solid transparent;border-radius:6px;background:transparent;color:#aab9ae;padding:7px 3px;font-size:10px}
+.hq-mission-tabs button.active{background:#28463a;border-color:#6ca98b;color:#eafff1}
+.hq-mission-content{padding:10px;overflow:auto;min-height:0;display:grid;align-content:start;gap:8px}
+.hq-mission-stat-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #3a4a40;border-radius:8px;overflow:hidden}
+.hq-mission-stat{padding:11px;border-right:1px solid #3a4a40;border-bottom:1px solid #3a4a40;min-width:0}
+.hq-mission-stat span{display:block;color:#a6b3a9;font-size:10px}.hq-mission-stat strong{display:block;margin-top:5px;font-size:21px;color:#f2f7f1;font-variant-numeric:tabular-nums}
+.hq-mission-stat small{display:block;margin-top:3px;color:#8b9c90;font-size:8px}
+.hq-mission-row{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #34443a;border-radius:8px;background:#1c2922;min-width:0}
+.hq-mission-dot{width:9px;height:9px;border-radius:50%;flex:none;background:#89978d}.hq-mission-dot.working{background:#58c99a}.hq-mission-dot.review{background:#e2b45e}.hq-mission-dot.blocked{background:#e47d82}.hq-mission-dot.queued{background:#77a8e8}
+.hq-mission-row div{min-width:0;flex:1}.hq-mission-row strong{display:block;font-size:10px;color:#edf4ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hq-mission-row small{display:block;margin-top:3px;color:#9aab9e;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hq-mission-row b{font-size:8px;color:#b7c7bb;white-space:nowrap}
+.hq-mission-section{font-size:9px;letter-spacing:.12em;color:#a5b8a9;margin:5px 2px 1px}
+.hq-mission-empty{padding:18px 10px;text-align:center;color:#9aab9e;font-size:10px;line-height:1.5}
+.hq-panel-toggle{position:absolute;z-index:6;right:16px;top:16px;border:1px solid #d5e1eb;border-radius:8px;background:#fff;color:#2e4c68;padding:8px 11px;font-size:10px;box-shadow:0 4px 14px #22384a18}
+.hq-viewport.panel-open .hq-panel-toggle{display:none}
+.hq-joystick-wrap{z-index:7}
+.hq-selected-detail{background:#fff;border-color:#dbe5ef;color:#20334a;box-shadow:0 8px 25px #243a5510}
+.hq-detail-head small{color:#527ba8}.hq-detail-head span,.hq-selected-detail p{color:#64758b}
+.hq-detail-close{border-color:#dbe4ee;background:#f2f6fb;color:#344a63}
+.hq-detail-summary span{background:#edf3fa;color:#48627f}
+.hq-selected-detail li{background:#f5f8fc;color:#31445b}
+.hq-selected-detail .hq-no-task{color:#75869a}
+.hq-task-status{color:#536c89}
+.hq-dept-card.selected{background:#edf5ff;border-color:#8fb7e8;box-shadow:0 0 0 1px #8fb7e833,0 8px 24px #23456b12}
+.hq-dept-icon{background:#e9f1fb;color:#315e94}
+.hq-status{color:#66798f;background:#edf1f5}
+.hq-status.working{color:#14734f;background:#e3f5ec}.hq-status.review{color:#94600f;background:#fff2dc}.hq-status.blocked{color:#ad3448;background:#fdebed}.hq-status.queued{color:#285da5;background:#e8f1ff}
+@media(max-width:700px){
+ .hq-mission-panel{right:8px;top:8px;bottom:8px;width:min(290px,82%)}
+ .hq-panel-toggle{right:10px;top:10px}
+ .hq-mission-stat{padding:9px}.hq-mission-stat strong{font-size:18px}
+ .hq-game-stats{flex-wrap:wrap}
+}
