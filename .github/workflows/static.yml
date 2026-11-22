@@ -39,6 +39,7 @@ jobs:
         run: |
           npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
           npm run build --prefix virtual-office-app
+          rm -rf virtual-office-app/node_modules
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
