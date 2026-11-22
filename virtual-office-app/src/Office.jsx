@@ -213,7 +213,6 @@ function normalizeState(payload) {
 export function OfficeApp() {
   const [snapshot, setSnapshot] = useState({ employees: [], tasks: [], departments: [] });
   const [selectedId, setSelectedId] = useState(null);
-  const [panel, setPanel] = useState("crew");
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const controls = useRef();
@@ -248,7 +247,6 @@ export function OfficeApp() {
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "DATABASE SNAPSHOT RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
         <button onClick={() => controls.current?.reset?.()}>Reset view</button>
-        <button onClick={() => setPanel(p => p ? "" : "crew")}>{panel ? "Hide panel" : "Mission Control"}</button>
       </div>
     </header>
     <section className="office-stage">
@@ -265,22 +263,6 @@ export function OfficeApp() {
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
       <div className="office-help">Drag to orbit · Pinch to zoom · Two-finger drag to pan · Tap an Agent to inspect</div>
-      {panel && <aside className="office-panel">
-        <div className="panel-heading"><div><small>LIVE COMPANY SNAPSHOT</small><strong>Mission Control</strong></div><button onClick={() => setPanel("")}>×</button></div>
-        <nav className="panel-tabs">
-          {["crew", "tasks", "departments"].map(tab => <button key={tab} className={panel === tab ? "active" : ""} onClick={() => setPanel(tab)}>{tab}</button>)}
-        </nav>
-        <div className="panel-body">
-          {panel === "crew" && (employees.length ? employees.map(e => {
-            const status = getStatus(e, tasks);
-            return <button key={e.id} className={"crew-row " + (selectedId === e.id ? "selected" : "")} onClick={() => setSelectedId(e.id)}>
-              <i style={{ background: STATUS[status.key].color }} /><span><b>{e.name}</b><small>{e.department || "Unassigned department"}</small></span><em>{STATUS[status.key].label}</em>
-            </button>;
-          }) : <p className="empty-state">No employee records received yet.</p>)}
-          {panel === "tasks" && (openTasks.length ? openTasks.slice(0, 50).map(t => <article className="task-row" key={t.id}><b>{t.title}</b><small>{t.ai_employees?.name || employees.find(e => e.id === t.assigned_employee_id)?.name || "Unassigned"} · {String(t.status || "queued").replaceAll("_", " ")}</small></article>) : <p className="empty-state">No open tasks recorded.</p>)}
-          {panel === "departments" && departments.map(d => <article className="department-row" key={d}><b>{d}</b><small>{employees.filter(e => e.department === d).length} registered roles</small></article>)}
-        </div>
-      </aside>}
       {selected && <aside className="agent-inspector">
         <button className="inspector-close" onClick={() => setSelectedId(null)}>×</button>
         <small>AGENT PROFILE</small><h2>{selected.name}</h2><p>{selected.department}</p>
