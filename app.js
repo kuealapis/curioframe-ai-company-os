@@ -835,13 +835,13 @@ const hqBuilds=new WeakMap();
 let hqRefreshTimer=null;
 const hqColors={ai_ceo:0x8bb7ff,research:0x67d6d0,content:0xffb86b,marketing:0xd69bff,quality:0x82a8ff,qc:0x66c7ff,qa:0x76d6a5,finance:0xf2ce70,operations:0xb1bdcf};
 function hqStatus(e){const a=tasks.filter(t=>t.assigned_employee_id===e.id&&!["completed","cancelled"].includes(t.status));if(a.some(t=>["review","pending"].includes(t.status)))return{key:"review",label:"AWAITING REVIEW",count:a.length};if(a.some(t=>t.status==="in_progress"))return{key:"working",label:"IN PROGRESS",count:a.length};if(a.some(t=>t.status==="blocked"))return{key:"blocked",label:"BLOCKED",count:a.length};if(a.some(t=>t.status==="queued"))return{key:"queued",label:"QUEUED",count:a.length};return{key:"idle",label:e.status==="planned"?"READY TO ACTIVATE":"IDLE",count:a.length}}
-function hqTextSprite(THREE,text,accent="#70d9e8"){
+function hqTextSprite(THREE,text,accent="#3978b9"){
   const canvas=document.createElement("canvas");canvas.width=640;canvas.height=160;
   const ctx=canvas.getContext("2d");ctx.clearRect(0,0,640,160);
-  ctx.shadowColor=accent;ctx.shadowBlur=16;ctx.fillStyle="rgba(5,15,29,.94)";
+  ctx.shadowColor="#385b7c";ctx.shadowBlur=8;ctx.fillStyle="rgba(255,255,255,.97)";
   ctx.beginPath();ctx.roundRect(8,10,624,140,28);ctx.fill();ctx.shadowBlur=0;
-  ctx.strokeStyle=accent;ctx.globalAlpha=.8;ctx.lineWidth=3;ctx.stroke();ctx.globalAlpha=1;
-  ctx.fillStyle="#f1f8ff";ctx.font="700 38px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.strokeStyle=accent;ctx.globalAlpha=.9;ctx.lineWidth=4;ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle="#20344d";ctx.font="700 34px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
   ctx.fillText(text,320,80,570);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));
@@ -904,8 +904,13 @@ async function buildHQ3D(el){
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,24,18),material);mesh.position.set(x,y,z);
     if(scale)mesh.scale.set(...scale);mesh.castShadow=true;parent.add(mesh);return mesh;
   };
-  const floor=addBox(scene,36,.5,26,mat(0xdce6f1,.18,.38),0,-.28,0,false,true);
-  const floorInset=addBox(scene,34,.035,24,mat(0xeaf0f7,.12,.5),0,-.005,0,false,true);
+  // Outdoor campus base and warm timber office floor, inspired by the reference office.
+  addBox(scene,58,.28,48,mat(0x8eae84,.02,.96),0,-.72,-1.5,false,true);
+  const floor=addBox(scene,36,.5,26,mat(0xb7835d,.08,.72),0,-.28,0,false,true);
+  const floorInset=addBox(scene,34,.035,24,mat(0xd6b18a,.02,.82),0,-.005,0,false,true);
+  const plankMat=mat(0x9c6e4d,.02,.82);
+  for(let z=-11.5;z<=11.5;z+=1.15){const seam=addBox(scene,33,.012,.018,plankMat,0,.022,z);seam.material.transparent=true;seam.material.opacity=.34;}
+  for(let x=-16;x<=16;x+=5.5){const seam=addBox(scene,.018,.012,23,mat(0x8d6247,.02,.9),x,.023,0);seam.material.transparent=true;seam.material.opacity=.22;}
   for(let x=-16;x<=16;x+=2){const line=addBox(scene,.018,.012,23,mat(0xb5c6d9,.25,.5),x,.02,0);line.material.transparent=true;line.material.opacity=.35}
   for(let z=-11;z<=11;z+=2){const line=addBox(scene,34,.012,.018,mat(0xb5c6d9,.25,.5),0,.021,z);line.material.transparent=true;line.material.opacity=.35}
   // Glass perimeter and architectural frame
@@ -918,6 +923,14 @@ async function buildHQ3D(el){
     addBox(scene,.055,3.35,.08,mat(0x9bb3ca,.65,.28),x-2.3,2.8,-12.52);
   }
   for(let z=-10;z<=10;z+=3.5)addBox(scene,.06,3.6,.08,mat(0x9bb3ca,.65,.28),-17.77,2.8,z);
+  // Interior glass partitions create recognizable department rooms while keeping the dollhouse view open.
+  const partition=mat(0xc5d9e8,.18,.34);partition.transparent=true;partition.opacity=.34;
+  const frame=mat(0x718da8,.45,.42);
+  for(const x of [-9,0,9]){addBox(scene,.10,2.45,23,partition,x,1.28,0);for(const z of [-10,-5,0,5,10])addBox(scene,.13,2.55,.13,frame,x,1.3,z);addBox(scene,.14,.12,23,frame,x,2.55,0);}
+  for(const z of [-4.05,4.05]){addBox(scene,33,2.25,.10,partition,0,1.16,z);for(let x=-15;x<=15;x+=4.5)addBox(scene,.13,2.35,.13,frame,x,1.2,z);addBox(scene,33,.12,.14,frame,0,2.35,z);}
+  // Low cutaway walls on the front and right edges keep the office readable from the camera.
+  addBox(scene,36,1.15,.22,mat(0xe9edf2,.02,.82),0,.55,12.72);
+  addBox(scene,.22,1.15,26,mat(0xe9edf2,.02,.82),17.9,.55,0);
   // Ceiling beams and warm linear fixtures
   for(let x=-12;x<=12;x+=6){
     addBox(scene,.12,.18,24,mat(0xd6e2ef,.45,.35),x,5.05,0);
@@ -935,6 +948,19 @@ async function buildHQ3D(el){
     for(let i=0;i<5;i++){const leaf=addSphere(scene,.22,mat(0x3f9c83),x+Math.sin(i*1.25)*.16,.58+(i%2)*.12,z+Math.cos(i*1.25)*.15,[.45,1.35,.45]);leaf.rotation.z=(i-2)*.22}
   };
   plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
+  // Reception desk and visitor lounge furniture.
+  const reception=new THREE.Group();reception.position.set(0,0,9.2);scene.add(reception);
+  addBox(reception,4.2,.28,1.45,mat(0x9b6748,.08,.65),0,1.05,0,true);
+  addBox(reception,3.95,.08,1.28,mat(0xe7c39c,.04,.7),0,1.22,0);
+  addBox(reception,.18,.9,.18,mat(0x9b6748),-1.75,.48,-.48);addBox(reception,.18,.9,.18,mat(0x9b6748),1.75,.48,-.48);
+  const receptionSign=hqTextSprite(THREE,"CURIOFRAME  /  RECEPTION","#3b83bd");receptionSign.position.set(0,2.15,-.05);receptionSign.scale.set(3.8,.85,1);reception.add(receptionSign);
+  const lounge=new THREE.Group();lounge.position.set(13,0,8.6);scene.add(lounge);
+  const sofaMat=mat(0x527c9b,.02,.82),sofaSeat=mat(0x6f98b3,.02,.86);
+  addBox(lounge,3.2,.52,1.05,sofaMat,0,.42,0,true);addBox(lounge,3.2,.95,.24,sofaMat,0,.78,-.42,true);
+  addBox(lounge,.25,.75,1.0,sofaMat,-1.48,.63,0,true);addBox(lounge,.25,.75,1.0,sofaMat,1.48,.63,0,true);
+  addBox(lounge,2.1,.12,.8,sofaSeat,0,.72,.08);
+  addBox(lounge,1.65,.18,1.05,mat(0xe4c49d,.02,.75),0,.36,1.35,true);
+  const loungePlant=()=>plant(15,10.7);loungePlant();
   const figures=[];
   const departmentNames=[...new Set(employees.map(e=>e.department||"General"))];
   const departmentSpots=departmentNames.map((name,index)=>({name,x:-13.5+(index%4)*9,z:-8.1+Math.floor(index/4)*8.1}));
@@ -942,7 +968,7 @@ async function buildHQ3D(el){
   const coords=employees.map(employee=>{const department=employee.department||"General",spot=departmentSpots.find(d=>d.name===department)||departmentSpots[0],n=departmentCounts.get(department)||0;departmentCounts.set(department,n+1);const offsets=[[0,0],[-1.55,0],[1.55,0],[-1.55,1.65],[1.55,1.65],[0,-1.65]];const offset=offsets[n%offsets.length];return[spot.x+offset[0],spot.z+offset[1]]});
   const employeePositionMap=new Map(employees.map((employee,index)=>[employee.id,coords[index]]));
   departmentSpots.forEach(spot=>{const zone=addBox(scene,7.9,.025,6.8,mat(0xdce8f4,.12,.72),spot.x,.045,spot.z,false);zone.material.transparent=true;zone.material.opacity=.42;const marker=hqTextSprite(THREE,spot.name.toUpperCase().slice(0,24),"#72cfe3");marker.position.set(spot.x,4.05,spot.z-2.75);marker.scale.set(3.4,.72,1);scene.add(marker)});
-  const statusColor=key=>key==="working"?0x39d9a5:key==="review"?0xf2bd65:key==="blocked"?0xf17d8a:key==="queued"?0x78a9ff:0x6687a6;
+  const statusColor=key=>key==="working"?0x1d9b70:key==="review"?0xd38a22:key==="blocked"?0xd64d60:key==="queued"?0x4f83cf:0x8493a5;
   employees.forEach((employee,index)=>{
     const [x,z]=coords[index];const accent=hqColors[employee.role_key]||0x79b8ef;
     const station=new THREE.Group();station.position.set(x,0,z);scene.add(station);
@@ -1017,7 +1043,7 @@ async function buildHQ3D(el){
     halo.rotation.x=Math.PI/2;halo.position.y=.07;avatar.add(halo);
     const selection=new THREE.Mesh(new THREE.TorusGeometry(.94,.035,8,48),new THREE.MeshBasicMaterial({color:0x8bdcff,transparent:true,opacity:0}));selection.rotation.x=Math.PI/2;selection.position.y=.035;avatar.add(selection);
     const label=hqTextSprite(THREE,(employee.name+" / "+employee.department).toUpperCase().slice(0,30),"#"+new THREE.Color(accent).getHexString());
-    label.position.set(0,3.2,0);avatar.add(label);
+    label.position.set(0,3.05,0);label.scale.set(2.85,.72,1);avatar.add(label);
     avatar.userData={employeeId:employee.id,status:hqStatus(employee).key,armL,armR,halo,selection,phase:index*.67,accent};
     figures.push(avatar);
   });
