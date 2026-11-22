@@ -193,13 +193,48 @@ function Building({ employees, tasks, selectedId, onSelect }) {
   </>;
 }
 
+function SharedSpaces() {
+  const rooms = [
+    { x: 18, z: -5, color: "#b9c9d6" },
+    { x: 18, z: 3, color: "#c9d4c4" },
+    { x: 18, z: 11, color: "#c9b9b0" }
+  ];
+  return <>
+    {rooms.map((r, i) => <group key={i} position={[r.x, 0, r.z]}>
+      <mesh position={[0, -0.08, 0]} receiveShadow><boxGeometry args={[7.2, 0.16, 7.2]} /><meshStandardMaterial color={r.color} roughness={0.9} /></mesh>
+      <mesh position={[0, 1.35, -3.55]}><boxGeometry args={[7.2, 2.7, 0.12]} /><meshStandardMaterial color="#e8e6df" /></mesh>
+      <mesh position={[-3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#e8e6df" /></mesh>
+      <mesh position={[3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#d5e4e8" transparent opacity={0.3} /></mesh>
+      {i === 0 && <>
+        <mesh position={[0, 0.8, 0]}><boxGeometry args={[4.2, 0.16, 1.5]} /><meshStandardMaterial color="#8b6b52" /></mesh>
+        {[-1.5, -0.5, 0.5, 1.5].flatMap(x => [-1.5, 1.5].map(z => <group key={x + ":" + z} position={[x, 0, z]}><mesh position={[0, 0.48, 0]}><boxGeometry args={[0.65, 0.12, 0.65]} /><meshStandardMaterial color="#34455d" /></mesh><mesh position={[0, 0.24, 0]}><cylinderGeometry args={[0.06, 0.06, 0.45, 8]} /><meshStandardMaterial color="#8d9aab" /></mesh></group>))}
+        <mesh position={[0, 1.6, -3.42]}><boxGeometry args={[2.8, 1.2, 0.08]} /><meshStandardMaterial color="#26384b" /></mesh>
+      </>}
+      {i === 1 && <>
+        <mesh position={[0, 0.7, -2.5]}><boxGeometry args={[5.4, 1.2, 0.8]} /><meshStandardMaterial color="#8b725d" /></mesh>
+        <mesh position={[-2.2, 1.3, -2.5]}><boxGeometry args={[0.8, 1.1, 0.8]} /><meshStandardMaterial color="#e2e7e9" /></mesh>
+        <mesh position={[2.2, 0.9, -2.5]}><boxGeometry args={[0.8, 1.7, 0.8]} /><meshStandardMaterial color="#7f9aa8" /></mesh>
+        <mesh position={[2.2, 1.9, -2.5]}><cylinderGeometry args={[0.42, 0.42, 0.5, 16]} /><meshStandardMaterial color="#4b9ac5" /></mesh>
+        <mesh position={[0, 0.55, 1.1]}><boxGeometry args={[2.4, 0.12, 0.9]} /><meshStandardMaterial color="#9a765a" /></mesh>
+      </>}
+      {i === 2 && <>
+        <mesh position={[0, 0.72, -2.2]}><boxGeometry args={[3.6, 0.9, 1.1]} /><meshStandardMaterial color="#4d7185" /></mesh>
+        <mesh position={[0, 1.22, -2.65]}><boxGeometry args={[3.6, 0.55, 0.18]} /><meshStandardMaterial color="#38586c" /></mesh>
+        <mesh position={[0, 0.42, 0.2]}><boxGeometry args={[1.7, 0.12, 1.1]} /><meshStandardMaterial color="#805d43" /></mesh>
+        <mesh position={[-2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#c38a61" /></mesh>
+        <mesh position={[2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#8b9f72" /></mesh>
+      </>}
+    </group>)}
+  </>;
+}
+
 function Scene({ employees, tasks, selectedId, onSelect }) {
   return <>
     <color attach="background" args={["#b9c9d3"]} />
     <fog attach="fog" args={["#b9c9d3", 35, 90]} />
     <ambientLight intensity={1.15} />
     <directionalLight position={[14, 24, 12]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />
+    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />\n    <SharedSpaces />
     <ContactShadows position={[0, -0.25, 0]} opacity={0.24} scale={48} blur={2.5} far={12} />
   </>;
 }
