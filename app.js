@@ -261,35 +261,40 @@ function renderWorkSampleAssignments(){
  const queued=workSampleAssignments.filter(a=>a.status==="queued").length,active=workSampleAssignments.filter(a=>a.status==="in_progress").length,submitted=workSampleAssignments.filter(a=>["submitted","qa_passed","qa_failed"].includes(a.status)).length;
  const q=$("#work-sample-queued-count"),a=$("#work-sample-active-count"),s=$("#work-sample-submitted-count");
  if(q)q.textContent=String(queued);if(a)a.textContent=String(active);if(s)s.textContent=String(submitted);
- host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(item.status==="queued"?'<button class="primary-btn" type="button" data-work-sample-start="'+item.id+'">Start work sample</button>':item.status==="in_progress"?'<button class="secondary-btn" type="button" data-work-sample-record="'+item.employee_id+'">Record work evidence</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
+ host.innerHTML=workSampleAssignments.map(item=>{const agent=employees.find(e=>e.id===item.employee_id);return '<article class="capability-agent-card"><div class="capability-agent-head"><div><strong>'+escapeHtml(agent?.name||"Unknown agent")+'</strong><small>'+escapeHtml(agent?.department||"")+' · '+escapeHtml(agent?.role_key||"")+'</small></div><span class="pill '+(item.status==="qa_passed"?"green":item.status==="qa_failed"||item.status==="blocked"?"amber":"gray")+'">'+escapeHtml(prettyStatus(item.status))+'</span></div><h3>'+escapeHtml(item.assignment_title)+'</h3><p>'+escapeHtml(item.task_brief)+'</p><div class="capability-actions">'+(["queued","in_progress"].includes(item.status)?'<button class="primary-btn" type="button" data-work-sample-run="'+item.id+'">Run this Agent</button>':'')+'</div>'+(item.submission_summary?'<p class="muted">Submission: '+escapeHtml(item.submission_summary)+'</p>':'')+(item.qa_notes?'<p class="muted">QA: '+escapeHtml(item.qa_notes)+'</p>':'')+'</article>'}).join("")||'<p class="muted">No work sample assignments found.</p>';
 }
-async function runOneWorkSample(){
- const confirmBox=$("#pilot-zero-cost-confirm"),button=$("#run-one-work-sample"),status=$("#work-sample-batch-status");
- if(!confirmBox?.checked){if(status)status.textContent="Pilot locked: confirm the verified zero-cost condition first.";return}
- const eligible=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
- if(!eligible.length){if(status)status.textContent="No queued or in-progress work sample remains.";return}
- const target=eligible[0],agent=employees.find(e=>e.id===target.employee_id);
- const agentName=agent?.name||"the next assigned Agent";
- if(!confirm("Run exactly ONE real work sample for "+agentName+"? This calls the configured Gemini API. No batch will run, and the result will remain unapproved until independent QA."))return;
- button.disabled=true;
- if(status)status.textContent="Running one pilot: "+agentName+". Waiting for the real deliverable…";
+async function runWorkSampleAssignment(assignmentId,button){
+ const confirmBox=$("#pilot-zero-cost-confirm"),status=$("#work-sample-batch-status");
+ if(!confirmBox?.checked){if(status)status.textContent="Pilot locked: first confirm the verified zero-cost condition.";return}
+ const target=workSampleAssignments.find(x=>x.id===assignmentId&&["queued","in_progress"].includes(x.status));
+ if(!target){if(status)status.textContent="This assignment is no longer eligible. Refresh the records before retrying.";return}
+ const agent=employees.find(e=>e.id===target.employee_id),agentName=agent?.name||"the selected Agent";
+ if(!confirm("Run exactly ONE real work sample for "+agentName+"? This calls the configured Gemini API. No other Agent will be started. The deliverable remains unapproved until independent QA."))return;
+ const runButton=button||$("#run-one-work-sample");if(runButton)runButton.disabled=true;
+ if(status)status.textContent="Running one real work sample: "+agentName+". Waiting for the deliverable…";
  try{
-  const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,confirmed_zero_cost:true}});
+  const {data,error}=await supabase.functions.invoke("run-agent-work-sample-batch",{body:{company_id:company.id,assignment_id:target.id,confirmed_zero_cost:true}});
   if(error)throw error;
   await loadData();
-  if(data?.done){if(status)status.textContent="No eligible assignment was found by the executor.";return}
+  if(data?.done){if(status)status.textContent="The executor did not find an eligible assignment. Refresh and inspect the queue.";return}
   if(data?.ok&&data.status==="submitted"){
-   if(status)status.textContent="PILOT SUBMITTED · "+(data.employee||agentName)+". Task: "+(data.task_id||"saved")+". Inspect the linked deliverable and require independent QA before marking capability verified.";
+   if(status)status.textContent="PILOT SUBMITTED · "+(data.employee||agentName)+". Task: "+(data.task_id||"saved")+". Inspect the saved task and deliverable; independent QA is still required.";
   }else{
-   if(status)status.textContent="PILOT STOPPED · "+(data?.employee||agentName)+": "+(data?.error||data?.detail||"Execution did not complete.")+". Check the assignment record before retrying.";
+   if(status)status.textContent="PILOT STOPPED · "+(data?.employee||agentName)+": "+(data?.error||data?.detail||"Execution did not complete.")+". Inspect the assignment and task before retrying.";
   }
  }catch(error){
-  if(status)status.textContent="PILOT ERROR · "+(error?.message||"The executor could not be reached.")+". No additional Agent was started.";
-  console.error("One-agent pilot failed:",error);
+  if(status)status.textContent="PILOT ERROR · "+(error?.message||"The executor could not be reached.")+". No second Agent was started.";
+  console.error("One-agent work sample failed:",error);
   try{await loadData()}catch(refreshError){console.error("Could not refresh after pilot error:",refreshError)}
  }finally{
-  button.disabled=!confirmBox?.checked;
+  if(runButton)runButton.disabled=false;
+  const globalButton=$("#run-one-work-sample");if(globalButton)globalButton.disabled=!confirmBox?.checked;
  }
+}
+async function runOneWorkSample(){
+ const eligible=workSampleAssignments.filter(x=>["queued","in_progress"].includes(x.status));
+ if(!eligible.length){const status=$("#work-sample-batch-status");if(status)status.textContent="No queued or in-progress work sample remains.";return}
+ return runWorkSampleAssignment(eligible[0].id,$("#run-one-work-sample"));
 }
 
 async function runAllWorkSamples(button){
@@ -1369,7 +1374,7 @@ pilotButton?.addEventListener("click",runOneWorkSample);
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
-document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify);const start=e.target.closest("[data-work-sample-start]");if(start)startWorkSampleAssignment(start.dataset.workSampleStart,start);const record=e.target.closest("[data-work-sample-record]");if(record)openWorkSampleEvidence(record.dataset.workSampleRecord)});
+document.addEventListener("click",e=>{const pre=e.target.closest("[data-capability-preflight]");if(pre)runCapabilityPreflight(pre.dataset.capabilityPreflight,pre);const verify=e.target.closest("[data-capability-verify]");if(verify)verifyCapabilityAgent(verify.dataset.capabilityVerify,verify);const runSample=e.target.closest("[data-work-sample-run]");if(runSample)runWorkSampleAssignment(runSample.dataset.workSampleRun,runSample)});
 document.addEventListener("change",e=>{const input=e.target.closest("[data-activation-check]");if(input)saveDistributionActivationCheck(input.dataset.accountId,input.dataset.activationCheck,input.checked,input)});
 document.addEventListener("change",e=>{const select=e.target.closest("#hq-department-select");if(!select||!select.value)return;const employee=employees.find(x=>x.department===select.value);if(employee)selectHQEmployee(employee.id)});
 document.addEventListener("click",e=>{const button=e.target.closest("[data-verify-account]");if(button)verifyDistributionAccount(button.dataset.verifyAccount,button)});
