@@ -478,7 +478,7 @@ export function OfficeApp() {
   return <main className="office-app">
     <header className="office-topbar">
       <div className="office-brand"><span className="brand-mark">CF</span><div><strong>CURIOFRAME AI</strong><small>VIRTUAL HEADQUARTERS · 3D FLOORPLAN</small></div></div>
-      <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "DATABASE SNAPSHOT RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
+      <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "COMPANY DATA RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
         <button onClick={() => { setWalkMode(false); controls.current?.reset?.(); }}>Reset view</button>
       </div>
@@ -503,8 +503,15 @@ export function OfficeApp() {
         <small>AGENT PROFILE</small><h2>{selected.name}</h2><p>{selected.department}</p>
         <span className="inspector-status" style={{ color: STATUS[selectedStatus.key].color }}>{STATUS[selectedStatus.key].label}</span>
         <p>{selected.responsibilities || "No role description recorded."}</p>
-        <h3>Assigned work</h3>
-        {selectedStatus.tasks.length ? selectedStatus.tasks.map(t => <article key={t.id}><b>{t.title}</b><small>{String(t.status).replaceAll("_", " ")}</small></article>) : <p className="empty-state">No open task assigned to this Agent.</p>}
+        <h3>Capability record</h3>
+        <article><b>{String(selected.capability_status || "not_verified").replaceAll("_", " ").toUpperCase()}</b><small>{selected.capability_verified_at ? "Verified " + new Date(selected.capability_verified_at).toLocaleString() : "No verified capability record"}</small></article>
+        {selected.capability_profile && typeof selected.capability_profile === "object" && Object.keys(selected.capability_profile).length > 0
+          ? <article><b>Capability profile</b><small>{Object.entries(selected.capability_profile).map(([key, value]) => key.replaceAll("_", " ") + ": " + (typeof value === "string" ? value : JSON.stringify(value))).join(" · ")}</small></article>
+          : <p className="empty-state">No capability details recorded.</p>}
+        <h3>Task history</h3>
+        {tasks.filter(t => t.assigned_employee_id === selected.id).sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)).slice(0, 6).length
+          ? tasks.filter(t => t.assigned_employee_id === selected.id).sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)).slice(0, 6).map(t => <article key={t.id}><b>{t.title}</b><small>{String(t.status || "unknown").replaceAll("_", " ")} · {t.updated_at ? new Date(t.updated_at).toLocaleDateString() : "date unavailable"}</small>{t.deliverable_url ? <a href={t.deliverable_url} target="_blank" rel="noreferrer">Open deliverable ↗</a> : null}</article>)
+          : <p className="empty-state">No task history recorded for this Agent.</p>}
       </aside>}
       <div className="office-freshness">{lastUpdate ? "Last database snapshot: " + lastUpdate.toLocaleTimeString() : "Waiting for parent workspace connection"}</div>
     </section>
