@@ -35,7 +35,7 @@ jobs:
           test -s virtual-office/index.html
           test -n "$(find virtual-office/assets -type f | head -n 1)"
       - name: Install headless Chromium for browser verification
-        run: virtual-office-app/node_modules/.bin/playwright install --with-deps chromium
+        run: npm exec --prefix virtual-office-app -- playwright install --with-deps chromium
       - name: Test desktop and Android-sized Virtual Office
         run: npm run test:smoke --prefix virtual-office-app
       - name: Clean dependencies from workspace
