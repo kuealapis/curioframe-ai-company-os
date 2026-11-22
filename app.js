@@ -864,7 +864,7 @@ async function buildHQ3D(el){
   const scene=new THREE.Scene();scene.background=new THREE.Color(0xeaf2fb);
   scene.fog=new THREE.FogExp2(0xeaf2fb,.012);
   const camera=new THREE.PerspectiveCamera(42,el.clientWidth/el.clientHeight,.1,120);
-  camera.position.set(29,22,34);
+  camera.position.set(17,13,20);
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:"high-performance"});
   const isSmallScreen=window.matchMedia?.("(max-width:700px)").matches||false;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmallScreen?1.2:1.65));
@@ -1100,9 +1100,9 @@ async function buildHQ3D(el){
       });
     },
     select(id){figures.forEach(f=>f.userData.selection.material.opacity=f.userData.employeeId===id?.85:0)},
-    reset(){gameMode=false;target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()},
+    reset(){gameMode=false;target.set(0,1.15,0);camera.position.set(17,13,20);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()},
     zoom(factor){if(gameMode){camera.position.add(new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)).multiplyScalar(factor<1?1.2:-1.2));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)}else{spherical.radius*=factor;controls.update()}},
-    setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();joystickMoveX=0;joystickMoveY=0;if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(29,22,34);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
+    setGameMode(enabled){gameMode=!!enabled;movementKeys.clear();joystickMoveX=0;joystickMoveY=0;if(gameMode){camera.position.set(0,1.72,10);walkYaw=0;walkPitch=-.12;camera.rotation.order="YXZ";camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(0,1.15,0);camera.position.set(17,13,20);spherical.setFromVector3(new THREE.Vector3().subVectors(camera.position,target));controls.update()}return gameMode},
     focusEmployee(id){const pos=employeePositionMap.get(id);if(!pos)return;const [x,z]=pos;if(gameMode){camera.position.set(x,1.72,z+4.8);walkYaw=0;walkPitch=-.12;camera.rotation.set(walkPitch,walkYaw,0)}else{target.set(x,1.2,z);spherical.radius=10;controls.update()}},
     setJoystickMovement(x,y){if(!gameMode){joystickMoveX=0;joystickMoveY=0;return}joystickMoveX=clamp(Number(x)||0,-1,1);joystickMoveY=clamp(Number(y)||0,-1,1)},
     move(direction){if(!gameMode)return;const v=new THREE.Vector3(-Math.sin(walkYaw),0,-Math.cos(walkYaw)),r=new THREE.Vector3(Math.cos(walkYaw),0,-Math.sin(walkYaw));const delta=direction==="forward"?v:direction==="back"?v.clone().negate():direction==="left"?r.clone().negate():r;camera.position.add(delta.multiplyScalar(1.25));camera.position.x=THREE.MathUtils.clamp(camera.position.x,-16.5,16.5);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-11.5,11.5)},
