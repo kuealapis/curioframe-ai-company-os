@@ -658,6 +658,7 @@ function renderAll(){
   renderDistribution();
   renderOrganization();
   renderCapabilityLab();
+  renderResearchQAPanel();
   renderWorkSampleAssignments();
   renderVirtualHQ();
   const activity=$("#activity-feed");
@@ -1268,6 +1269,7 @@ $("#distribution-publication-form")?.addEventListener("submit",createDistributio
 $("#organization-department-form")?.addEventListener("submit",addOrganizationDepartment);
 $("#organization-agent-form")?.addEventListener("submit",addOrganizationAgent);
 $("#capability-test-form")?.addEventListener("submit",recordCapabilityTest);
+$("#research-qa-panel")?.addEventListener("submit",submitResearchQAReview);
 $("#run-safe-simulation")?.addEventListener("click",runSafeWorkSampleSimulation);
 $("#run-dispatcher-qa-dry-run")?.addEventListener("click",runDispatcherQADryRun);
 $("#run-department-integration-dry-run")?.addEventListener("click",runDepartmentIntegrationDryRun);
