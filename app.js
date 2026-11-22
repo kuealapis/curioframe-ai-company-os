@@ -861,8 +861,8 @@ async function buildHQ3D(el){
   }
   const old=hqWorlds.get(el);if(old)old.dispose();
   el.innerHTML="";
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x081525);
-  scene.fog=new THREE.FogExp2(0x081525,.012);
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0xeaf2fb);
+  scene.fog=new THREE.FogExp2(0xeaf2fb,.012);
   const camera=new THREE.PerspectiveCamera(42,el.clientWidth/el.clientHeight,.1,120);
   camera.position.set(29,22,34);
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:"high-performance"});
@@ -870,7 +870,7 @@ async function buildHQ3D(el){
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isSmallScreen?1.2:1.65));
   renderer.setSize(el.clientWidth,el.clientHeight);
   renderer.shadowMap.enabled=!isSmallScreen;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.28;
   el.appendChild(renderer.domElement);
   // Native pointer camera controller: avoids external OrbitControls touch quirks on mobile browsers.
   const target=new THREE.Vector3(0,1.15,0),spherical=new THREE.Spherical();
@@ -889,11 +889,11 @@ async function buildHQ3D(el){
   function cameraWheel(ev){ev.preventDefault();if(gameMode)return;spherical.radius*=Math.exp(ev.deltaY*.001);syncCamera()}
   renderer.domElement.addEventListener("pointerdown",cameraPointerDown);renderer.domElement.addEventListener("pointermove",cameraPointerMove);renderer.domElement.addEventListener("pointerup",cameraPointerEnd);renderer.domElement.addEventListener("pointercancel",cameraPointerEnd);renderer.domElement.addEventListener("wheel",cameraWheel,{passive:false});
   syncCamera();
-  const hemi=new THREE.HemisphereLight(0xd9edff,0x1a2a3c,2.1);scene.add(hemi);
-  const key=new THREE.DirectionalLight(0xffe5c4,3.1);key.position.set(-9,18,11);key.castShadow=true;
+  const hemi=new THREE.HemisphereLight(0xffffff,0xb9c9dc,2.6);scene.add(hemi);
+  const key=new THREE.DirectionalLight(0xfff4df,3.8);key.position.set(-9,18,11);key.castShadow=true;
   key.shadow.mapSize.set(1536,1536);key.shadow.camera.left=-18;key.shadow.camera.right=18;key.shadow.camera.top=18;key.shadow.camera.bottom=-18;scene.add(key);
-  const fill=new THREE.DirectionalLight(0x68baff,1.35);fill.position.set(12,9,-10);scene.add(fill);
-  const glow=new THREE.PointLight(0x42cbe7,55,28);glow.position.set(0,6,0);scene.add(glow);
+  const fill=new THREE.DirectionalLight(0x9fc8f5,1.7);fill.position.set(12,9,-10);scene.add(fill);
+  const glow=new THREE.PointLight(0x8ac9df,18,28);glow.position.set(0,6,0);scene.add(glow);
   const mat=(color,metalness=.05,roughness=.58)=>new THREE.MeshStandardMaterial({color,metalness,roughness});
   const basic=color=>new THREE.MeshBasicMaterial({color});
   const addBox=(parent,w,h,d,material,x,y,z,cast=false,receive=false)=>{
@@ -904,34 +904,34 @@ async function buildHQ3D(el){
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,24,18),material);mesh.position.set(x,y,z);
     if(scale)mesh.scale.set(...scale);mesh.castShadow=true;parent.add(mesh);return mesh;
   };
-  const floor=addBox(scene,36,.5,26,mat(0x263b52,.18,.38),0,-.28,0,false,true);
-  const floorInset=addBox(scene,34,.035,24,mat(0x304b65,.12,.5),0,-.005,0,false,true);
-  for(let x=-16;x<=16;x+=2){const line=addBox(scene,.018,.012,23,mat(0x54718a,.25,.5),x,.02,0);line.material.transparent=true;line.material.opacity=.35}
-  for(let z=-11;z<=11;z+=2){const line=addBox(scene,34,.012,.018,mat(0x54718a,.25,.5),0,.021,z);line.material.transparent=true;line.material.opacity=.35}
+  const floor=addBox(scene,36,.5,26,mat(0xdce6f1,.18,.38),0,-.28,0,false,true);
+  const floorInset=addBox(scene,34,.035,24,mat(0xeaf0f7,.12,.5),0,-.005,0,false,true);
+  for(let x=-16;x<=16;x+=2){const line=addBox(scene,.018,.012,23,mat(0xb5c6d9,.25,.5),x,.02,0);line.material.transparent=true;line.material.opacity=.35}
+  for(let z=-11;z<=11;z+=2){const line=addBox(scene,34,.012,.018,mat(0xb5c6d9,.25,.5),0,.021,z);line.material.transparent=true;line.material.opacity=.35}
   // Glass perimeter and architectural frame
-  addBox(scene,36,5.4,.22,mat(0x29445e,.35,.3),0,2.45,-12.75);
-  addBox(scene,.22,5.4,26,mat(0x29445e,.35,.3),-17.9,2.45,0);
-  addBox(scene,36,.2,.22,mat(0x6a8ba6,.55,.3),0,5.15,-12.6);
-  const glass=new THREE.MeshPhysicalMaterial({color:0x6db8d7,transparent:true,opacity:.13,metalness:.15,roughness:.12,side:THREE.DoubleSide});
+  addBox(scene,36,5.4,.22,mat(0xc7d8e9,.35,.3),0,2.45,-12.75);
+  addBox(scene,.22,5.4,26,mat(0xc7d8e9,.35,.3),-17.9,2.45,0);
+  addBox(scene,36,.2,.22,mat(0x8ea9c4,.55,.3),0,5.15,-12.6);
+  const glass=new THREE.MeshPhysicalMaterial({color:0xb9d9ed,transparent:true,opacity:.13,metalness:.15,roughness:.12,side:THREE.DoubleSide});
   for(let i=0;i<7;i++){
     const x=-15+i*5;addBox(scene,4.55,3.25,.035,glass,x,2.8,-12.59);
-    addBox(scene,.055,3.35,.08,mat(0x6b91ac,.65,.28),x-2.3,2.8,-12.52);
+    addBox(scene,.055,3.35,.08,mat(0x9bb3ca,.65,.28),x-2.3,2.8,-12.52);
   }
-  for(let z=-10;z<=10;z+=3.5)addBox(scene,.06,3.6,.08,mat(0x6b91ac,.65,.28),-17.77,2.8,z);
+  for(let z=-10;z<=10;z+=3.5)addBox(scene,.06,3.6,.08,mat(0x9bb3ca,.65,.28),-17.77,2.8,z);
   // Ceiling beams and warm linear fixtures
   for(let x=-12;x<=12;x+=6){
-    addBox(scene,.12,.18,24,mat(0x415b73,.45,.35),x,5.05,0);
-    const lamp=addBox(scene,2.7,.045,.22,mat(0xbfeaff,.15,.25),x,4.91,0);
-    const light=new THREE.PointLight(0x9bdcff,8,9);light.position.set(x,4.55,0);scene.add(light);
+    addBox(scene,.12,.18,24,mat(0xd6e2ef,.45,.35),x,5.05,0);
+    const lamp=addBox(scene,2.7,.045,.22,mat(0xffffff,.15,.25),x,4.91,0);
+    const light=new THREE.PointLight(0xffe7bb,8,9);light.position.set(x,4.55,0);scene.add(light);
   }
   // Reception / command core
   const core=new THREE.Group();scene.add(core);
-  const plinth=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.75,.48,48),mat(0x173e5b,.5,.28));plinth.position.y=.25;plinth.castShadow=true;core.add(plinth);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.62,.055,12,80),new THREE.MeshBasicMaterial({color:0x55d8ee}));ring.rotation.x=Math.PI/2;ring.position.y=.52;core.add(ring);
-  const coreTop=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.15,.18,48),mat(0x286487,.55,.24));coreTop.position.y=.57;core.add(coreTop);
+  const plinth=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.75,.48,48),mat(0xc9d9eb,.5,.28));plinth.position.y=.25;plinth.castShadow=true;core.add(plinth);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.62,.055,12,80),new THREE.MeshBasicMaterial({color:0x3b9fd2}));ring.rotation.x=Math.PI/2;ring.position.y=.52;core.add(ring);
+  const coreTop=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.15,.18,48),mat(0x8eafd2,.55,.24));coreTop.position.y=.57;core.add(coreTop);
   const logo=hqTextSprite(THREE,"CURIOFRAME  /  COMMAND","#55d8ee");logo.position.set(0,2.15,0);logo.scale.set(4.5,1.05,1);scene.add(logo);
   const plant=(x,z)=>{
-    const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.38,18),mat(0x536b82));pot.position.set(x,.2,z);scene.add(pot);
+    const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.38,18),mat(0xb8c7d8));pot.position.set(x,.2,z);scene.add(pot);
     for(let i=0;i<5;i++){const leaf=addSphere(scene,.22,mat(0x3f9c83),x+Math.sin(i*1.25)*.16,.58+(i%2)*.12,z+Math.cos(i*1.25)*.15,[.45,1.35,.45]);leaf.rotation.z=(i-2)*.22}
   };
   plant(-15,-10.5);plant(15,-10.5);plant(-15,10.5);plant(15,10.5);
@@ -941,32 +941,32 @@ async function buildHQ3D(el){
   const departmentCounts=new Map();
   const coords=employees.map(employee=>{const department=employee.department||"General",spot=departmentSpots.find(d=>d.name===department)||departmentSpots[0],n=departmentCounts.get(department)||0;departmentCounts.set(department,n+1);const offsets=[[0,0],[-1.55,0],[1.55,0],[-1.55,1.65],[1.55,1.65],[0,-1.65]];const offset=offsets[n%offsets.length];return[spot.x+offset[0],spot.z+offset[1]]});
   const employeePositionMap=new Map(employees.map((employee,index)=>[employee.id,coords[index]]));
-  departmentSpots.forEach(spot=>{const zone=addBox(scene,7.9,.025,6.8,mat(0x34536d,.12,.72),spot.x,.045,spot.z,false);zone.material.transparent=true;zone.material.opacity=.42;const marker=hqTextSprite(THREE,spot.name.toUpperCase().slice(0,24),"#72cfe3");marker.position.set(spot.x,4.05,spot.z-2.75);marker.scale.set(3.4,.72,1);scene.add(marker)});
+  departmentSpots.forEach(spot=>{const zone=addBox(scene,7.9,.025,6.8,mat(0xdce8f4,.12,.72),spot.x,.045,spot.z,false);zone.material.transparent=true;zone.material.opacity=.42;const marker=hqTextSprite(THREE,spot.name.toUpperCase().slice(0,24),"#72cfe3");marker.position.set(spot.x,4.05,spot.z-2.75);marker.scale.set(3.4,.72,1);scene.add(marker)});
   const statusColor=key=>key==="working"?0x39d9a5:key==="review"?0xf2bd65:key==="blocked"?0xf17d8a:key==="queued"?0x78a9ff:0x6687a6;
   employees.forEach((employee,index)=>{
     const [x,z]=coords[index];const accent=hqColors[employee.role_key]||0x79b8ef;
     const station=new THREE.Group();station.position.set(x,0,z);scene.add(station);
     // desk, pedestal, ergonomic chair, display and accessories
-    addBox(station,2.65,.16,1.28,mat(0x805b43,.22,.35),0,1.08,0,true);
-    addBox(station,2.25,.07,1.02,mat(0xc49a70,.12,.4),0,1.19,0);
-    for(const dx of [-1,1])for(const dz of [-.43,.43])addBox(station,.12,1,.12,mat(0x526b80,.55,.3),dx, .55,dz,true);
-    addBox(station,.72,.13,.58,mat(0x27394d,.3,.4),-.72,.16,0);
+    addBox(station,2.65,.16,1.28,mat(0xb98b63,.22,.35),0,1.08,0,true);
+    addBox(station,2.25,.07,1.02,mat(0xe0bb91,.12,.4),0,1.19,0);
+    for(const dx of [-1,1])for(const dz of [-.43,.43])addBox(station,.12,1,.12,mat(0x9aafc4,.55,.3),dx, .55,dz,true);
+    addBox(station,.72,.13,.58,mat(0xd6e0eb,.3,.4),-.72,.16,0);
     const chair=new THREE.Group();chair.position.set(0,0,1.55);station.add(chair);
-    addBox(chair,.72,.15,.68,mat(0x263e58,.2,.4),0,.68,0,true);
-    addBox(chair,.72,.9,.16,mat(0x314d68,.2,.4),0,1.13,.3,true);
-    addBox(chair,.1,.65,.1,mat(0x607b91,.6,.3),0,.31,0);
-    for(const dx of [-.38,.38])addBox(chair,.08,.08,.75,mat(0x607b91,.6,.3),dx,.05,0);
-    const monitor=addBox(station,.92,.64,.09,mat(0x111f31,.55,.24),0,1.62,-.43,true);
+    addBox(chair,.72,.15,.68,mat(0x7189a5,.2,.4),0,.68,0,true);
+    addBox(chair,.72,.9,.16,mat(0x879fb9,.2,.4),0,1.13,.3,true);
+    addBox(chair,.1,.65,.1,mat(0x9aafc4,.6,.3),0,.31,0);
+    for(const dx of [-.38,.38])addBox(chair,.08,.08,.75,mat(0x9aafc4,.6,.3),dx,.05,0);
+    const monitor=addBox(station,.92,.64,.09,mat(0x344b67,.55,.24),0,1.62,-.43,true);
     addBox(station,.79,.48,.025,mat(accent,.25,.25),0,1.63,-.375);
-    addBox(station,.13,.34,.12,mat(0x728da5,.65,.3),0,1.27,-.43);
-    addBox(station,.55,.055,.38,mat(0x33495f,.35,.4),0,1.26,-.02);
+    addBox(station,.13,.34,.12,mat(0x9db3c9,.65,.3),0,1.27,-.43);
+    addBox(station,.55,.055,.38,mat(0xd3dfeb,.35,.4),0,1.26,-.02);
     // glowing UI lines on the display
     for(let j=0;j<3;j++){const bar=addBox(station,.48-j*.08,.025,.018,basic(j===0?0xc7f3ff:accent),-.05,1.75-j*.105,-.355);bar.material.toneMapped=false}
     const mug=new THREE.Mesh(new THREE.CylinderGeometry(.09,.1,.16,16),mat(0xd5e1ed,.08,.28));mug.position.set(.91,1.34,.1);station.add(mug);
     const deskLamp=new THREE.Group();deskLamp.position.set(-.95,1.28,.08);station.add(deskLamp);
-    addBox(deskLamp,.34,.055,.12,mat(0x718ca4,.6,.28),0,0,0);
-    const lampArm=addBox(deskLamp,.045,.38,.045,mat(0x718ca4,.6,.28),0,.2,0);lampArm.rotation.z=-.25;
-    const lampHead=addSphere(deskLamp,.13,mat(0x9edfff,.25,.25),-.09,.4,0,[1,.45,1]);
+    addBox(deskLamp,.34,.055,.12,mat(0x8ea7c2,.6,.28),0,0,0);
+    const lampArm=addBox(deskLamp,.045,.38,.045,mat(0x8ea7c2,.6,.28),0,.2,0);lampArm.rotation.z=-.25;
+    const lampHead=addSphere(deskLamp,.13,mat(0xffe7ad,.25,.25),-.09,.4,0,[1,.45,1]);
     // premium animated character with distinct hair, face, outfit and accessories
     const avatar=new THREE.Group();avatar.userData.employeeId=employee.id;avatar.position.set(x,0,z+2.35);scene.add(avatar);
     const skin=mat([0xf0c5a3,0xd99f7e,0xe8b99a,0xc98d70,0xf1c9a7,0xd8a181,0xe7b99a,0xc99072,0xe9bd9c][index%9],0,.72);
