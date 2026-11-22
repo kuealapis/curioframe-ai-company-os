@@ -19,19 +19,27 @@ The Founder sets direction, approves consequential decisions and final publicati
 
 ### A. Business data and performance reporting
 
-**Proposed flow:** Google Business Profile (where CurioFrame or an authorized client actually manages a profile) → Windsor.ai (only if the required connector and a genuinely free tier are confirmed) → Google Sheets → Google Drive.
+**Scope confirmed by Founder:** both (1) CurioFrame-owned Google Business Profile locations and (2) client-owned locations that CurioFrame is explicitly authorized to manage.
+
+**Proposed flow:** CurioFrame/client Google Business Profiles → Windsor.ai (subject to account, connector, quota, and free-tier limits) → Google Sheets → Google Drive. CurioFrame and every client are separate data tenants; a shared integration pipeline must never mean shared visibility or mixed reporting.
 
 1. **Account authorization**
-   - Operations records the profile owner/client, authorized scope, account identifier, consent date, and permitted data fields.
-   - Never request or store a Google password in CurioFrame.
-   - Do not connect a client profile without documented authorization.
+   - Operations creates a separate client record for each business and records the legal/business owner, primary contact, Google account/manager identity, Business Profile account and location IDs, authorized scope, consent evidence, consent date, and permitted data fields.
+   - For CurioFrame-owned locations, record CurioFrame as data owner. For client locations, the client remains data owner and CurioFrame acts only within written authorization.
+   - Client onboarding documents included locations, permitted reporting period, permitted users, whether review/post management is included, retention expectations, and access revocation.
+   - Never request or store a Google password in CurioFrame. The owner/authorized manager completes Google's or Windsor's own OAuth/authorization flow.
+   - Do not connect, import, modify, or report on a client profile without documented authorization.
 2. **Data extraction**
-   - Data Integration checks connector availability, refresh schedule, quota, pricing, and field coverage before activation.
-   - If Windsor.ai is not available at Rp0, stop at this gate. Use an approved manual CSV export or another verified no-cost route; do not silently switch to a paid plan.
+   - Data Integration verifies connector availability, refresh schedule, quota, field coverage, account mapping, and plan limits before activation.
+   - Windsor.ai documentation currently describes a 30-day expanded free trial (up to 10 sources and 15 accounts) that steps down to Forever Free with 1 user, 1 data source, and 1 account. Its pricing page says 10 Google Business Profile locations count as 1 account. Do not assume Forever Free can serve multiple independently authorized client Google accounts. Verify actual account counting and tenant arrangement before promising ongoing multi-client sync. Sources: https://windsor.ai/pricing/ and https://windsor.ai/documentation/how-to-start-for-free.
+   - The initial 30-day trial is not the long-term operating baseline. Design the pilot around post-trial limits or obtain explicit Founder approval before any paid upgrade.
+   - If the free plan cannot cover required CurioFrame + client accounts at steady state, use an approved manual export or another verified Rp0 route; do not silently switch to a paid plan.
 3. **Normalization in Sheets**
-   - Keep raw imports separate from cleaned reporting tables.
-   - Minimum columns: source, account_id, location_id, metric_date, metric_name, metric_value, currency/unit, imported_at, source_updated_at, and validation_status.
-   - Prevent duplicate imports using a stable source/account/date/metric key.
+   - Keep raw imports separate from cleaned reporting tables. Every row carries tenant_id/client_id and profile_location_id.
+   - Minimum columns: tenant_id, client_id, source, Google account_id, Business Profile location_id, metric_date, metric_name, metric_value, currency/unit, imported_at, source_updated_at, sync_run_id, and validation_status.
+   - Default to separate client spreadsheets/workbooks and Drive folders to reduce accidental disclosure. Never expose one client's metrics, reviews, or profile identifiers to another client.
+   - Prevent duplicate imports using a stable tenant/source/account/location/date/metric key.
+   - Apply least-privilege access: a client sees only its own data; CurioFrame staff see client data only when their role and engagement require it.
 4. **Validation**
    - Check date coverage, missing values, duplicates, unexpected zeroes, and source freshness.
    - Mark incomplete data as partial or stale; never present it as live/complete.
@@ -116,14 +124,30 @@ The intended experience is a full-screen, isometric 3D office inspired by Ruang'
 5. **Workflow automation** — automate validation, report generation, task handoffs, and notifications.
 6. **Virtual Office** — build the Ruang-style 3D client and bind its characters/panels to real CurioFrame data/events.
 7. **Controlled publishing** — only after approval gates, idempotency, audit, and zero-cost checks pass.
-8. **Operational acceptance** — test on Android and desktop, including stale data, disconnects, failures, recovery, and permissions.
+8. **Multi-tenant authorization pilot** — first connect one CurioFrame-owned location and one consenting client location (only after authorization and plan limits are confirmed); verify dataset isolation end to end.
+9. **Operational acceptance** — test on Android and desktop, including stale data, disconnects, failures, recovery, tenant isolation, consent revocation, and permissions.
 
-## 7. Founder decisions still required
+## 7. Confirmed scope and remaining Founder decisions
 
-- Which Google Business Profile(s) are in scope: CurioFrame's own profile, client profiles, or both?
-- Is Windsor.ai mandatory, or may the integration use another verified Rp0 source if Windsor is paid/limited?
+**Confirmed:** Google Business Profile scope includes both CurioFrame's own profile(s) and client profiles, with separate ownership, authorization, and data isolation.
+
+**Still to decide:**
+- Is Windsor.ai mandatory, or may the integration use another verified Rp0 source if its post-trial Forever Free limits cannot support the required number of separate accounts?
 - Which content channels and scheduler are the first publishing targets?
 - What reporting cadence and timezone should be used?
 - What exact content types/services are included in the first pilot?
 
-Until these are decided, integrations stay disconnected and publishing automation stays disabled.
+Until the remaining decisions are made and access is authorized, integrations stay disconnected and publishing automation stays disabled.
+
+## 8. Multi-tenant integration design (initial data contract)
+
+The following is a proposed design, not a deployed database schema:
+
+- **Tenant boundary:** tenant_id identifies CurioFrame or a client organization. Client data must be filtered and protected server-side; hiding rows in the UI is not a security boundary.
+- **Business profile registry:** store tenant_id, profile_owner_type (CurioFrame/client), client_id (nullable only for CurioFrame), Google account ID, location ID, display name, connection ID, authorization status, allowed scopes, consent reference, and revoked_at.
+- **Connection registry:** store provider, connector account reference, tenant mapping, granted scopes, connected_by, connected_at, last_verified_at, status, and revocation state. Do not store Google passwords or expose OAuth tokens to the browser.
+- **Sync run ledger:** store tenant_id, connection_id, started_at, completed_at, date range, rows fetched, result, freshness, and error summary. Each run must be traceable to its source and destination.
+- **Metrics and review records:** every metric/review/post row must include tenant_id and location_id. Keep raw source payloads access-controlled and apply a documented retention policy.
+- **Access control:** enforce tenant isolation with Supabase RLS and server-side authorization. Test cross-tenant reads and writes before pilot acceptance.
+- **Revocation:** when a client ends authorization, stop future syncs, revoke connector authorization where supported, mark the connection revoked, and follow the agreed data export/retention/deletion process. Preserve audit records without retaining unnecessary client content.
+- **Read/write separation:** reporting sync is read-only. Review replies, post publishing, photo uploads, profile edits, and business-hour changes are separate write capabilities; each requires explicit client authorization and the relevant CurioFrame approval gate. No write action is enabled by this reporting integration by default.
