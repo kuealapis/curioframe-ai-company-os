@@ -151,3 +151,80 @@ The following is a proposed design, not a deployed database schema:
 - **Access control:** enforce tenant isolation with Supabase RLS and server-side authorization. Test cross-tenant reads and writes before pilot acceptance.
 - **Revocation:** when a client ends authorization, stop future syncs, revoke connector authorization where supported, mark the connection revoked, and follow the agreed data export/retention/deletion process. Preserve audit records without retaining unnecessary client content.
 - **Read/write separation:** reporting sync is read-only. Review replies, post publishing, photo uploads, profile edits, and business-hour changes are separate write capabilities; each requires explicit client authorization and the relevant CurioFrame approval gate. No write action is enabled by this reporting integration by default.
+
+## 9. Department responsibility and handoff matrix
+
+The following maps the 28 registered employee identities to their current 11 departments. Registration is not proof of capability; every role remains planned until its work sample and independent QA are passed.
+
+| Department | Registered roles | Accountable output / handoff |
+|---|---|---|
+| Executive Office | AI CEO / Orchestrator; Chief of Staff | Prioritized company goals, task routing, exception summaries, Founder decision briefs. AI CEO may coordinate but cannot override policy gates. |
+| Research & Insights | Research Officer | Research brief, source register, claim-to-source mapping, opportunity recommendation → Content Production. |
+| Content Production | Content Officer; Scriptwriter; Video Editor; Voice-over Producer | Script, narration/voice plan, edit/visual package, final content asset → Quality & Compliance. |
+| Quality & Compliance | Quality Manager; QC Officer; QA Officer; Legal & Platform Compliance Agent | Independent factual, language, production, rights, safety, and platform-policy review → revision or approval queue. |
+| Distribution Network | Distribution Officer; Distribution Analyst | Channel readiness, approved publishing queue, publication evidence, performance dataset → Marketing & Growth. |
+| Marketing & Growth | Marketing Officer; Marketing Strategist; SEO & Discovery Specialist; Social Growth Analyst | Audience strategy, metadata/discovery package, organic experiments, performance interpretation → Executive Office and Research. |
+| Advertising & Partnerships | Advertiser Acquisition Specialist; Brand Partnership Manager; Campaign Coordinator; Sponsorship & Endorsement Manager | Prospect research, media kit, campaign and partnership proposals → Client Services / Founder approval. No outreach commitment or paid campaign without approval. |
+| Client Services | Client Acquisition Agent; Client Project Manager; Client Relations Agent | Lead qualification, scope/onboarding, client consent records, delivery coordination, client report → relevant delivery department. |
+| Engineering & Automation | Development Engineer | Internal tools, integrations, workflow reliability, access controls, incident fixes → Operations and Founder review for material changes. |
+| Finance | Finance Officer; Finance Analyst | Income/expense ledger, zero-cost checks, budget visibility, financial commitment review → Founder. |
+| Operations & Administration | Operations Officer | SOP upkeep, task records, handoff tracking, run logs, incident register, operational reporting → Executive Office. |
+
+### Decision rights (RACI baseline)
+
+- **Founder (Accountable):** company direction, final publication, client commitments, scope/pricing, spending, paid upgrades, paid API use, advertising spend, sensitive account permissions, and material policy exceptions.
+- **AI CEO / Orchestrator (Responsible for coordination):** break approved goals into tasks, assign work, enforce dependencies, surface blockers, and prepare decision briefs. It is not authorized to approve its own exceptions.
+- **Department Agent (Responsible for production):** create only the deliverable defined in its task brief and attach evidence, source references, and completion notes.
+- **Quality & Compliance (Independent reviewer):** review work it did not produce; return failed items with specific reasons. A creator cannot approve its own deliverable.
+- **Operations (Process custodian):** ensure each handoff, status change, approval, and incident is recorded.
+- **Finance (Control):** verify free-tier and zero-spend constraints before any provider or integration is enabled.
+- **Client owner (Data authority):** grants/revokes access to client-owned profiles and confirms permitted service scope. CurioFrame cannot grant itself client permissions.
+
+## 10. Standard task lifecycle and handoff contract
+
+Every work item must have: a unique task ID; objective; requester; accountable department; assigned agent; input references; expected artifact(s); acceptance criteria; due date/priority where applicable; policy classification; and audit trail.
+
+1. **Intake:** Operations or the originating department records the request and checks that the objective, owner, inputs, and expected output are clear. Incomplete briefs are returned for clarification, not silently guessed.
+2. **Triage:** Executive Office prioritizes the request, confirms dependencies and capacity, and routes it to the responsible department.
+3. **Execution:** The assigned Agent may claim a queued task only when its capability is verified for that task type and all required free-tier/policy preflights pass. Otherwise the task remains queued or becomes blocked with a reason.
+4. **Submission:** The Agent attaches the deliverable, source/evidence references, version, assumptions, and a concise completion summary. A status change alone is not a deliverable.
+5. **Independent review:** QC/QA checks the acceptance criteria and evidence. A failed review returns the task to the creator with itemized corrections; a passed review records reviewer, timestamp, rubric, and result.
+6. **Founder decision:** Work requiring publication, external communication, client commitment, account write access, policy exception, or financial commitment enters an approval queue. Approval must identify the exact version and action being authorized.
+7. **Release / close:** Only the approved version is released or scheduled. The task closes only when the required artifact, review, approval (if required), and outcome evidence are recorded.
+8. **Learning loop:** Operations records recurring failures and cycle-time issues; Research/Marketing may propose improvements, but process changes are versioned and approved by the Founder when they materially affect business policy.
+
+### Allowed task state transitions
+
+- queued → in_progress only after an eligible Agent claims the task and the execution record is created.
+- in_progress → review only when a deliverable and evidence are attached.
+- review → completed only after independent QA passes and all required approvals/release evidence exist.
+- Any active state → blocked when inputs, permissions, quota, capability, QA, or external dependency is missing; the blocker must include reason, owner, and next action.
+- blocked → queued only after the blocker is resolved and the task is safe to retry.
+- cancelled requires a recorded reason and authorized requester.
+- No task may be marked complete solely because an API returned HTTP success or an Agent reported that it finished.
+
+## 11. Quality, evidence, and service-level rules
+
+- Every factual Research output must include source URLs and a claim-to-source mapping. Unsupported claims are marked unverified and cannot pass factual QA.
+- Every Content output must identify its approved brief, target audience/channel, asset version, rights/safety notes, and QC result.
+- Every Distribution record must distinguish draft, awaiting approval, approved, scheduled, published, failed, and cancelled. A scheduled response is not proof of publication.
+- Every client report must identify the tenant, authorized locations, reporting period, data freshness, missing fields, and source of each metric.
+- Every integration run must log start/end, trigger, tenant, connector, date range, row counts, status, and errors without exposing credentials or unnecessary personal data.
+- Default operating timezone for internal timestamps is UTC in the database; user-facing schedules and reports must explicitly display the selected local timezone. Until a channel-specific cadence is approved, no recurring publication or client-report schedule is enabled.
+- No numerical SLA is promised until a pilot has measured actual capacity and cycle time. Initial pilots use explicit due dates and report actual completion time, blocked time, and QA pass rate.
+
+## 12. SOP acceptance checklist
+
+This SOP is ready for Founder review, but it is not approved for autonomous production until all of the following are true:
+
+- [ ] Founder approves the department mandates, decision rights, and workflow boundaries.
+- [ ] First pilot service, target audience, and deliverable package are selected.
+- [ ] First content channel(s), publishing cadence, and reporting cadence are selected.
+- [ ] Task lifecycle and required artifact fields are reflected in the live application and tested end to end.
+- [ ] Each pilot Agent submits a real work sample and passes independent QA; no capability is inferred from its registered role.
+- [ ] Client onboarding, written authorization, tenant isolation, and revocation are tested before any client data is connected.
+- [ ] Every connector and scheduler is verified as ongoing Rp0 (not a time-limited trial) before activation.
+- [ ] Failure, retry, stale data, and audit-log tests pass.
+- [ ] Founder explicitly approves the SOP version and pilot launch.
+
+**Current status:** Draft 0.2 — department accountability and task lifecycle documented; Founder approval and operational acceptance tests remain pending. No new integration, client data access, paid service, or publishing permission is activated by this document.
