@@ -72,11 +72,11 @@ function Chair({ position }) {
   </group>;
 }
 
-function AgentAvatar({ employee, status, position, onSelect, selected }) {
+function AgentAvatar({ employee, status, position, onSelect, selected, color, variant }) {
   const group = useRef();
   const leftArm = useRef();
   const rightArm = useRef();
-  const tint = roundedColor(employee.role_key || employee.department || employee.id);
+  const tint = color || "#6b9cff";
   const active = status.key === "working" || status.key === "review";
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -109,6 +109,14 @@ function AgentAvatar({ employee, status, position, onSelect, selected }) {
       <boxGeometry args={[0.38, 0.26, 0.28]} />
       <meshStandardMaterial color="#27384d" />
     </mesh>
+    {variant === 0 && <mesh position={[0, 1.02, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.235, 0.025, 7, 18]} /><meshStandardMaterial color="#303b4b" /></mesh>}
+    {variant === 1 && <mesh position={[0, 1.17, 0.02]}><sphereGeometry args={[0.24, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.35]} /><meshStandardMaterial color="#27364a" /></mesh>}
+    {variant === 2 && <>
+      <mesh position={[-0.085, 1.0, 0.205]}><torusGeometry args={[0.055, 0.012, 6, 12]} /><meshStandardMaterial color="#263341" /></mesh>
+      <mesh position={[0.085, 1.0, 0.205]}><torusGeometry args={[0.055, 0.012, 6, 12]} /><meshStandardMaterial color="#263341" /></mesh>
+      <mesh position={[0, 1.0, 0.21]}><boxGeometry args={[0.08, 0.018, 0.018]} /><meshStandardMaterial color="#263341" /></mesh>
+    </>}
+    {variant === 3 && <mesh position={[0, 0.68, 0.16]} rotation={[0.1, 0, 0]}><coneGeometry args={[0.075, 0.3, 4]} /><meshStandardMaterial color="#f0d28a" /></mesh>}
     <mesh position={[0, 1.42, 0]}>
       <sphereGeometry args={[selected ? 0.12 : 0.085, 12, 8]} />
       <meshBasicMaterial color={STATUS[status.key].color} />
@@ -161,10 +169,12 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
       const employee = agents[seat];
       if (!employee) return null;
       const status = getStatus(employee, tasks);
+      const employeeIndex = employees.findIndex(item => item.id === employee.id);
+      const avatarColor = "hsl(" + ((employeeIndex * 137.508) % 360) + ", 58%, 58%)";
       return <group key={employee.id}>
         <Desk position={[sx, 0, sz - 0.5]} />
         <Chair position={[sx, 0, sz + 0.8]} />
-        <AgentAvatar employee={employee} status={status} position={[sx, 0, sz + 0.45]} selected={selectedId === employee.id} onSelect={onSelect} />
+        <AgentAvatar employee={employee} status={status} position={[sx, 0, sz + 0.45]} selected={selectedId === employee.id} onSelect={onSelect} color={avatarColor} variant={employeeIndex % 4} />
       </group>;
     })}
   </group>;
