@@ -510,8 +510,15 @@ export function OfficeApp() {
           ? <article><b>Capability profile</b><small>{Object.entries(selected.capability_profile).map(([key, value]) => key.replaceAll("_", " ") + ": " + (typeof value === "string" ? value : JSON.stringify(value))).join(" · ")}</small></article>
           : <p className="empty-state">No capability details recorded.</p>}
         <h3>Recent activity</h3>
-        {snapshot.events.filter(event => event.employee_id === selected.id).slice(0, 6).length
-          ? snapshot.events.filter(event => event.employee_id === selected.id).slice(0, 6).map(event => <article key={event.id}><b>{String(event.event_type || "activity").replaceAll("_", " ")}</b><small>{event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"}</small>{event.message ? <small>{event.message}</small> : null}</article>)
+        {snapshot.events
+          .filter(event => event.employee_id === selected.id || tasks.some(task => task.assigned_employee_id === selected.id && task.id === event.task_id))
+          .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+          .slice(0, 6).length
+          ? snapshot.events
+            .filter(event => event.employee_id === selected.id || tasks.some(task => task.assigned_employee_id === selected.id && task.id === event.task_id))
+            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+            .slice(0, 6)
+            .map(event => <article key={event.id}><b>{String(event.event_type || "activity").replaceAll("_", " ")}</b><small>{event.created_at ? new Date(event.created_at).toLocaleString() : "time unavailable"}</small>{event.message ? <small>{event.message}</small> : null}</article>)
           : <p className="empty-state">No recorded activity events for this Agent.</p>}
         <h3>Task history</h3>
         {tasks.filter(t => t.assigned_employee_id === selected.id).sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)).slice(0, 6).length
