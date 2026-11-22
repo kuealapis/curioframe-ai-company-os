@@ -122,7 +122,7 @@
           <div id="work-sample-assignment-list" class="capability-agent-list"><p class="muted">Loading assignments…</p></div>
         </section>
         <div class="distribution-lower-grid capability-lower-grid"><section class="panel"><div class="panel-head"><div><h2>Record an evidence-based test</h2><p>Only after a real work sample or independent QA review.</p></div></div>
-          <form id="capability-test-form" class="distribution-form"><label>AI Agent<select id="capability-employee"></select></label><label>Test type<select id="capability-test-kind"><option value="work_sample">Real work sample</option><option value="qa_review">Independent QA review</option></select></label><label>Result<select id="capability-test-status"><option value="passed">Passed</option><option value="failed">Failed</option><option value="blocked">Blocked</option></select></label><label>Evidence summary<textarea id="capability-evidence" rows="4" minlength="20" required placeholder="Describe the actual task, output, acceptance criteria, and what was checked…"></textarea></label><label>Evidence reference (optional)<input id="capability-reference" maxlength="500" placeholder="Task ID, asset ID, document link, or QA record"></label><button class="primary-btn" id="capability-test-submit" type="submit">Save test evidence</button></form>
+          <form id="capability-test-form" class="distribution-form"><label>AI Agent<select id="capability-employee"></select></label><label>Test type<select id="capability-test-kind"><option value="work_sample">Real work sample</option><option value="qa_review">Independent QA review</option></select></label><label>Result<select id="capability-test-status"><option value="passed">Passed</option><option value="failed">Failed</option><option value="blocked">Blocked</option></select></label><label>Evidence summary<textarea id="capability-evidence" rows="4" minlength="20" required placeholder="Describe the actual task, output, acceptance criteria, and what was checked…"></textarea></label><label>Evidence reference · required<input id="capability-reference" maxlength="500" required placeholder="Paste the exact Task ID or Asset ID from the submitted work sample"></label><button class="primary-btn" id="capability-test-submit" type="submit">Save test evidence</button></form>
         </section><section class="panel"><div class="panel-head"><div><h2>Recent test history</h2><p>Latest evidence records</p></div></div><div id="capability-test-history" class="activity-feed"><p class="muted">No tests yet.</p></div></section></div>
         <section class="panel" style="margin-top:18px"><div class="panel-head"><div><p class="eyebrow">RESEARCH QUALITY GATE</p><h2>Independent QA · Bioluminescence Brief</h2><p>Human review form for the revised asset. QA Officer execution is not available while the role remains PLANNED.</p></div><span class="pill amber">HUMAN REVIEW REQUIRED</span></div><div id="research-qa-panel"><p class="muted">Loading research QA assignment…</p></div></section>
       </section>
@@ -223,6 +223,6 @@
       showStartupError(reason && reason.message ? reason.message : "an initialization request failed");
     });
   </script>
-  <script type="module" src="./app.js?v=20261122-32"></script>
+  <script type="module" src="./app.js?v=20261122-33"></script>
 </body>
 </html>
