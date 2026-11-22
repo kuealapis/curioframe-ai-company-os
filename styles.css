@@ -445,3 +445,20 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
 #page-virtual-hq:fullscreen #virtual-hq-full-scene{display:block!important;flex:1 1 auto!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important}
 #page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene canvas,
 #page-virtual-hq:fullscreen #virtual-hq-full-scene canvas{display:block;width:100%!important;height:100%!important}
+
+
+/* Virtual office: give the 3D workspace the dominant, immersive screen area */
+#page-virtual-hq.hq-fullscreen-mode .hq-main-panel,
+#page-virtual-hq:fullscreen .hq-main-panel{height:calc(100dvh - 76px)!important;min-height:0!important;overflow:visible}
+#page-virtual-hq.hq-fullscreen-mode .hq-viewport,
+#page-virtual-hq:fullscreen .hq-viewport{height:calc(100dvh - 235px)!important;min-height:420px!important;flex:1 1 auto!important;overflow:hidden!important}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene,
+#page-virtual-hq:fullscreen #virtual-hq-full-scene{height:100%!important;min-height:420px!important;width:100%!important}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene canvas,
+#page-virtual-hq:fullscreen #virtual-hq-full-scene canvas{width:100%!important;height:100%!important;display:block!important}
+@media(max-width:700px){
+ #page-virtual-hq.hq-fullscreen-mode .hq-viewport,
+ #page-virtual-hq:fullscreen .hq-viewport{height:calc(100dvh - 205px)!important;min-height:360px!important}
+ #page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene,
+ #page-virtual-hq:fullscreen #virtual-hq-full-scene{min-height:360px!important}
+}
