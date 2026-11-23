@@ -213,7 +213,7 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
       <sphereGeometry args={[0.035, 8, 8]} />
       <meshBasicMaterial color="#ffffff" />
     </mesh>
-    <Html position={[0, 1.86, 0]} distanceFactor={11} center><button type="button" className={"agent-name-tag agent-select-target" + (selected ? " selected" : "")} aria-label={"Inspect " + employee.name} aria-pressed={selected} onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(employee.id); }}>{employee.name}</button></Html>
+    <Html position={[0, 1.86, 0]} distanceFactor={11} center><span className={"agent-name-tag" + (selected ? " selected" : "")} aria-label={"Agent " + employee.name} style={{ opacity: selected ? 1 : 0 }}>{employee.name}</span></Html>
   </group>;
 }
 
@@ -550,9 +550,9 @@ export function OfficeApp() {
       </div>
     </header>
     <section className="office-stage">
-      <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
+      <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }} onCreated={({ gl }) => { gl.domElement.style.pointerEvents = "auto"; gl.domElement.style.touchAction = "none"; gl.domElement.tabIndex = 0; }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} activeFloor={activeFloor} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
-        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
+        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
       </Canvas>
       <div className="office-hud">
         <span><b>{employees.length}</b> REGISTERED AGENTS</span>
