@@ -514,3 +514,8 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
 #page-virtual-hq:fullscreen #virtual-hq-full-scene{height:100%!important;min-height:0!important}
 #page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene iframe[data-curioframe-office],
 #page-virtual-hq:fullscreen #virtual-hq-full-scene iframe[data-curioframe-office]{height:100%!important;min-height:0!important}
+
+
+/* Use the controls inside the shared 3D office iframe; prevent overlay controls intercepting touch. */
+#page-virtual-hq .hq-game-toolbar,
+#page-virtual-hq .hq-joystick-wrap{display:none!important;pointer-events:none!important}

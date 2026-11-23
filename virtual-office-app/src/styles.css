@@ -22,3 +22,9 @@
 .office-walk-pad-row:last-child button{font-size:9px;letter-spacing:.04em}
 .office-actions button.active{border-color:#78a9ff;background:#375577;color:#fff}
 @media(max-width:700px){.office-walk-pad{right:8px;bottom:54px;padding:7px}.office-walk-pad button{min-width:39px;min-height:42px}.office-help{max-width:calc(100% - 160px);font-size:8px;line-height:1.4}.office-crew-picker{bottom:54px}}
+
+
+/* Gesture-first controls: no on-screen movement pad or duplicate Agent roster overlay. */
+.office-walk-pad,.office-crew-picker{display:none!important}
+.office-stage canvas{touch-action:none;overscroll-behavior:contain}
+.agent-name-tag{touch-action:manipulation;user-select:none;-webkit-user-select:none}
