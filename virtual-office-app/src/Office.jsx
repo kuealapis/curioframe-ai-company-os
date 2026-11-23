@@ -328,10 +328,46 @@ function SharedSpaces({ activeFloor = "all" }) {
       <mesh position={[0, 1.35, -3.55]}><boxGeometry args={[7.2, 2.7, 0.12]} /><meshStandardMaterial color="#e8e6df" /></mesh>
       <mesh position={[-3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#e8e6df" /></mesh>
       <mesh position={[3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#d5e4e8" transparent opacity={0.3} /></mesh>
+      <mesh position={[0, 2.58, -3.42]}>
+        <boxGeometry args={[2.35, 0.42, 0.08]} />
+        <meshStandardMaterial color={i === 0 ? "#344f68" : i === 1 ? "#557b68" : "#725b72"} emissive={i === 0 ? "#344f68" : i === 1 ? "#557b68" : "#725b72"} emissiveIntensity={0.16} />
+      </mesh>
+      <Html position={[0, 2.58, -3.35]} center distanceFactor={10}>
+        <div className="room-sign">{["MEETING ROOM", "PANTRY", "LOUNGE"][i]}</div>
+      </Html>
+      <mesh position={[0, 2.48, 0]}>
+        <boxGeometry args={[1.65, 0.055, 0.42]} />
+        <meshStandardMaterial color="#f2e8cf" emissive="#f2e8cf" emissiveIntensity={0.28} />
+      </mesh>
       {i === 0 && <>
         <mesh position={[0, 0.8, 0]}><boxGeometry args={[4.2, 0.16, 1.5]} /><meshStandardMaterial color="#8b6b52" /></mesh>
         {[-1.5, -0.5, 0.5, 1.5].flatMap(x => [-1.5, 1.5].map(z => <group key={x + ":" + z} position={[x, 0, z]}><mesh position={[0, 0.48, 0]}><boxGeometry args={[0.65, 0.12, 0.65]} /><meshStandardMaterial color="#34455d" /></mesh><mesh position={[0, 0.24, 0]}><cylinderGeometry args={[0.06, 0.06, 0.45, 8]} /><meshStandardMaterial color="#8d9aab" /></mesh></group>))}
         <mesh position={[0, 1.6, -3.42]}><boxGeometry args={[2.8, 1.2, 0.08]} /><meshStandardMaterial color="#26384b" /></mesh>
+        <mesh position={[0, 1.6, -3.34]}>
+          <planeGeometry args={[2.42, 0.82]} />
+          <meshBasicMaterial color="#8fc4d6" />
+        </mesh>
+        <mesh position={[0, 0.72, 0.05]}>
+          <cylinderGeometry args={[1.28, 1.28, 0.14, 32]} />
+          <meshStandardMaterial color="#9b7658" roughness={0.62} />
+        </mesh>
+        {Array.from({ length: 6 }, (_, seat) => {
+          const angle = seat * Math.PI / 3;
+          return <group key={seat} position={[Math.cos(angle) * 1.72, 0, Math.sin(angle) * 1.72]}>
+            <mesh position={[0, 0.52, 0]} castShadow>
+              <boxGeometry args={[0.56, 0.12, 0.56]} />
+              <meshStandardMaterial color="#43596d" roughness={0.78} />
+            </mesh>
+            <mesh position={[0, 0.82, -0.22]}>
+              <boxGeometry args={[0.56, 0.55, 0.1]} />
+              <meshStandardMaterial color="#526b80" roughness={0.8} />
+            </mesh>
+          </group>;
+        })}
+        <mesh position={[0, 0.84, 0.05]}>
+          <cylinderGeometry args={[0.18, 0.18, 0.035, 16]} />
+          <meshStandardMaterial color="#d6e1e5" />
+        </mesh>
       </>}
       {i === 1 && <>
         <mesh position={[0, 0.7, -2.5]}><boxGeometry args={[5.4, 1.2, 0.8]} /><meshStandardMaterial color="#8b725d" /></mesh>
@@ -339,6 +375,24 @@ function SharedSpaces({ activeFloor = "all" }) {
         <mesh position={[2.2, 0.9, -2.5]}><boxGeometry args={[0.8, 1.7, 0.8]} /><meshStandardMaterial color="#7f9aa8" /></mesh>
         <mesh position={[2.2, 1.9, -2.5]}><cylinderGeometry args={[0.42, 0.42, 0.5, 16]} /><meshStandardMaterial color="#4b9ac5" /></mesh>
         <mesh position={[0, 0.55, 1.1]}><boxGeometry args={[2.4, 0.12, 0.9]} /><meshStandardMaterial color="#9a765a" /></mesh>
+        {[-0.72, 0, 0.72].map(cx => <group key={cx} position={[cx, 0.68, 1.1]}>
+          <mesh position={[0, 0.14, 0]}>
+            <cylinderGeometry args={[0.11, 0.13, 0.27, 12]} />
+            <meshStandardMaterial color="#f2eee5" roughness={0.42} />
+          </mesh>
+          <mesh position={[0.12, 0.14, 0]}>
+            <torusGeometry args={[0.07, 0.025, 8, 12]} />
+            <meshStandardMaterial color="#f2eee5" />
+          </mesh>
+        </group>)}
+        <mesh position={[-1.65, 0.72, 1.15]}>
+          <boxGeometry args={[0.48, 0.7, 0.48]} />
+          <meshStandardMaterial color="#d7e1e4" roughness={0.28} />
+        </mesh>
+        <mesh position={[-1.65, 1.12, 1.15]}>
+          <boxGeometry args={[0.5, 0.08, 0.5]} />
+          <meshStandardMaterial color="#667b88" metalness={0.35} />
+        </mesh>
       </>}
       {i === 2 && <>
         <mesh position={[0, 0.72, -2.2]}><boxGeometry args={[3.6, 0.9, 1.1]} /><meshStandardMaterial color="#4d7185" /></mesh>
@@ -346,6 +400,22 @@ function SharedSpaces({ activeFloor = "all" }) {
         <mesh position={[0, 0.42, 0.2]}><boxGeometry args={[1.7, 0.12, 1.1]} /><meshStandardMaterial color="#805d43" /></mesh>
         <mesh position={[-2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#c38a61" /></mesh>
         <mesh position={[2.2, 0.65, 1.7]}><boxGeometry args={[1.1, 1.2, 1.1]} /><meshStandardMaterial color="#8b9f72" /></mesh>
+        <mesh position={[0, 0.5, 0.2]}>
+          <boxGeometry args={[1.25, 0.12, 0.78]} />
+          <meshStandardMaterial color="#b58a63" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.62, 0.2]}>
+          <boxGeometry args={[0.34, 0.045, 0.24]} />
+          <meshStandardMaterial color="#e7e0d1" />
+        </mesh>
+        {[-0.42, 0, 0.42].map(px => <mesh key={px} position={[px, 0.69, 0.2]}>
+          <cylinderGeometry args={[0.045, 0.045, 0.12, 10]} />
+          <meshStandardMaterial color="#4f6b5b" />
+        </mesh>)}
+        <mesh position={[0, 0.12, 0.2]}>
+          <boxGeometry args={[1.08, 0.08, 0.62]} />
+          <meshStandardMaterial color="#6f513b" />
+        </mesh>
       </>}
     </group>))}
   </>;
