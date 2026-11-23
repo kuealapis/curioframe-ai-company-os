@@ -53,6 +53,18 @@ function Desk({ position, color = "#c4a985" }) {
       <boxGeometry args={[0.3, 0.035, 0.2]} />
       <meshStandardMaterial color="#333d4c" />
     </mesh>
+    <mesh position={[0, 0.9, 0.31]}>
+      <boxGeometry args={[0.54, 0.035, 0.2]} />
+      <meshStandardMaterial color="#566477" roughness={0.48} />
+    </mesh>
+    <mesh position={[0.52, 0.91, 0.28]}>
+      <cylinderGeometry args={[0.065, 0.065, 0.025, 12]} />
+      <meshStandardMaterial color="#252f3e" />
+    </mesh>
+    <mesh position={[0, 1.0, -0.27]}>
+      <cylinderGeometry args={[0.045, 0.045, 0.12, 10]} />
+      <meshStandardMaterial color="#8b9aaa" metalness={0.45} />
+    </mesh>
   </group>;
 }
 
@@ -69,6 +81,53 @@ function Chair({ position }) {
     <mesh position={[0, 0.2, 0]}>
       <cylinderGeometry args={[0.07, 0.07, 0.4, 8]} />
       <meshStandardMaterial color="#8d9aab" metalness={0.5} />
+    </mesh>
+  </group>;
+}
+
+function OfficePlant({ position, scale = 1 }) {
+  return <group position={position} scale={scale}>
+    <mesh position={[0, 0.22, 0]} castShadow>
+      <cylinderGeometry args={[0.28, 0.2, 0.42, 12]} />
+      <meshStandardMaterial color="#b77f58" roughness={0.88} />
+    </mesh>
+    <mesh position={[0, 0.44, 0]}>
+      <cylinderGeometry args={[0.24, 0.24, 0.06, 12]} />
+      <meshStandardMaterial color="#493c32" />
+    </mesh>
+    {Array.from({ length: 7 }, (_, i) => {
+      const angle = i * Math.PI * 2 / 7;
+      return <group key={i} rotation={[0, angle, 0]}>
+        <mesh position={[0.18, 0.88 + (i % 3) * 0.08, 0]} rotation={[0, 0, -0.38]}>
+          <capsuleGeometry args={[0.075, 0.56, 4, 7]} />
+          <meshStandardMaterial color={i % 2 ? "#4e8b65" : "#6aa477"} roughness={0.9} />
+        </mesh>
+      </group>;
+    })}
+    <mesh position={[0, 1.05, 0]}>
+      <sphereGeometry args={[0.16, 10, 8]} />
+      <meshStandardMaterial color="#78a77b" roughness={0.95} />
+    </mesh>
+  </group>;
+}
+
+function WindowPanel({ position, width = 1.7 }) {
+  return <group position={position}>
+    <mesh>
+      <boxGeometry args={[width, 1.18, 0.07]} />
+      <meshStandardMaterial color="#5e7e91" metalness={0.32} roughness={0.24} />
+    </mesh>
+    <mesh position={[0, 0, 0.045]}>
+      <planeGeometry args={[width - 0.16, 1.02]} />
+      <meshBasicMaterial color="#a9d5e7" />
+    </mesh>
+    <mesh position={[0, 0, 0.09]}>
+      <boxGeometry args={[0.045, 1.08, 0.035]} />
+      <meshStandardMaterial color="#e5edf0" metalness={0.2} />
+    </mesh>
+    <mesh position={[0, 0, 0.09]}>
+      <boxGeometry args={[width - 0.08, 0.045, 0.035]} />
+      <meshStandardMaterial color="#e5edf0" metalness={0.2} />
     </mesh>
   </group>;
 }
@@ -193,6 +252,17 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect,
       <boxGeometry args={[1.3, 0.48, 0.12]} />
       <meshStandardMaterial color={wallColor} emissive={wallColor} emissiveIntensity={0.18} />
     </mesh>
+    {[-1.55, 0.55, 2.65].map(wx => <WindowPanel key={wx} position={[wx, 1.55, -3.57]} width={1.55} />)}
+    <OfficePlant position={[-3.35, 0, 2.75]} scale={0.82} />
+    <OfficePlant position={[3.35, 0, 2.75]} scale={0.82} />
+    <mesh position={[0, 2.62, 0.2]}>
+      <boxGeometry args={[2.2, 0.07, 0.42]} />
+      <meshStandardMaterial color="#e5e8e8" emissive="#fff0c4" emissiveIntensity={0.22} />
+    </mesh>
+    {[-0.8, 0, 0.8].map(lx => <mesh key={lx} position={[lx, 2.57, 0.2]}>
+      <boxGeometry args={[0.035, 0.025, 0.32]} />
+      <meshStandardMaterial color="#8c9da8" metalness={0.3} />
+    </mesh>)}
     <Html position={[-3.45, 2.74, -3.47]} distanceFactor={9} center><div className="room-sign">{department}</div></Html>
     {Array.from({ length: Math.max(1, agents.length) }, (_, seat) => {
       const sx = -2.65 + (seat % 3) * 2.55;
