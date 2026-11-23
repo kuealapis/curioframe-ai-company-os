@@ -467,3 +467,41 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
 #virtual-hq-full-scene iframe[data-curioframe-office]{display:block;width:100%;height:100%;min-height:520px;border:0;border-radius:inherit;background:#b9cbd2}
 #page-virtual-hq .hq-viewport #virtual-hq-full-scene{overflow:hidden;position:relative}
 @media(max-width:700px){#virtual-hq-full-scene iframe[data-curioframe-office]{min-height:480px}}
+
+
+/* Virtual HQ focus mode: the 3D office is the page, not another dashboard. */
+#page-virtual-hq>.page-heading,
+#page-virtual-hq .hq-live-line,
+#page-virtual-hq .hq-game-stats,
+#page-virtual-hq .hq-mission-panel,
+#page-virtual-hq .hq-panel-toggle,
+#page-virtual-hq .hq-game-hint,
+#page-virtual-hq .hq-selected-detail,
+#page-virtual-hq .hq-legend,
+#page-virtual-hq #hq-department-grid,
+#page-virtual-hq .hq-note{display:none!important}
+#page-virtual-hq{padding-top:0!important}
+#page-virtual-hq .hq-main-panel{padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#page-virtual-hq .hq-viewport{height:calc(100dvh - 92px)!important;min-height:480px!important;border-radius:14px!important;overflow:hidden!important;background:#091426!important}
+#page-virtual-hq #virtual-hq-full-scene{width:100%!important;height:100%!important;min-height:480px!important;max-height:none!important;border:0!important;border-radius:14px!important}
+#page-virtual-hq #virtual-hq-full-scene iframe[data-curioframe-office]{height:100%!important;min-height:480px!important}
+#page-virtual-hq .hq-game-toolbar{position:absolute!important;z-index:8!important;top:10px!important;left:10px!important;right:10px!important;display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:8px!important;padding:0!important;pointer-events:none}
+#page-virtual-hq .hq-game-toolbar>*{pointer-events:auto}
+#page-virtual-hq .hq-game-mode,
+#page-virtual-hq .hq-camera-buttons{display:flex!important;gap:6px!important;flex:0 0 auto!important}
+#page-virtual-hq .hq-dept-jump{display:none!important}
+#page-virtual-hq .hq-game-toolbar button{min-height:36px;padding:8px 11px!important;border:1px solid #6e8ca5aa!important;background:#0b1c2edb!important;color:#e8f4ff!important;backdrop-filter:blur(10px)}
+#page-virtual-hq .hq-game-toolbar button.active{background:#176079ed!important;border-color:#68d9ed!important}
+#page-virtual-hq .hq-camera-buttons{margin-left:auto!important}
+#page-virtual-hq .hq-build-status{position:absolute;z-index:8;left:12px;bottom:12px;padding:7px 10px;border:1px solid #e6b65d66;border-radius:999px;background:#101d2bd9;color:#ffd98c;font:800 9px/1.2 system-ui;letter-spacing:.12em;backdrop-filter:blur(10px);pointer-events:none}
+#page-virtual-hq .hq-joystick-wrap{z-index:9}
+@media(max-width:700px){
+  #page-virtual-hq .hq-viewport{height:calc(100dvh - 70px)!important;min-height:420px!important}
+  #page-virtual-hq #virtual-hq-full-scene,
+  #page-virtual-hq #virtual-hq-full-scene iframe[data-curioframe-office]{min-height:420px!important}
+  #page-virtual-hq .hq-game-toolbar{top:7px!important;left:7px!important;right:7px!important;gap:4px!important;flex-wrap:nowrap!important}
+  #page-virtual-hq .hq-game-toolbar button{min-height:34px;padding:7px 8px!important;font-size:10px!important}
+  #page-virtual-hq .hq-game-mode,
+  #page-virtual-hq .hq-camera-buttons{gap:4px!important}
+  #page-virtual-hq .hq-build-status{left:8px;bottom:8px;font-size:8px}
+}
