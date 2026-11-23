@@ -9,6 +9,13 @@ on:
       - "index.html"
       - "styles.css"
       - ".github/workflows/virtual-office-check.yml"
+  pull_request:
+    paths:
+      - "virtual-office-app/**"
+      - "app.js"
+      - "index.html"
+      - "styles.css"
+      - ".github/workflows/virtual-office-check.yml"
 
 permissions:
   contents: read
