@@ -1158,8 +1158,9 @@ function sendHQSnapshot(frame){
   frame.contentWindow.postMessage({type:"curioframe:office-snapshot",payload},location.origin);
 }
 window.addEventListener("message",event=>{
-  const frame=$("#virtual-hq-full-scene iframe[data-curioframe-office]");
-  if(event.origin!==location.origin||event.source!==frame?.contentWindow)return;
+  const frames=$("#virtual-hq-scene iframe[data-curioframe-office], #virtual-hq-full-scene iframe[data-curioframe-office]");
+  const frame=frames.find(candidate=>candidate.contentWindow===event.source);
+  if(event.origin!==location.origin||!frame)return;
   if(event.data?.type==="curioframe:office-ready"){sendHQSnapshot(frame);return;}
   if(event.data?.type==="curioframe:agent-selected"&&typeof event.data.employeeId==="string"){
     selectHQEmployee(event.data.employeeId);
@@ -1220,8 +1221,9 @@ function selectHQEmployee(employeeId){
   selectedHQEmployeeId=employeeId;
   $(".hq-dept-card").forEach(card=>card.classList.toggle("selected",card.dataset.hqEmployee===employeeId));
   hqWorlds.forEach(world=>{world.select(employeeId);world.focusEmployee?.(employeeId)});
-  const officeFrame=$("#virtual-hq-full-scene iframe[data-curioframe-office]");
-  officeFrame?.contentWindow?.postMessage({type:"curioframe:select-agent",employeeId},location.origin);
+  $("#virtual-hq-scene iframe[data-curioframe-office], #virtual-hq-full-scene iframe[data-curioframe-office]").forEach(frame=>{
+    frame.contentWindow?.postMessage({type:"curioframe:select-agent",employeeId},location.origin);
+  });
   renderHQDetail(employeeId);
 }
 let hqLastEventAt=null,hqEventCount=0,hqPendingDiagnostic=null;

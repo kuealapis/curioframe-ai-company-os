@@ -41,7 +41,8 @@ jobs:
           grep -Fq 'data-curioframe-office="true"' app.js
           grep -Fq 'src="./virtual-office/index.html"' app.js
           grep -Fq 'sendHQSnapshot(officeFrame)' app.js
-          grep -Fq 'event.source!==frame?.contentWindow' app.js
+          grep -Fq 'const frames=$("#virtual-hq-scene iframe[data-curioframe-office], #virtual-hq-full-scene iframe[data-curioframe-office]")' app.js
+          grep -Fq 'candidate.contentWindow===event.source' app.js
           grep -Fq 'id="virtual-hq-full-scene"' index.html
           grep -Fq '#virtual-hq-full-scene iframe[data-curioframe-office]' styles.css
           echo "Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified."
