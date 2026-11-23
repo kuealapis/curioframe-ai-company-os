@@ -498,6 +498,52 @@ export function OfficeApp() {
   const [activeFloor, setActiveFloor] = useState("all");
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const controls = useRef();
+  useEffect(() => {
+    const orbit = controls.current;
+    const element = orbit?.domElement;
+    if (!orbit || !element) return;
+    let drag = null;
+    const writeCameraState = () => {
+      const camera = orbit.object;
+      element.dataset.cameraPosition = camera.position.toArray().map(value => value.toFixed(3)).join(",");
+    };
+    const onPointerDown = event => {
+      if (event.pointerType !== "mouse" || event.button !== 0) return;
+      drag = { x: event.clientX, y: event.clientY, moved: false };
+      try { element.setPointerCapture(event.pointerId); } catch {}
+    };
+    const onPointerMove = event => {
+      if (!drag || event.pointerType !== "mouse") return;
+      const dx = event.clientX - drag.x;
+      const dy = event.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) < 1) return;
+      drag = { x: event.clientX, y: event.clientY, moved: true };
+      const offset = orbit.object.position.clone().sub(orbit.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      spherical.theta -= dx * 0.006;
+      spherical.phi = THREE.MathUtils.clamp(spherical.phi - dy * 0.006, 0.12, Math.PI / 2.02);
+      offset.setFromSpherical(spherical);
+      orbit.object.position.copy(orbit.target).add(offset);
+      orbit.object.lookAt(orbit.target);
+      orbit.update();
+      writeCameraState();
+    };
+    const onPointerUp = () => { drag = null; };
+    const onWheel = () => requestAnimationFrame(writeCameraState);
+    element.addEventListener("pointerdown", onPointerDown);
+    element.addEventListener("pointermove", onPointerMove);
+    element.addEventListener("pointerup", onPointerUp);
+    element.addEventListener("pointercancel", onPointerUp);
+    element.addEventListener("wheel", onWheel);
+    writeCameraState();
+    return () => {
+      element.removeEventListener("pointerdown", onPointerDown);
+      element.removeEventListener("pointermove", onPointerMove);
+      element.removeEventListener("pointerup", onPointerUp);
+      element.removeEventListener("pointercancel", onPointerUp);
+      element.removeEventListener("wheel", onWheel);
+    };
+  }, []);
   const employees = snapshot.employees;
   const tasks = snapshot.tasks;
 
@@ -552,7 +598,7 @@ export function OfficeApp() {
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }} onCreated={({ gl }) => { gl.domElement.style.pointerEvents = "auto"; gl.domElement.style.touchAction = "none"; gl.domElement.tabIndex = 0; }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} activeFloor={activeFloor} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
-        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} onChange={() => { const camera = controls.current?.object; const canvas = controls.current?.domElement; if (camera && canvas) canvas.dataset.cameraPosition = camera.position.toArray().map(value => value.toFixed(3)).join(","); }} />
+        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan={false} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
       </Canvas>
       <div className="office-hud">
         <span><b>{employees.length}</b> REGISTERED AGENTS</span>
