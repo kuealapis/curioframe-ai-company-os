@@ -505,3 +505,12 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
   #page-virtual-hq .hq-camera-buttons{gap:4px!important}
   #page-virtual-hq .hq-build-status{left:8px;bottom:8px;font-size:8px}
 }
+
+#page-virtual-hq.hq-fullscreen-mode .hq-main-panel,
+#page-virtual-hq:fullscreen .hq-main-panel{height:100dvh!important;min-height:0!important}
+#page-virtual-hq.hq-fullscreen-mode .hq-viewport,
+#page-virtual-hq:fullscreen .hq-viewport{height:100dvh!important;min-height:0!important;flex:1 1 auto!important}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene,
+#page-virtual-hq:fullscreen #virtual-hq-full-scene{height:100%!important;min-height:0!important}
+#page-virtual-hq.hq-fullscreen-mode #virtual-hq-full-scene iframe[data-curioframe-office],
+#page-virtual-hq:fullscreen #virtual-hq-full-scene iframe[data-curioframe-office]{height:100%!important;min-height:0!important}
