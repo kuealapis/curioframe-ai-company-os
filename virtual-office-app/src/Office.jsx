@@ -498,6 +498,7 @@ export function OfficeApp() {
   const [activeFloor, setActiveFloor] = useState("all");
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const controls = useRef();
+  const [controlsReady, setControlsReady] = useState(false);
   useEffect(() => {
     const orbit = controls.current;
     const element = orbit?.domElement;
@@ -543,7 +544,7 @@ export function OfficeApp() {
       element.removeEventListener("pointercancel", onPointerUp);
       element.removeEventListener("wheel", onWheel);
     };
-  }, []);
+  }, [controlsReady]);
   const employees = snapshot.employees;
   const tasks = snapshot.tasks;
 
@@ -598,7 +599,7 @@ export function OfficeApp() {
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }} onCreated={({ gl }) => { gl.domElement.style.pointerEvents = "auto"; gl.domElement.style.touchAction = "none"; gl.domElement.tabIndex = 0; }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} activeFloor={activeFloor} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
-        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan={false} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
+        <OrbitControls ref={node => { controls.current = node; if (node) setControlsReady(true); }} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan={false} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
       </Canvas>
       <div className="office-hud">
         <span><b>{employees.length}</b> REGISTERED AGENTS</span>
