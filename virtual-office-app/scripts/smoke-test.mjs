@@ -87,8 +87,19 @@ async function exerciseViewport(page, label) {
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
   await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 03" }).click({ force: true });
-  await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 03");
+  const visibleAgent = await page.locator(".agent-name-tag").evaluateAll(nodes => {
+    const width = document.documentElement.clientWidth;
+    const height = document.documentElement.clientHeight;
+    return nodes.map((node, index) => {
+      const rect = node.getBoundingClientRect();
+      return { index, name: node.textContent.trim(), x: rect.left + rect.width / 2, y: rect.top + rect.height / 2,
+        visible: rect.width > 0 && rect.height > 0 && rect.left >= 0 && rect.top >= 0 && rect.right <= width && rect.bottom <= height };
+    }).find(item => item.visible);
+  });
+  assert.ok(visibleAgent, label + ": at least one Agent hit target must be visible inside the viewport");
+  await page.mouse.click(visibleAgent.x, visibleAgent.y);
+  await page.waitForFunction(name => document.querySelector(".agent-inspector h2")?.textContent === name, visibleAgent.name);
+  assert.equal(await page.locator(".agent-inspector h2").textContent(), visibleAgent.name, label + ": tapping a visible Agent must open its identity panel");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
   return metrics;
 }
