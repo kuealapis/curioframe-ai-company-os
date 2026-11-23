@@ -50,7 +50,7 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).click({ force: true });
+  await page.evaluate(() => window.postMessage({ type: "curioframe:select-agent", employeeId: "agent-02" }, window.location.origin));
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
@@ -87,6 +87,22 @@ async function exerciseViewport(page, label) {
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
   await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
+  const canvas = page.locator("canvas");
+  const canvasBox = await canvas.boundingBox();
+  assert.ok(canvasBox && canvasBox.width > 100 && canvasBox.height > 100, label + ": interactive canvas must occupy the viewer");
+  const cameraBeforeDrag = await canvas.getAttribute("data-camera-position");
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.55);
+  await page.mouse.down();
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.68, canvasBox.y + canvasBox.height * 0.42, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  const cameraAfterDrag = await canvas.getAttribute("data-camera-position");
+  assert.ok(cameraAfterDrag && cameraAfterDrag !== cameraBeforeDrag, label + ": mouse drag must rotate the 3D camera");
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.5);
+  await page.mouse.wheel(0, -420);
+  await page.waitForTimeout(250);
+  const cameraAfterZoom = await canvas.getAttribute("data-camera-position");
+  assert.ok(cameraAfterZoom && cameraAfterZoom !== cameraAfterDrag, label + ": mouse wheel must zoom the 3D camera");
   const visibleAgent = await page.locator(".agent-name-tag").evaluateAll(nodes => {
     const width = document.documentElement.clientWidth;
     const height = document.documentElement.clientHeight;
