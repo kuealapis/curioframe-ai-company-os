@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrbitControls, ContactShadows, Html } from "@react-three/drei";
 
@@ -482,98 +482,6 @@ function getAgentWorldPosition(employee, employees, tasks = []) {
   return [targetX, floor * 5.7 + 1.15, targetZ];
 }
 
-function WalkController({ enabled, move }) {
-  const { camera, gl } = useThree();
-  const keys = useRef(new Set());
-  const yaw = useRef(0);
-  const pitch = useRef(0);
-  const pointer = useRef(null);
-  const forward = useMemo(() => new THREE.Vector3(), []);
-  const right = useMemo(() => new THREE.Vector3(), []);
-
-  useEffect(() => {
-    if (!enabled) {
-      keys.current.clear();
-      pointer.current = null;
-      return;
-    }
-    camera.position.set(0, 2.4, 25);
-    camera.rotation.order = "YXZ";
-    camera.lookAt(0, 2.4, 0);
-    yaw.current = camera.rotation.y;
-    pitch.current = camera.rotation.x;
-
-    const onKeyDown = event => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "q", "e"].includes(key)) {
-        event.preventDefault();
-        keys.current.add(key);
-      }
-    };
-    const onKeyUp = event => keys.current.delete(event.key.toLowerCase());
-    const onPointerDown = event => {
-      if (event.pointerType === "mouse" && event.button !== 0) return;
-      pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
-      try { gl.domElement.setPointerCapture(event.pointerId); } catch {}
-    };
-    const onPointerMove = event => {
-      if (!pointer.current || pointer.current.id !== event.pointerId) return;
-      const dx = event.clientX - pointer.current.x;
-      const dy = event.clientY - pointer.current.y;
-      pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
-      yaw.current -= dx * 0.006;
-      pitch.current = THREE.MathUtils.clamp(pitch.current - dy * 0.0045, -0.72, 0.48);
-      camera.rotation.set(pitch.current, yaw.current, 0);
-    };
-    const onPointerUp = event => {
-      if (pointer.current?.id === event.pointerId) pointer.current = null;
-    };
-    gl.domElement.addEventListener("pointerdown", onPointerDown);
-    gl.domElement.addEventListener("pointermove", onPointerMove);
-    gl.domElement.addEventListener("pointerup", onPointerUp);
-    gl.domElement.addEventListener("pointercancel", onPointerUp);
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      gl.domElement.removeEventListener("pointerdown", onPointerDown);
-      gl.domElement.removeEventListener("pointermove", onPointerMove);
-      gl.domElement.removeEventListener("pointerup", onPointerUp);
-      gl.domElement.removeEventListener("pointercancel", onPointerUp);
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, [enabled, camera, gl]);
-
-  useFrame((_, delta) => {
-    if (!enabled) return;
-    const pressed = keys.current;
-    let horizontal = Number(move?.x || 0);
-    let vertical = -Number(move?.y || 0);
-    if (pressed.has("a") || pressed.has("arrowleft")) horizontal -= 1;
-    if (pressed.has("d") || pressed.has("arrowright")) horizontal += 1;
-    if (pressed.has("w") || pressed.has("arrowup")) vertical += 1;
-    if (pressed.has("s") || pressed.has("arrowdown")) vertical -= 1;
-    const magnitude = Math.hypot(horizontal, vertical);
-    if (magnitude > 1) {
-      horizontal /= magnitude;
-      vertical /= magnitude;
-    }
-    camera.getWorldDirection(forward);
-    forward.y = 0;
-    forward.normalize();
-    right.setFromMatrixColumn(camera.matrixWorld, 0);
-    right.y = 0;
-    right.normalize();
-    const speed = 8 * delta;
-    camera.position.addScaledVector(forward, vertical * speed);
-    camera.position.addScaledVector(right, horizontal * speed);
-    if (pressed.has("q")) camera.position.y -= 4 * delta;
-    if (pressed.has("e")) camera.position.y += 4 * delta;
-    camera.position.y = THREE.MathUtils.clamp(camera.position.y + Number(move?.z || 0) * 4 * delta, 1.4, 10.5);
-  });
-  return null;
-}
-
 function normalizeState(payload) {
   const employees = Array.isArray(payload?.employees) ? payload.employees : [];
   const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
@@ -598,11 +506,9 @@ export function OfficeApp() {
     const employee = employees.find(e => e.id === selectedId);
     if (!employee) return;
     const target = getAgentWorldPosition(employee, employees, tasks);
-    if (!walkMode && controls.current) {
-      controls.current.target.set(target[0], target[1], target[2]);
-      controls.current.update();
-    }
-  }, [selectedId, employees, tasks, walkMode]);
+    controls.current.target.set(target[0], target[1], target[2]);
+    controls.current.update();
+  }, [selectedId, employees, tasks]);
 
   useEffect(() => {
     const receive = event => {
@@ -613,27 +519,6 @@ export function OfficeApp() {
         setLastUpdate(new Date());
       } else if (event.data?.type === "curioframe:select-agent" && typeof event.data.employeeId === "string") {
         setSelectedId(event.data.employeeId);
-      } else if (event.data?.type === "curioframe:office-control") {
-        const action = event.data.action;
-        if (action === "walk") setWalkMode(true);
-        if (action === "orbit") setWalkMode(false);
-        if (action === "reset") {
-          setWalkMode(false);
-          controls.current?.reset?.();
-        }
-        if (action === "zoom-in" && !walkMode) {
-          controls.current?.dollyIn?.(1.2);
-          controls.current?.update?.();
-        }
-        if (action === "zoom-out" && !walkMode) {
-          controls.current?.dollyOut?.(1.2);
-          controls.current?.update?.();
-        }
-      } else if (event.data?.type === "curioframe:office-move") {
-        setJoystickMove({
-          x: THREE.MathUtils.clamp(Number(event.data.x) || 0, -1, 1),
-          y: THREE.MathUtils.clamp(Number(event.data.y) || 0, -1, 1)
-        });
       }
     };
     window.addEventListener("message", receive);
@@ -657,20 +542,17 @@ export function OfficeApp() {
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "COMPANY DATA RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
         <div className="floor-switcher" role="group" aria-label="Choose office floor">
-          <button type="button" className={activeFloor === "all" ? "active" : ""} aria-pressed={activeFloor === "all"} onClick={() => { setWalkMode(false); setActiveFloor("all"); if (controls.current) { controls.current.reset(); controls.current.update(); } }}>Full HQ</button>
-          <button type="button" className={activeFloor === "0" ? "active" : ""} aria-pressed={activeFloor === "0"} onClick={() => { setWalkMode(false); setActiveFloor("0"); if (controls.current) { controls.current.target.set(0, 1.35, 0); controls.current.object.position.set(0, 14, 29); controls.current.update(); } }}>Floor 01</button>
-          <button type="button" className={activeFloor === "1" ? "active" : ""} aria-pressed={activeFloor === "1"} onClick={() => { setWalkMode(false); setActiveFloor("1"); if (controls.current) { controls.current.target.set(0, 7.05, 0); controls.current.object.position.set(0, 20, 29); controls.current.update(); } }}>Floor 02</button>
+          <button type="button" className={activeFloor === "all" ? "active" : ""} aria-pressed={activeFloor === "all"} onClick={() => { setActiveFloor("all"); if (controls.current) { controls.current.reset(); controls.current.update(); } }}>Full HQ</button>
+          <button type="button" className={activeFloor === "0" ? "active" : ""} aria-pressed={activeFloor === "0"} onClick={() => { setActiveFloor("0"); if (controls.current) { controls.current.target.set(0, 1.35, 0); controls.current.object.position.set(0, 14, 29); controls.current.update(); } }}>Floor 1</button>
+          <button type="button" className={activeFloor === "1" ? "active" : ""} aria-pressed={activeFloor === "1"} onClick={() => { setActiveFloor("1"); if (controls.current) { controls.current.target.set(0, 7.05, 0); controls.current.object.position.set(0, 20, 29); controls.current.update(); } }}>Floor 2</button>
         </div>
-        <button type="button" className={walkMode ? "active" : ""} aria-pressed={walkMode} onClick={() => setWalkMode(true)}>Walk</button>
-        <button type="button" className={!walkMode ? "active" : ""} aria-pressed={!walkMode} onClick={() => setWalkMode(false)}>Orbit</button>
-        <button type="button" onClick={() => { setWalkMode(false); setActiveFloor("all"); controls.current?.reset?.(); }}>Reset view</button>
+        <button type="button" onClick={() => { setActiveFloor("all"); controls.current?.reset?.(); }}>Reset view</button>
       </div>
     </header>
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
         <Scene employees={employees} tasks={tasks} selectedId={selectedId} activeFloor={activeFloor} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
-        <OrbitControls ref={controls} makeDefault enabled={!walkMode} target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
-        <WalkController enabled={walkMode} move={joystickMove} />
+        <OrbitControls ref={controls} makeDefault enabled target={[0, 4.2, 0]} enableRotate enableZoom enablePan enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }} />
       </Canvas>
       <div className="office-hud">
         <span><b>{employees.length}</b> REGISTERED AGENTS</span>
@@ -680,17 +562,7 @@ export function OfficeApp() {
         <span className="hud-review"><b>{counts.review}</b> REVIEW</span>
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
-      {walkMode && <div className="office-walk-pad" aria-label="Virtual HQ movement controls">
-        <div className="office-walk-pad-row"><button type="button" aria-label="Move forward" onPointerDown={() => setJoystickMove({x:0,y:1,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▲</button></div>
-        <div className="office-walk-pad-row">
-          <button type="button" aria-label="Move left" onPointerDown={() => setJoystickMove({x:-1,y:0,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>◀</button>
-          <button type="button" aria-label="Move backward" onPointerDown={() => setJoystickMove({x:0,y:-1,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▼</button>
-          <button type="button" aria-label="Move right" onPointerDown={() => setJoystickMove({x:1,y:0,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▶</button>
-        </div>
-        <div className="office-walk-pad-row"><button type="button" aria-label="Move to upper level" onPointerDown={() => setJoystickMove({x:0,y:0,z:1})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>UP FLOOR</button><button type="button" aria-label="Move to lower level" onPointerDown={() => setJoystickMove({x:0,y:0,z:-1})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>DOWN</button></div>
-      </div>}
-      <div className="office-help">{walkMode ? "Walk mode: drag the scene to look · use the movement pad or WASD · use floor controls to change height" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
-      <nav className="office-crew-picker" aria-label="Select an Agent"><strong>CREW · {employees.length}</strong><div>{employees.map(employee => <button type="button" key={employee.id} className={selectedId === employee.id ? "active" : ""} onClick={() => { setSelectedId(employee.id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: employee.id }, window.location.origin); }}>{employee.name}</button>)}</div></nav>
+      <div className="office-help">Touch: one finger to orbit · two fingers to zoom / pan · tap an Agent to inspect</div>
       {!connected && <div className="office-connection-card"><strong>Connect your company workspace</strong><p>This 3D view needs the authenticated CurioFrame workspace to load your 28 Agents, departments, tasks, and activity. Open Virtual HQ from your main dashboard after signing in.</p><a href="../index.html#virtual-hq">Open CurioFrame workspace ↗</a></div>}
       {selected && <aside className="agent-inspector">
         <button className="inspector-close" onClick={() => setSelectedId(null)}>×</button>
