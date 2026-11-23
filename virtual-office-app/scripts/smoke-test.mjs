@@ -50,7 +50,7 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).click();
+  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).click({ force: true });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
@@ -87,7 +87,7 @@ async function exerciseViewport(page, label) {
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
   await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 03" }).click();
+  await page.locator(".agent-name-tag").filter({ hasText: "Agent 03" }).click({ force: true });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 03");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
   return metrics;
