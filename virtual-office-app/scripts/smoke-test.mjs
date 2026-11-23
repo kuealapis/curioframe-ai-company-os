@@ -113,7 +113,7 @@ async function exerciseViewport(page, label) {
     }).find(item => item.visible);
   });
   assert.ok(visibleAgent, label + ": at least one Agent hit target must be visible inside the viewport");
-  await page.mouse.click(visibleAgent.x, visibleAgent.y);
+  await page.mouse.click(visibleAgent.x, visibleAgent.y + 24);
   await page.waitForFunction(name => document.querySelector(".agent-inspector h2")?.textContent === name, visibleAgent.name);
   assert.equal(await page.locator(".agent-inspector h2").textContent(), visibleAgent.name, label + ": tapping a visible Agent must open its identity panel");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
