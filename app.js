@@ -1479,9 +1479,10 @@ async function requestPasswordReset(){
 }
 
 async function refreshSession(){
-  const {data,error}=await supabase.auth.getSession();if(error)throw error;
   if(authMode==="recovery"){showAuth();return}
-  if(data.session)await startWorkspace(data.session.user);else showAuth();
+  // getUser verifies the access token with Supabase Auth; getSession alone reads local storage.
+  const {data,error}=await supabase.auth.getUser();if(error)throw error;
+  if(data.user)await startWorkspace(data.user);else showAuth();
 }
 function navigate(page){
   $$(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
