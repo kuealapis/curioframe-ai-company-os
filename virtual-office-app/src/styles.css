@@ -14,3 +14,11 @@
 
 
 .door-hint{padding:4px 7px;border:1px solid #dce9ed88;border-radius:5px;background:#172b3be8;color:#f4f8fa;font-size:7px;font-weight:800;letter-spacing:.12em;white-space:nowrap;box-shadow:0 2px 8px #0004;pointer-events:none}
+
+.office-walk-pad{position:absolute;z-index:10;right:12px;bottom:48px;display:flex;flex-direction:column;gap:5px;padding:9px;border:1px solid #d8e8f488;border-radius:14px;background:#102238dd;box-shadow:0 8px 24px #07132166;backdrop-filter:blur(10px);touch-action:none}
+.office-walk-pad-row{display:flex;justify-content:center;gap:5px}
+.office-walk-pad button{min-width:42px;min-height:40px;padding:7px 9px;border:1px solid #8dc9e788;border-radius:9px;background:#24445f;color:#f3f9ff;font-size:14px;font-weight:800;touch-action:none;user-select:none;-webkit-user-select:none}
+.office-walk-pad button:active{background:#39799a;transform:scale(.96)}
+.office-walk-pad-row:last-child button{font-size:9px;letter-spacing:.04em}
+.office-actions button.active{border-color:#78a9ff;background:#375577;color:#fff}
+@media(max-width:700px){.office-walk-pad{right:8px;bottom:54px;padding:7px}.office-walk-pad button{min-width:39px;min-height:42px}.office-help{max-width:calc(100% - 160px);font-size:8px;line-height:1.4}.office-crew-picker{bottom:54px}}

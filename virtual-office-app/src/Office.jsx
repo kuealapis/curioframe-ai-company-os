@@ -569,7 +569,7 @@ function WalkController({ enabled, move }) {
     camera.position.addScaledVector(right, horizontal * speed);
     if (pressed.has("q")) camera.position.y -= 4 * delta;
     if (pressed.has("e")) camera.position.y += 4 * delta;
-    camera.position.y = THREE.MathUtils.clamp(camera.position.y, 1.4, 10.5);
+    camera.position.y = THREE.MathUtils.clamp(camera.position.y + Number(move?.z || 0) * 4 * delta, 1.4, 10.5);
   });
   return null;
 }
@@ -661,6 +661,8 @@ export function OfficeApp() {
           <button type="button" className={activeFloor === "0" ? "active" : ""} aria-pressed={activeFloor === "0"} onClick={() => { setWalkMode(false); setActiveFloor("0"); if (controls.current) { controls.current.target.set(0, 1.35, 0); controls.current.object.position.set(0, 14, 29); controls.current.update(); } }}>Floor 01</button>
           <button type="button" className={activeFloor === "1" ? "active" : ""} aria-pressed={activeFloor === "1"} onClick={() => { setWalkMode(false); setActiveFloor("1"); if (controls.current) { controls.current.target.set(0, 7.05, 0); controls.current.object.position.set(0, 20, 29); controls.current.update(); } }}>Floor 02</button>
         </div>
+        <button type="button" className={walkMode ? "active" : ""} aria-pressed={walkMode} onClick={() => setWalkMode(true)}>Walk</button>
+        <button type="button" className={!walkMode ? "active" : ""} aria-pressed={!walkMode} onClick={() => setWalkMode(false)}>Orbit</button>
         <button type="button" onClick={() => { setWalkMode(false); setActiveFloor("all"); controls.current?.reset?.(); }}>Reset view</button>
       </div>
     </header>
@@ -678,7 +680,16 @@ export function OfficeApp() {
         <span className="hud-review"><b>{counts.review}</b> REVIEW</span>
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
-      <div className="office-help">{walkMode ? "Walk mode: drag to look · joystick / WASD to move · Q / E to move vertically between floors" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
+      {walkMode && <div className="office-walk-pad" aria-label="Virtual HQ movement controls">
+        <div className="office-walk-pad-row"><button type="button" aria-label="Move forward" onPointerDown={() => setJoystickMove({x:0,y:1,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▲</button></div>
+        <div className="office-walk-pad-row">
+          <button type="button" aria-label="Move left" onPointerDown={() => setJoystickMove({x:-1,y:0,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>◀</button>
+          <button type="button" aria-label="Move backward" onPointerDown={() => setJoystickMove({x:0,y:-1,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▼</button>
+          <button type="button" aria-label="Move right" onPointerDown={() => setJoystickMove({x:1,y:0,z:0})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>▶</button>
+        </div>
+        <div className="office-walk-pad-row"><button type="button" aria-label="Move to upper level" onPointerDown={() => setJoystickMove({x:0,y:0,z:1})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>UP FLOOR</button><button type="button" aria-label="Move to lower level" onPointerDown={() => setJoystickMove({x:0,y:0,z:-1})} onPointerUp={() => setJoystickMove({x:0,y:0,z:0})} onPointerLeave={() => setJoystickMove({x:0,y:0,z:0})} onPointerCancel={() => setJoystickMove({x:0,y:0,z:0})}>DOWN</button></div>
+      </div>}
+      <div className="office-help">{walkMode ? "Walk mode: drag the scene to look · use the movement pad or WASD · use floor controls to change height" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
       <nav className="office-crew-picker" aria-label="Select an Agent"><strong>CREW · {employees.length}</strong><div>{employees.map(employee => <button type="button" key={employee.id} className={selectedId === employee.id ? "active" : ""} onClick={() => { setSelectedId(employee.id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: employee.id }, window.location.origin); }}>{employee.name}</button>)}</div></nav>
       {!connected && <div className="office-connection-card"><strong>Connect your company workspace</strong><p>This 3D view needs the authenticated CurioFrame workspace to load your 28 Agents, departments, tasks, and activity. Open Virtual HQ from your main dashboard after signing in.</p><a href="../index.html#virtual-hq">Open CurioFrame workspace ↗</a></div>}
       {selected && <aside className="agent-inspector">
