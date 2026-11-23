@@ -1167,17 +1167,13 @@ function renderVirtualHQ(){
   const overview=$("#virtual-hq-scene");
   if(overview){
     overview.classList.add("hq-3d-stage");
-    const visible=overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0;
-    if(!visible){
-      if(!hqWorlds.has(overview))overview.innerHTML='<div class="hq-3d-loading">3D HEADQUARTERS READY · OPEN VIRTUAL HQ TO ENTER</div>';
-    }else if(!hqWorlds.has(overview)){
-      if(!overview.querySelector(".hq-3d-loading"))overview.innerHTML='<div class="hq-3d-loading">BUILDING COMPANY FLOOR…</div>';
-      requestAnimationFrame(()=>{if(overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0)launchHQ3D(overview)});
+    let previewFrame=overview.querySelector("iframe[data-curioframe-office]");
+    if(!previewFrame){
+      overview.innerHTML='<iframe data-curioframe-office="true" title="CurioFrame AI Virtual HQ preview" src="./virtual-office/index.html" loading="lazy" allow="fullscreen" referrerpolicy="same-origin"></iframe>';
+      previewFrame=overview.querySelector("iframe[data-curioframe-office]");
+      previewFrame?.addEventListener("load",()=>sendHQSnapshot(previewFrame),{once:true});
     }else{
-      const world=hqWorlds.get(overview);
-      const currentIds=(world.employeeIds||[]).join("|"),latestIds=employees.map(e=>e.id).join("|");
-      if(currentIds!==latestIds){world.dispose();hqWorlds.delete(overview);overview.innerHTML='<div class="hq-3d-loading">UPDATING COMPANY FLOOR…</div>';requestAnimationFrame(()=>{if(overview.getClientRects().length>0&&overview.clientWidth>0&&overview.clientHeight>0)launchHQ3D(overview)});}
-      else world.refresh();
+      sendHQSnapshot(previewFrame);
     }
   }
   const full=$("#virtual-hq-full-scene");
