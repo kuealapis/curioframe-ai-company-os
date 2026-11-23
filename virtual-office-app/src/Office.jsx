@@ -522,9 +522,16 @@ export function OfficeApp() {
       }
     };
     window.addEventListener("message", receive);
-    window.parent.postMessage({ type: "curioframe:office-ready" }, window.location.origin);
-    return () => window.removeEventListener("message", receive);
-  }, []);
+    const announceReady = () => {
+      if (!connected) window.parent.postMessage({ type: "curioframe:office-ready" }, window.location.origin);
+    };
+    announceReady();
+    const handshakeTimer = connected ? null : window.setInterval(announceReady, 750);
+    return () => {
+      window.removeEventListener("message", receive);
+      if (handshakeTimer !== null) window.clearInterval(handshakeTimer);
+    };
+  }, [connected]);
 
   const departments = snapshot.departments.length ? snapshot.departments.map(d => d.name).filter(Boolean) : [...new Set(employees.map(e => e.department || "Unassigned"))];
   const selected = employees.find(e => e.id === selectedId);
