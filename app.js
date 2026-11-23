@@ -1,3 +1,14 @@
+// Remove referral tracking parameters from the address bar without reloading the app.
+try {
+  const cleanUrl = new URL(window.location.href);
+  for (const key of [...cleanUrl.searchParams.keys()]) {
+    if (key.toLowerCase().startsWith("utm_")) cleanUrl.searchParams.delete(key);
+  }
+  window.history.replaceState(window.history.state, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+} catch (error) {
+  console.warn("Could not normalize the workspace URL:", error);
+}
+
 let createClient;
 try {
   ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.2"));
