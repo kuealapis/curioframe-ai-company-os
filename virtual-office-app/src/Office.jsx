@@ -413,6 +413,7 @@ export function OfficeApp() {
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [walkMode, setWalkMode] = useState(false);
+  const [activeFloor, setActiveFloor] = useState("all");
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const controls = useRef();
   const employees = snapshot.employees;
@@ -481,7 +482,12 @@ export function OfficeApp() {
       <div className="office-brand"><span className="brand-mark">CF</span><div><strong>CURIOFRAME AI</strong><small>VIRTUAL HEADQUARTERS · 3D FLOORPLAN</small></div></div>
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "COMPANY DATA RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
-        <button onClick={() => { setWalkMode(false); controls.current?.reset?.(); }}>Reset view</button>
+        <div className="floor-switcher" role="group" aria-label="Choose office floor">
+          <button type="button" className={activeFloor === "all" ? "active" : ""} aria-pressed={activeFloor === "all"} onClick={() => { setWalkMode(false); setActiveFloor("all"); if (controls.current) { controls.current.reset(); controls.current.update(); } }}>Full HQ</button>
+          <button type="button" className={activeFloor === "0" ? "active" : ""} aria-pressed={activeFloor === "0"} onClick={() => { setWalkMode(false); setActiveFloor("0"); if (controls.current) { controls.current.target.set(0, 1.35, 0); controls.current.object.position.set(0, 14, 29); controls.current.update(); } }}>Floor 01</button>
+          <button type="button" className={activeFloor === "1" ? "active" : ""} aria-pressed={activeFloor === "1"} onClick={() => { setWalkMode(false); setActiveFloor("1"); if (controls.current) { controls.current.target.set(0, 7.05, 0); controls.current.object.position.set(0, 20, 29); controls.current.update(); } }}>Floor 02</button>
+        </div>
+        <button type="button" onClick={() => { setWalkMode(false); setActiveFloor("all"); controls.current?.reset?.(); }}>Reset view</button>
       </div>
     </header>
     <section className="office-stage">
@@ -498,7 +504,7 @@ export function OfficeApp() {
         <span className="hud-review"><b>{counts.review}</b> REVIEW</span>
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
-      <div className="office-help">{walkMode ? "Walk mode: drag to look · joystick / WASD to move · Q / E to change floor" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
+      <div className="office-help">{walkMode ? "Walk mode: drag to look · joystick / WASD to move · Q / E to move vertically between floors" : "Orbit mode: drag to rotate · pinch to zoom · two-finger drag to pan · tap an Agent to inspect"}</div>
       <nav className="office-crew-picker" aria-label="Select an Agent"><strong>CREW · {employees.length}</strong><div>{employees.map(employee => <button type="button" key={employee.id} className={selectedId === employee.id ? "active" : ""} onClick={() => { setSelectedId(employee.id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: employee.id }, window.location.origin); }}>{employee.name}</button>)}</div></nav>
       {!connected && <div className="office-connection-card"><strong>Connect your company workspace</strong><p>This 3D view needs the authenticated CurioFrame workspace to load your 28 Agents, departments, tasks, and activity. Open Virtual HQ from your main dashboard after signing in.</p><a href="../index.html#virtual-hq">Open CurioFrame workspace ↗</a></div>}
       {selected && <aside className="agent-inspector">
