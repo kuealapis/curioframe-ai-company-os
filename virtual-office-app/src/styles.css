@@ -28,3 +28,8 @@
 .office-walk-pad,.office-crew-picker{display:none!important}
 .office-stage canvas{touch-action:none;overscroll-behavior:contain}
 .agent-name-tag{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+
+
+/* Keep the offline connection notice visible without intercepting 3D viewer gestures. */
+.office-connection-card{pointer-events:none}
+.office-connection-card a{pointer-events:auto}
