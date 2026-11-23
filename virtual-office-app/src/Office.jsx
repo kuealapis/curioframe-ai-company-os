@@ -119,6 +119,9 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
       <sphereGeometry args={[0.225, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.48]} />
       <meshStandardMaterial color={tint} roughness={0.9} />
     </mesh>
+    <mesh position={[-0.078, 1.015, 0.218]}><sphereGeometry args={[0.018, 8, 8]} /><meshStandardMaterial color="#253247" roughness={0.65} /></mesh>
+    <mesh position={[0.078, 1.015, 0.218]}><sphereGeometry args={[0.018, 8, 8]} /><meshStandardMaterial color="#253247" roughness={0.65} /></mesh>
+    <mesh position={[0, 0.965, 0.231]}><sphereGeometry args={[0.018, 8, 8]} /><meshStandardMaterial color="#b98368" roughness={0.9} /></mesh>
     <mesh ref={leftArm} position={[-0.29, 0.63, 0.08]} rotation={[0, 0, -0.16]}>
       <capsuleGeometry args={[0.075, 0.36, 4, 7]} />
       <meshStandardMaterial color={tint} />
@@ -155,7 +158,7 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
   </group>;
 }
 
-function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect }) {
+function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect, visible = true }) {
   const floor = index < 6 ? 0 : 1;
   const local = index % 6;
   const col = local % 3;
@@ -165,7 +168,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
   const y = floor * 5.7;
   const agents = employees.filter(e => (e.department || "Unassigned") === department);
   const wallColor = PALETTE[index % PALETTE.length];
-  return <group position={[x, y, z]}>
+  return <group position={[x, y, z]} visible={visible}>
     <mesh position={[0, -0.1, 0]} receiveShadow>
       <boxGeometry args={[8.5, 0.2, 7.5]} />
       <meshStandardMaterial color={floor ? "#d8d8d1" : "#d5d0c5"} roughness={0.9} />
@@ -221,7 +224,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect 
   </group>;
 }
 
-function Building({ employees, tasks, selectedId, onSelect }) {
+function Building({ employees, tasks, selectedId, onSelect, activeFloor }) {
   const departments = useMemo(() => {
     const fromEmployees = [...new Set(employees.map(e => e.department || "Unassigned"))];
     return fromEmployees.length ? fromEmployees : [];
@@ -232,7 +235,7 @@ function Building({ employees, tasks, selectedId, onSelect }) {
       <meshStandardMaterial color="#7f9a7a" roughness={1} />
     </mesh>
     {departments.map((department, index) =>
-      <OfficeRoom key={department} department={department} index={index} employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />
+      <OfficeRoom key={department} department={department} index={index} employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} visible={activeFloor === "all" || (index < 6 ? "0" : "1") === activeFloor} />
     )}
     <group position={[13, 0, 5]}>
       {Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[0, i * 0.45 + 0.22, i * -0.32]} rotation={[0, 0, -0.55]}>
@@ -243,14 +246,14 @@ function Building({ employees, tasks, selectedId, onSelect }) {
   </>;
 }
 
-function SharedSpaces() {
+function SharedSpaces({ activeFloor = "all" }) {
   const rooms = [
     { x: 18, z: -5, color: "#b9c9d6" },
     { x: 18, z: 3, color: "#c9d4c4" },
     { x: 18, z: 11, color: "#c9b9b0" }
   ];
   return <>
-    {rooms.flatMap((r, i) => [0, 5.7].map(floorY => <group key={i + ":" + floorY} position={[r.x, floorY, r.z]}>
+    {rooms.flatMap((r, i) => [0, 5.7].map(floorY => <group key={i + ":" + floorY} position={[r.x, floorY, r.z]} visible={activeFloor === "all" || String(Math.round(floorY / 5.7)) === activeFloor}>
       <mesh position={[0, -0.08, 0]} receiveShadow><boxGeometry args={[7.2, 0.16, 7.2]} /><meshStandardMaterial color={r.color} roughness={0.9} /></mesh>
       <mesh position={[0, 1.35, -3.55]}><boxGeometry args={[7.2, 2.7, 0.12]} /><meshStandardMaterial color="#e8e6df" /></mesh>
       <mesh position={[-3.55, 1.35, 0]}><boxGeometry args={[0.12, 2.7, 7.2]} /><meshStandardMaterial color="#e8e6df" /></mesh>
@@ -278,14 +281,14 @@ function SharedSpaces() {
   </>;
 }
 
-function Scene({ employees, tasks, selectedId, onSelect }) {
+function Scene({ employees, tasks, selectedId, onSelect, activeFloor }) {
   return <>
     <color attach="background" args={["#b9c9d3"]} />
     <fog attach="fog" args={["#b9c9d3", 35, 90]} />
     <ambientLight intensity={1.15} />
     <directionalLight position={[14, 24, 12]} intensity={2.1} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} />
-    <SharedSpaces />
+    <Building employees={employees} tasks={tasks} selectedId={selectedId} onSelect={onSelect} activeFloor={activeFloor} />
+    <SharedSpaces activeFloor={activeFloor} />
     <ContactShadows position={[0, -0.25, 0]} opacity={0.24} scale={48} blur={2.5} far={12} />
   </>;
 }
@@ -492,7 +495,7 @@ export function OfficeApp() {
     </header>
     <section className="office-stage">
       <Canvas shadows dpr={[1, 1.4]} camera={{ position: [27, 25, 33], fov: 42 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
-        <Scene employees={employees} tasks={tasks} selectedId={selectedId} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
+        <Scene employees={employees} tasks={tasks} selectedId={selectedId} activeFloor={activeFloor} onSelect={id => { setSelectedId(id); window.parent.postMessage({ type: "curioframe:agent-selected", employeeId: id }, window.location.origin); }} />
         <OrbitControls ref={controls} makeDefault enabled={!walkMode} target={[0, 4.2, 0]} enableDamping dampingFactor={0.08} minDistance={12} maxDistance={65} maxPolarAngle={Math.PI / 2.03} />
         <WalkController enabled={walkMode} move={joystickMove} />
       </Canvas>
