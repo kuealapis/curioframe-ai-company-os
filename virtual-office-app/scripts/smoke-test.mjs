@@ -50,7 +50,7 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
-  await page.locator(".office-crew-picker button").filter({ hasText: "Agent 02" }).click();
+  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).click();
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
@@ -80,13 +80,15 @@ async function exerciseViewport(page, label) {
   await page.evaluate(() => window.postMessage({ type: "curioframe:select-agent", employeeId: "agent-01" }, window.location.origin));
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 01" && document.querySelector(".inspector-status")?.textContent === "IN REVIEW");
 
-  await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "walk" }, window.location.origin));
-  await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Walk mode:"));
-  await page.evaluate(() => window.postMessage({ type: "curioframe:office-move", x: 0.6, y: -0.8 }, window.location.origin));
-  await page.waitForTimeout(350);
-  await page.evaluate(() => window.postMessage({ type: "curioframe:office-move", x: 0, y: 0 }, window.location.origin));
-  await page.evaluate(() => window.postMessage({ type: "curioframe:office-control", action: "orbit" }, window.location.origin));
-  await page.waitForFunction(() => document.querySelector(".office-help")?.textContent?.startsWith("Orbit mode:"));
+  assert.equal(await page.locator(".floor-switcher button").count(), 3, label + ": Full HQ, Floor 1 and Floor 2 controls must be visible");
+  assert.equal(await page.locator(".office-walk-pad").count(), 0, label + ": movement pad must not render");
+  assert.equal(await page.locator(".office-crew-picker").count(), 0, label + ": duplicate roster overlay must not render");
+  await page.locator(".floor-switcher button").filter({ hasText: "Floor 2" }).click();
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
+  await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
+  await page.locator(".agent-name-tag").filter({ hasText: "Agent 03" }).click();
+  await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 03");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
   return metrics;
 }
