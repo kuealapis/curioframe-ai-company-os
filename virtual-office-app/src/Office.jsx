@@ -227,6 +227,7 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect,
   const y = floor * 5.7;
   const agents = employees.filter(e => (e.department || "Unassigned") === department);
   const wallColor = PALETTE[index % PALETTE.length];
+  const [doorOpen, setDoorOpen] = useState(false);
   return <group position={[x, y, z]} visible={visible}>
     <mesh position={[0, -0.1, 0]} receiveShadow>
       <boxGeometry args={[8.5, 0.2, 7.5]} />
@@ -248,6 +249,36 @@ function OfficeRoom({ department, index, employees, tasks, selectedId, onSelect,
       <boxGeometry args={[8.5, 0.08, 0.16]} />
       <meshStandardMaterial color={wallColor} />
     </mesh>
+    <group position={[-0.72, 0, 3.72]}>
+      <mesh position={[0, 1.18, 0]}>
+        <boxGeometry args={[0.12, 2.42, 0.22]} />
+        <meshStandardMaterial color="#536574" metalness={0.35} roughness={0.45} />
+      </mesh>
+      <mesh position={[1.42, 1.18, 0]}>
+        <boxGeometry args={[0.12, 2.42, 0.22]} />
+        <meshStandardMaterial color="#536574" metalness={0.35} roughness={0.45} />
+      </mesh>
+      <mesh position={[0.71, 2.39, 0]}>
+        <boxGeometry args={[1.54, 0.12, 0.22]} />
+        <meshStandardMaterial color="#536574" metalness={0.35} roughness={0.45} />
+      </mesh>
+      <group rotation={[0, doorOpen ? -Math.PI * 0.42 : 0, 0]}>
+        <mesh position={[0.71, 1.13, -0.035]} castShadow
+          onClick={event => { event.stopPropagation(); setDoorOpen(open => !open); }}
+          onPointerOver={event => { event.stopPropagation(); document.body.style.cursor = "pointer"; }}
+          onPointerOut={() => { document.body.style.cursor = "auto"; }}>
+          <boxGeometry args={[1.36, 2.22, 0.075]} />
+          <meshStandardMaterial color="#83aab7" transparent opacity={doorOpen ? 0.24 : 0.48} roughness={0.22} metalness={0.12} />
+        </mesh>
+        <mesh position={[1.22, 1.08, 0.035]}>
+          <sphereGeometry args={[0.055, 10, 8]} />
+          <meshStandardMaterial color="#d7b56d" metalness={0.7} roughness={0.25} />
+        </mesh>
+      </group>
+      <Html position={[0.71, 2.62, 0]} center distanceFactor={10}>
+        <div className="door-hint">{doorOpen ? "DOOR OPEN" : "TAP TO OPEN"}</div>
+      </Html>
+    </group>
     <mesh position={[-3.45, 2.74, -3.57]}>
       <boxGeometry args={[1.3, 0.48, 0.12]} />
       <meshStandardMaterial color={wallColor} emissive={wallColor} emissiveIntensity={0.18} />
