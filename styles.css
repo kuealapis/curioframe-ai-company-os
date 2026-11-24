@@ -519,3 +519,19 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
 /* Use the controls inside the shared 3D office iframe; prevent overlay controls intercepting touch. */
 #page-virtual-hq .hq-game-toolbar,
 #page-virtual-hq .hq-joystick-wrap{display:none!important;pointer-events:none!important}
+
+/* Finance & Revenue ledger */
+.finance-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.finance-layout{align-items:start}
+.finance-source{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.finance-amount{font-weight:700;white-space:nowrap}
+.finance-amount.positive{color:#16834b}
+.finance-amount.negative{color:#b66a20}
+#page-finance .table-wrap{overflow-x:auto}
+#page-finance table{min-width:590px}
+#page-finance .finance-layout{grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr)}
+@media(max-width:760px){
+ .finance-stats{grid-template-columns:1fr}
+ #page-finance .finance-layout{grid-template-columns:1fr}
+ #page-finance .page-heading{align-items:flex-start}
+}
