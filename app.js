@@ -42,7 +42,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], financeEntries=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
 let aiProviderPreflightPassed=false;
 let workSamplePilotRunning=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -73,7 +73,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes,workSampleRes]=await Promise.all([
+  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,capabilityTestRes,workSampleRes]=await Promise.all([
     supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
     supabase.from("company_operating_policies").select("*").eq("company_id",company.id).maybeSingle(),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
@@ -88,16 +88,56 @@ async function loadData(){
     supabase.from("workflow_steps").select("*").eq("company_id",company.id).order("sort_order"),
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
     supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
+    supabase.from("finance_entries").select("*").eq("company_id",company.id).order("occurred_at",{ascending:false}).limit(100),
     supabase.from("agent_capability_test_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(500),
     supabase.from("agent_work_sample_assignments").select("*").eq("company_id",company.id).order("assigned_at")
   ]);
-  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,capabilityTestRes,workSampleRes])if(result.error)throw result.error;
+  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,capabilityTestRes,workSampleRes])if(result.error)throw result.error;
   departments=departmentRes.data||[];operatingPolicy=policyRes.data||null;employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];workSampleAssignments=workSampleRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];financeEntries=financeEntryRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];workSampleAssignments=workSampleRes.data||[];
   renderAll();
 }
 
 
+
+
+function formatIDR(value){
+  return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value)||0);
+}
+function renderFinance(){
+  const host=$("#finance-entry-list");if(!host)return;
+  const income=financeEntries.filter(x=>x.entry_type==="income").reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const expense=financeEntries.filter(x=>x.entry_type==="expense").reduce((sum,x)=>sum+Number(x.amount||0),0);
+  $("#finance-income-total").textContent=formatIDR(income);
+  $("#finance-expense-total").textContent=formatIDR(expense);
+  $("#finance-net-total").textContent=formatIDR(income-expense);
+  host.innerHTML=financeEntries.length?financeEntries.map(x=>{
+    const date=x.occurred_at?new Date(x.occurred_at+"T00:00:00"):null;
+    const label=date&&!Number.isNaN(date.getTime())?new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Jakarta"}).format(date):"—";
+    return '<tr><td>'+escapeHtml(label)+'</td><td><span class="pill '+(x.entry_type==="income"?"green":"amber")+'">'+(x.entry_type==="income"?"INCOME":"EXPENSE")+'</span><small class="finance-source">'+escapeHtml(x.description.split(" — ")[0])+'</small></td><td>'+escapeHtml(x.description.split(" — ").slice(1).join(" — ")||x.description)+'</td><td class="finance-amount '+(x.entry_type==="income"?"positive":"negative")+'">'+(x.entry_type==="income"?"+":"−")+escapeHtml(formatIDR(x.amount))+'</td></tr>';
+  }).join(""):'<tr><td class="empty-row" colspan="4">No transactions recorded yet.</td></tr>';
+}
+async function submitFinanceEntry(event){
+  event.preventDefault();
+  const button=$("#finance-entry-submit"),message=$("#finance-entry-message");
+  button.disabled=true;message.textContent="Saving transaction…";
+  const type=$("#finance-entry-type").value,amount=Number($("#finance-entry-amount").value);
+  const source=$("#finance-entry-source").value.trim(),description=$("#finance-entry-description").value.trim(),date=$("#finance-entry-date").value;
+  try{
+    if(!["income","expense"].includes(type)||!Number.isSafeInteger(amount)||amount<=0||!source||!description||!date)throw new Error("Complete all fields with a valid whole-number amount.");
+    const {error}=await supabase.from("finance_entries").insert({
+      company_id:company.id,entry_type:type,amount,currency:"IDR",
+      description:source+" — "+description,requires_owner_approval:false,
+      occurred_at:date
+    });
+    if(error)throw error;
+    $("#finance-entry-form").reset();
+    $("#finance-entry-date").value=new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"});
+    message.textContent="Transaction saved to the company finance ledger.";
+    await loadData();
+  }catch(error){message.textContent=error.message||"Could not save the transaction."}
+  finally{button.disabled=false}
+}
 
 function slugifyRole(value){
   return String(value||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,48);
@@ -744,6 +784,7 @@ function renderAll(){
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
   renderOrchestrator();
   renderDistribution();
+  renderFinance();
   renderOrganization();
   renderCapabilityLab();
   renderResearchQAPanel();
@@ -1543,8 +1584,11 @@ document.addEventListener("fullscreenchange",()=>{
 
 $("#hq-realtime-test-btn")?.addEventListener("click",event=>testHQRealtimeFeed(event.currentTarget));
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#finance-entry-form")?.addEventListener("submit",submitFinanceEntry);
+$("#finance-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#distribution-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
+const financeDate=$("#finance-entry-date");if(financeDate)financeDate.value=new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"});
 window.__curioAuthReady=true;
 if(window.__curioBootTimer)clearTimeout(window.__curioBootTimer);
 $("#sign-out-btn").addEventListener("click",async()=>{if(hqChannel){await supabase.removeChannel(hqChannel);hqChannel=null}await supabase.auth.signOut();company=null;selectedHQEmployeeId=null;showAuth();setMessage("You have been signed out.")});
