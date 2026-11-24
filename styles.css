@@ -587,3 +587,17 @@ body.hq-immersive #page-virtual-hq .hq-mission-panel{top:10px;right:10px;bottom:
  body.hq-immersive #page-virtual-hq .hq-game-stats span{font-size:7px;padding:4px 6px}
  body.hq-immersive #page-virtual-hq .hq-mission-panel{top:auto;right:7px;bottom:7px;width:min(265px,74%);height:45%;max-height:340px}
 }
+
+/* Database-backed short-form video project intake */
+.video-project-create{margin-bottom:18px}
+.video-project-create .panel-head{align-items:center;flex-wrap:wrap}
+.video-project-create .distribution-form{max-width:720px}
+.video-project-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.video-project-card{min-width:0;padding:16px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.video-project-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.video-project-card h3{margin:5px 0;font-size:16px;overflow-wrap:anywhere}
+.video-project-card p,.video-project-card>small{color:var(--muted);font-size:12px}
+.video-project-tasks{display:grid;gap:7px;margin-top:12px}
+.video-project-tasks>div{display:flex;justify-content:space-between;gap:10px;padding-top:7px;border-top:1px solid var(--border);font-size:11px}
+.video-project-tasks small{color:var(--muted);text-align:right}
+@media(max-width:760px){.video-project-list{grid-template-columns:1fr}.video-project-card{padding:13px}.video-project-head{flex-wrap:wrap}.video-project-tasks>div{align-items:flex-start;flex-direction:column}.video-project-tasks small{text-align:left}}
