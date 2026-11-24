@@ -50,7 +50,11 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).evaluate(node => node.click());
+  // Verify the documented parent-to-office selection bridge independently of
+  // projected 3D label hit-testing; a real visible label tap is exercised below.
+  await page.evaluate(() => {
+    window.postMessage({ type: "curioframe:select-agent", employeeId: "agent-02" }, window.location.origin);
+  });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
