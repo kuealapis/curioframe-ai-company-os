@@ -213,7 +213,7 @@ function AgentAvatar({ employee, status, position, destination, onSelect, select
       <sphereGeometry args={[0.035, 8, 8]} />
       <meshBasicMaterial color="#ffffff" />
     </mesh>
-    <Html position={[0, 1.86, 0]} distanceFactor={11} center><button type="button" className={"agent-name-tag agent-select-target" + (selected ? " selected" : "")} aria-label={"Inspect " + employee.name} aria-pressed={selected} onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(employee.id); }}>{employee.name}</button></Html>
+    <Html position={[0, 1.86, 0]} distanceFactor={11} center><button type="button" className={"agent-name-tag agent-select-target " + status.key + (selected ? " selected" : "")} aria-label={"Inspect " + employee.name + ", " + STATUS[status.key].label} aria-pressed={selected} onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onSelect(employee.id); }}><strong>{employee.name}</strong><small>{STATUS[status.key].label}</small></button></Html>
   </group>;
 }
 
@@ -482,6 +482,16 @@ function getAgentWorldPosition(employee, employees, tasks = []) {
   return [targetX, floor * 5.7 + 1.15, targetZ];
 }
 
+function getJakartaShiftInfo(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const hour = Number(parts.find(part => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find(part => part.type === "minute")?.value || 0);
+  const minutes = hour * 60 + minute;
+  if (minutes >= 360 && minutes < 840) return { label: "SHIFT 1", window: "06:00–14:00 WIB", state: "active", next: "Shift 2 at 14:00 WIB" };
+  if (minutes >= 840 && minutes < 1320) return { label: "SHIFT 2", window: "14:00–22:00 WIB", state: "active", next: "Rest window at 22:00 WIB" };
+  return { label: "REST WINDOW", window: "22:00–06:00 WIB", state: "rest", next: "Shift 1 starts at 06:00 WIB" };
+}
+
 function normalizeState(payload) {
   const employees = Array.isArray(payload?.employees) ? payload.employees : [];
   const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
@@ -494,6 +504,7 @@ export function OfficeApp() {
   const [selectedId, setSelectedId] = useState(null);
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [clockNow, setClockNow] = useState(() => new Date());
   const [walkMode, setWalkMode] = useState(false);
   const [activeFloor, setActiveFloor] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -501,6 +512,11 @@ export function OfficeApp() {
   const controls = useRef();
   const employees = snapshot.employees;
   const tasks = snapshot.tasks;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!selectedId || !controls.current) return;
@@ -539,6 +555,8 @@ export function OfficeApp() {
   const selected = employees.find(e => e.id === selectedId);
   const selectedStatus = selected ? getStatus(selected, tasks) : null;
   const openTasks = tasks.filter(t => !["completed", "cancelled"].includes(t.status));
+  const shiftInfo = getJakartaShiftInfo(clockNow);
+  const missionTasks = openTasks.slice().sort((a, b) => { const order = { in_progress: 0, blocked: 1, review: 2, queued: 3, pending: 4 }; return (order[a.status] ?? 5) - (order[b.status] ?? 5); }).slice(0, 4);
   const counts = {
     working: employees.filter(e => getStatus(e, tasks).key === "working").length,
     review: employees.filter(e => getStatus(e, tasks).key === "review").length,
@@ -549,6 +567,7 @@ export function OfficeApp() {
     <header className="office-topbar">
       <div className="office-brand"><span className="brand-mark">CF</span><div><strong>CURIOFRAME AI</strong><small>VIRTUAL HEADQUARTERS · 3D FLOORPLAN</small></div></div>
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "COMPANY DATA RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
+      <div className={"shift-indicator " + shiftInfo.state}><span>{shiftInfo.label}</span><strong>{shiftInfo.window}</strong><small>16H DAILY OPERATIONS · {shiftInfo.next}</small></div>
       <div className="office-actions">
         <label className="department-switcher">
           <span>VISIT DEPARTMENT</span>
@@ -594,7 +613,8 @@ export function OfficeApp() {
         <span className="hud-review"><b>{counts.review}</b> REVIEW</span>
         <span className="hud-blocked"><b>{counts.blocked}</b> BLOCKED</span>
       </div>
-      <div className="office-help">Touch: one finger to orbit · two fingers to zoom / pan · tap an Agent to inspect</div>
+      <div className="office-help">Touch: drag to orbit · pinch to zoom · tap an Agent to inspect</div>
+      <aside className="mission-board" aria-label="Company mission board"><div className="mission-board-head"><span>MISSION BOARD</span><b>{openTasks.length} OPEN</b></div>{missionTasks.length ? missionTasks.map(task => <article key={task.id}><i className={"mission-dot " + (task.status || "queued")}></i><div><strong>{task.title || "Untitled mission"}</strong><small>{String(task.status || "queued").replaceAll("_", " ")} · {employees.find(employee => employee.id === task.assigned_employee_id)?.name || "Unassigned"}</small></div></article>) : <p>No active missions. New work will appear here when assigned.</p>}<footer>{counts.working} working · {counts.review} in review · {counts.blocked} blocked</footer></aside>
       {!connected && <div className="office-connection-card"><strong>Connect your company workspace</strong><p>This 3D view needs the authenticated CurioFrame workspace to load your 28 Agents, departments, tasks, and activity. Open Virtual HQ from your main dashboard after signing in.</p><a href="../index.html#virtual-hq">Open CurioFrame workspace ↗</a></div>}
       {selected && <aside className="agent-inspector">
         <button className="inspector-close" onClick={() => setSelectedId(null)}>×</button>

@@ -33,3 +33,35 @@
 /* Keep the offline connection notice visible without intercepting 3D viewer gestures. */
 .office-connection-card{pointer-events:none}
 .office-connection-card a{pointer-events:auto}
+
+/* CurioFrame HQ reference-inspired mission and shift overlays */
+.shift-indicator{display:flex;flex-direction:column;gap:2px;min-width:154px;padding:6px 9px;border:1px solid #ffffff24;border-radius:9px;background:#17263be8;color:#eaf1f8}
+.shift-indicator span{font-size:8px;font-weight:900;letter-spacing:.12em;color:#83dfa8}
+.shift-indicator strong{font-size:11px;letter-spacing:.03em}
+.shift-indicator small{font-size:7px;color:#a7b8ca}
+.shift-indicator.rest span{color:#e8bd75}
+.mission-board{position:absolute;left:12px;right:12px;bottom:42px;z-index:6;max-width:440px;max-height:34%;overflow:auto;padding:10px 12px;border:1px solid #ffffff40;border-radius:12px;background:#111c2ce8;color:#edf3fa;box-shadow:0 10px 30px #10203355;backdrop-filter:blur(12px)}
+.mission-board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:9px;font-weight:900;letter-spacing:.14em}
+.mission-board-head b{font-size:8px;color:#9fc5f0;letter-spacing:.08em}
+.mission-board article{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #ffffff17}
+.mission-board article div{min-width:0}
+.mission-board article strong,.mission-board article small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mission-board article strong{font-size:9px}
+.mission-board article small{margin-top:2px;color:#9eb0c2;font-size:8px;text-transform:capitalize}
+.mission-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#d6ae69}
+.mission-dot.in_progress{background:#45d483}.mission-dot.blocked{background:#ff7474}.mission-dot.review{background:#78a9ff}
+.mission-board>p{margin:8px 0;color:#aab9c9;font-size:9px}
+.mission-board footer{padding-top:6px;border-top:1px solid #ffffff17;color:#9eb0c2;font-size:8px}
+.agent-name-tag{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;text-align:center}
+.agent-name-tag strong{font-size:8px;line-height:1.1}
+.agent-name-tag small{font-size:6px;font-weight:900;letter-spacing:.06em;color:#b8c8d9}
+.agent-name-tag.working small{color:#65e29b}.agent-name-tag.review small{color:#91b9ff}.agent-name-tag.blocked small{color:#ff9292}.agent-name-tag.queued small{color:#f0ce82}
+@media(max-width:700px){
+ .shift-indicator{order:3;flex:1;min-width:0;padding:5px 7px}
+ .shift-indicator strong{font-size:9px}.shift-indicator small{font-size:6px}
+ .mission-board{left:7px;right:7px;bottom:42px;max-width:none;max-height:27%;padding:8px 9px}
+ .mission-board article{padding:4px 0}.mission-board article strong{font-size:8px}
+ .mission-board article small{font-size:7px}
+ .agent-name-tag{min-width:48px;max-width:82px;padding:3px 5px}
+ .agent-name-tag strong{font-size:7px}.agent-name-tag small{font-size:5px}
+}
