@@ -496,6 +496,7 @@ export function OfficeApp() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [walkMode, setWalkMode] = useState(false);
   const [activeFloor, setActiveFloor] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const controls = useRef();
   const employees = snapshot.employees;
@@ -548,12 +549,35 @@ export function OfficeApp() {
       <div className="office-brand"><span className="brand-mark">CF</span><div><strong>CURIOFRAME AI</strong><small>VIRTUAL HEADQUARTERS · 3D FLOORPLAN</small></div></div>
       <div className="office-live"><i className={connected ? "live-dot connected" : "live-dot"} />{connected ? "COMPANY DATA RECEIVED" : "WAITING FOR COMPANY DATA"}</div>
       <div className="office-actions">
+        <label className="department-switcher">
+          <span>VISIT DEPARTMENT</span>
+          <select aria-label="Visit department" value={selectedDepartment} onChange={event => {
+            const department = event.target.value;
+            setSelectedDepartment(department);
+            if (!department) return;
+            const departmentIndex = departments.indexOf(department);
+            setActiveFloor(departmentIndex < 6 ? "0" : "1");
+            const employee = employees.find(item => (item.department || "Unassigned") === department);
+            if (employee) {
+              setSelectedId(employee.id);
+              const target = getAgentWorldPosition(employee, employees, tasks);
+              if (controls.current) {
+                controls.current.target.set(target[0], target[1], target[2]);
+                controls.current.object.position.set(target[0] + 13, target[1] + 9, target[2] + 13);
+                controls.current.update();
+              }
+            }
+          }}>
+            <option value="">Choose a department…</option>
+            {departments.map(department => <option key={department} value={department}>{department} · {employees.filter(employee => (employee.department || "Unassigned") === department).length} agents</option>)}
+          </select>
+        </label>
         <div className="floor-switcher" role="group" aria-label="Choose office floor">
           <button type="button" className={activeFloor === "all" ? "active" : ""} aria-pressed={activeFloor === "all"} onClick={() => { setActiveFloor("all"); if (controls.current) { controls.current.reset(); controls.current.update(); } }}>Full HQ</button>
           <button type="button" className={activeFloor === "0" ? "active" : ""} aria-pressed={activeFloor === "0"} onClick={() => { setActiveFloor("0"); if (controls.current) { controls.current.target.set(0, 1.35, 0); controls.current.object.position.set(0, 14, 29); controls.current.update(); } }}>Floor 1</button>
           <button type="button" className={activeFloor === "1" ? "active" : ""} aria-pressed={activeFloor === "1"} onClick={() => { setActiveFloor("1"); if (controls.current) { controls.current.target.set(0, 7.05, 0); controls.current.object.position.set(0, 20, 29); controls.current.update(); } }}>Floor 2</button>
         </div>
-        <button type="button" onClick={() => { setActiveFloor("all"); controls.current?.reset?.(); }}>Reset view</button>
+        <button type="button" onClick={() => { setActiveFloor("all"); setSelectedDepartment(""); controls.current?.reset?.(); }}>Reset view</button>
       </div>
     </header>
     <section className="office-stage">
