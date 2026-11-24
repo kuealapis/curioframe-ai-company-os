@@ -160,9 +160,14 @@ function renderFinance(){
   $("#finance-expense-total").textContent=formatIDR(expense);
   $("#finance-net-total").textContent=formatIDR(income-expense);
   host.innerHTML=financeEntries.length?financeEntries.map(x=>{
-    const date=x.occurred_at?new Date(x.occurred_at+"T00:00:00"):null;
+    // Treat date-only ledger values as Jakarta calendar dates, independent of device timezone.
+    const date=x.occurred_at?new Date(String(x.occurred_at).slice(0,10)+"T00:00:00+07:00"):null;
     const label=date&&!Number.isNaN(date.getTime())?new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Jakarta"}).format(date):"—";
-    return '<tr><td>'+escapeHtml(label)+'</td><td><span class="pill '+(x.entry_type==="income"?"green":"amber")+'">'+(x.entry_type==="income"?"INCOME":"EXPENSE")+'</span><small class="finance-source">'+escapeHtml(x.description.split(" — ")[0])+'</small></td><td>'+escapeHtml(x.description.split(" — ").slice(1).join(" — ")||x.description)+'</td><td class="finance-amount '+(x.entry_type==="income"?"positive":"negative")+'">'+(x.entry_type==="income"?"+":"−")+escapeHtml(formatIDR(x.amount))+'</td></tr>';
+    const description=String(x.description||"");
+    const parts=description.split(" — ");
+    const source=parts[0]||"Unspecified source";
+    const detail=parts.slice(1).join(" — ")||description||"No description";
+    return '<tr><td>'+escapeHtml(label)+'</td><td><span class="pill '+(x.entry_type==="income"?"green":"amber")+'">'+(x.entry_type==="income"?"INCOME":"EXPENSE")+'</span><small class="finance-source">'+escapeHtml(source)+'</small></td><td>'+escapeHtml(detail)+'</td><td class="finance-amount '+(x.entry_type==="income"?"positive":"negative")+'">'+(x.entry_type==="income"?"+":"−")+escapeHtml(formatIDR(x.amount))+'</td></tr>';
   }).join(""):'<tr><td class="empty-row" colspan="4">No transactions recorded yet.</td></tr>';
 }
 async function submitFinanceEntry(event){
