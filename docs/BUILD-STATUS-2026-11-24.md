@@ -17,7 +17,7 @@ Development is being performed on `mvp/owner-auth-workflow` and reviewed through
 - Owner sign-in UI:
   - Removes the in-app account creation path.
   - Preserves email/password sign-in and password recovery.
-  - This UI change alone does not prove that public sign-ups are disabled in Supabase Auth project settings; that setting must be checked separately.
+  - A restrictive owner-only RLS guard is now applied to all 21 RLS-enabled public tables. The configured Owner UUID was confirmed to exist before migration; verification found 21/21 restrictive guard policies.
 - Finance date defaults use an explicit Asia/Jakarta date formatter.
 - Responsive styles added for the mobile workspace.
 
@@ -27,6 +27,7 @@ An additive migration created `public.client_leads` in the active Supabase proje
 - Basic validation constraints and indexes.
 - Row Level Security enabled.
 - Authenticated access is restricted by the owning user's `companies.owner_id`.
+- A separate owner-only restrictive RLS migration now limits authenticated access across all 21 RLS-enabled public tables to the verified CurioFrame Owner identity.
 - Anonymous table privileges revoked; authenticated CRUD privileges granted.
 - The security advisor returned the existing warnings for `pg_net` in the public schema and disabled leaked-password protection. These were not changed in this build.
 
@@ -42,7 +43,7 @@ An additive migration created `public.client_leads` in the active Supabase proje
 - Research URL retrieval can collect public HTML/text for human review; retrieval does not validate claims or source authority.
 - Social account authorization, publishing, email/client outreach, DANA/payment wallet, and automated withdrawal are not connected.
 - The company database currently contains two CurioFrame AI workspaces. The application selects the earliest workspace; the records have not been merged or deleted.
-- The owner-only sign-in UI is not equivalent to server-side Auth signup disablement.
+- The owner-only app UI and restrictive database policies protect company data; the Supabase Auth setting that disables account registration globally is still not verified through the available project-management controls.
 
 ## Cost and safety
 - No paid services, API billing, advertising spend, or payment provider connections were activated.
