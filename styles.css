@@ -535,3 +535,16 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
  #page-finance .finance-layout{grid-template-columns:1fr}
  #page-finance .page-heading{align-items:flex-start}
 }
+
+/* Sales & Clients pipeline */
+.sales-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sales-layout{align-items:start}
+#page-sales .table-wrap{overflow-x:auto}
+#page-sales table{min-width:620px}
+.sales-stage-select{min-width:138px;max-width:160px}
+#page-sales textarea{width:100%;resize:vertical}
+@media(max-width:760px){
+ .sales-stats{grid-template-columns:1fr}
+ #page-sales .sales-layout{grid-template-columns:1fr}
+ #page-sales .page-heading{align-items:flex-start}
+}
