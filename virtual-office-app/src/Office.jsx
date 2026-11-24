@@ -534,7 +534,8 @@ export function OfficeApp() {
     };
   }, [connected]);
 
-  const departments = snapshot.departments.length ? snapshot.departments.map(d => d.name).filter(Boolean) : [...new Set(employees.map(e => e.department || "Unassigned"))];
+  // Match Building room order exactly: rooms are generated from first-seen employee departments.
+  const departments = [...new Set(employees.map(e => e.department || "Unassigned"))];
   const selected = employees.find(e => e.id === selectedId);
   const selectedStatus = selected ? getStatus(selected, tasks) : null;
   const openTasks = tasks.filter(t => !["completed", "cancelled"].includes(t.status));
