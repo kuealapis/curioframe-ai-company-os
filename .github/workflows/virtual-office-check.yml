@@ -46,6 +46,20 @@ jobs:
           grep -Fq 'id="virtual-hq-full-scene"' index.html
           grep -Fq '#virtual-hq-full-scene iframe[data-curioframe-office]' styles.css
           echo "Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified."
+      - name: Verify Finance, Sales, and Owner app surfaces
+        run: |
+          grep -Fq 'data-page="finance"' index.html
+          grep -Fq 'id="page-finance"' index.html
+          grep -Fq 'id="finance-entry-form"' index.html
+          grep -Fq 'data-page="sales"' index.html
+          grep -Fq 'id="page-sales"' index.html
+          grep -Fq 'id="sales-lead-form"' index.html
+          grep -Fq 'from("finance_entries").select("*")' app.js
+          grep -Fq 'from("client_leads").select("*")' app.js
+          grep -Fq 'function renderFinance()' app.js
+          grep -Fq 'function renderSales()' app.js
+          ! grep -Fq 'supabase.auth.signUp' app.js
+          echo "Finance, Sales, and Owner-only sign-in UI wiring verified."
       - name: Install free open-source dependencies
         run: npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
       - name: Build Virtual Office
