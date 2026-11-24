@@ -33,7 +33,7 @@ An additive migration created `public.client_leads` in the active Supabase proje
 
 ## Validation
 - Finance-only commit passed the existing GitHub Actions pipeline, including JavaScript syntax, Virtual Office build, and desktop/Android-sized browser smoke tests.
-- Expanded Finance + Sales + Owner sign-in branch has a new GitHub Actions run; its final result must be recorded after completion.
+- Expanded Finance + Sales + Owner sign-in branch passed GitHub Actions run #80 (run ID `45426227199`): JavaScript syntax, authenticated Mission Control integration, Finance/Sales/Owner surface checks, Virtual Office production build, generated Pages assets, and desktop + Android-sized browser smoke tests all completed successfully.
 - The live client_leads table was checked: RLS is enabled and the owner-scoped policy is present.
 
 ## Not yet production-ready
