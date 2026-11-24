@@ -101,6 +101,11 @@ async function loadData(){
 
 
 
+function getJakartaISODate(){
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const value=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+  return value.year+"-"+value.month+"-"+value.day;
+}
 function formatIDR(value){
   return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value)||0);
 }
@@ -132,7 +137,7 @@ async function submitFinanceEntry(event){
     });
     if(error)throw error;
     $("#finance-entry-form").reset();
-    $("#finance-entry-date").value=new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"});
+    $("#finance-entry-date").value=getJakartaISODate();
     message.textContent="Transaction saved to the company finance ledger.";
     await loadData();
   }catch(error){message.textContent=error.message||"Could not save the transaction."}
@@ -1487,11 +1492,6 @@ async function handleAuth(event){
     if(authMode==="recovery"){
       const {error}=await supabase.auth.updateUser({password});if(error)throw error;
       authMode="signin";$("#auth-password").value="";setAuthModeUI();setMessage("Password updated successfully. Sign in with your new password.");
-    }else if(authMode==="signup"){
-      const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0]}});
-      if(error)throw error;
-      if(data.session){await startWorkspace(data.user);setMessage("")}
-      else setMessage("Account created. Check your email to confirm, then return here and sign in.");
     }else{
       if($("#remember-email").checked)safeStorageSet("curioframe_owner_email",email);
       else safeStorageRemove("curioframe_owner_email");
@@ -1506,19 +1506,15 @@ async function handleAuth(event){
 }
 let authMode="signin";
 function setAuthModeUI(){
-  const recovery=authMode==="recovery",signup=authMode==="signup";
-  $("#auth-title").textContent=recovery?"Choose a new password":signup?"Create owner account":"Owner sign in";
-  $("#auth-copy").textContent=recovery?"Enter a new password for your CurioFrame Owner account.":signup?"Create the secure owner login for CurioFrame AI.":"Sign in to open your private company workspace.";
-  $("#auth-submit").textContent=recovery?"Update password":signup?"Create account":"Sign in";
-  $("#auth-switch").hidden=recovery;$("#auth-forgot-password").hidden=signup||recovery;$("#auth-options").hidden=recovery||signup;
-  $("#auth-password-label").textContent=recovery?"New password":signup?"Create password":"Password";
+  const recovery=authMode==="recovery";
+  $("#auth-title").textContent=recovery?"Choose a new password":"Owner sign in";
+  $("#auth-copy").textContent=recovery?"Enter a new password for your CurioFrame Owner account.":"Sign in to open your private company workspace.";
+  $("#auth-submit").textContent=recovery?"Update password":"Sign in";
+  $("#auth-forgot-password").hidden=recovery;$("#auth-options").hidden=recovery;
+  $("#auth-password-label").textContent=recovery?"New password":"Password";
   $("#auth-email-label").hidden=recovery;$("#auth-email").required=!recovery;
-  $("#auth-password").autocomplete=signup||recovery?"new-password":"current-password";
+  $("#auth-password").autocomplete=recovery?"new-password":"current-password";
   $("#auth-password").value="";
-}
-function toggleAuth(){
-  authMode=authMode==="signin"?"signup":"signin";setAuthModeUI();
-  $("#auth-switch").textContent=authMode==="signup"?"Already registered? Sign in":"New here? Create your owner account";setMessage("");
 }
 async function requestPasswordReset(){
   const email=$("#auth-email").value.trim();
