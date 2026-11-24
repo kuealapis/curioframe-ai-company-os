@@ -62,7 +62,8 @@ jobs:
           echo "Finance, Sales, and Owner-only sign-in UI wiring verified."
       - name: Verify zero-cost and research evidence gates
         run: |
-          grep -Fq 'HARD_ZERO_COST_GUARD' app.js
+          grep -Fq 'function askZeroCostExecution(purpose)' app.js
+          grep -Fq 'aiProviderPreflightPassed' app.js
           grep -Fq 'verification_status:"retrieved_pending_human_review"' app.js
           grep -Fq 'decision:"BLOCKED_NOT_VERIFIED"' app.js
           grep -Fq 'source_status:asset.status' app.js
