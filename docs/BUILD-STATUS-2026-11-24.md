@@ -36,6 +36,12 @@ An additive migration created `public.client_leads` in the active Supabase proje
 - Expanded Finance + Sales + Owner sign-in branch passed GitHub Actions run #80 (run ID `45426227199`): JavaScript syntax, authenticated Mission Control integration, Finance/Sales/Owner surface checks, Virtual Office production build, generated Pages assets, and desktop + Android-sized browser smoke tests all completed successfully.
 - The live client_leads table was checked: RLS is enabled and the owner-scoped policy is present.
 
+## Follow-up hardening on the development branch
+- Finance ledger rendering now treats date-only values as Asia/Jakarta calendar dates and safely handles an empty transaction description.
+- GitHub Actions now checks the client-side zero-cost preflight gate and the Research source-review / blocked-intake evidence markers.
+- Owner sign-in copy now accurately describes the workspace as Owner-only; the GitHub repository itself remains public.
+- Follow-up validation run #86 is in progress for the latest branch head. Do not treat this run as passed until its desktop and Android-sized browser tests complete successfully.
+
 ## Not yet production-ready
 - The pull request is still open and unmerged.
 - No production deployment was performed by this change.
