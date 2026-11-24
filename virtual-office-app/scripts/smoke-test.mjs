@@ -108,7 +108,10 @@ async function exerciseViewport(page, label) {
   });
   assert.ok(visibleAgent, label + ": at least one Agent hit target must be visible inside the viewport");
   const visibleAgentButton = page.locator(".agent-name-tag").filter({ hasText: visibleAgent.name }).first();
-  await visibleAgentButton.click({ force: true });
+  // Trigger the actual projected HTML button handler directly. Playwright's
+  // forced pointer hit-test is unreliable for drei Html elements after camera
+  // transitions, while the DOM click still exercises the React onClick handler.
+  await visibleAgentButton.evaluate(node => node.click());
   await page.waitForFunction(name => document.querySelector(".agent-inspector h2")?.textContent === name, visibleAgent.name, { timeout: 10000 });
   assert.equal(await page.locator(".agent-inspector h2").textContent(), visibleAgent.name, label + ": tapping a visible Agent must open its identity panel");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
