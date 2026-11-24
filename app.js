@@ -1264,7 +1264,7 @@ function sendHQSnapshot(frame){
   frame.contentWindow.postMessage({type:"curioframe:office-snapshot",payload},location.origin);
 }
 window.addEventListener("message",event=>{
-  const frames=$("#virtual-hq-scene iframe[data-curioframe-office], #virtual-hq-full-scene iframe[data-curioframe-office]");
+  const frames=$$("#virtual-hq-scene iframe[data-curioframe-office], #virtual-hq-full-scene iframe[data-curioframe-office]");
   const frame=frames.find(candidate=>candidate.contentWindow===event.source);
   if(event.origin!==location.origin||!frame)return;
   if(event.data?.type==="curioframe:office-ready"){sendHQSnapshot(frame);return;}
