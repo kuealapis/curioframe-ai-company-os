@@ -1706,6 +1706,7 @@ const pilotConfirm=$("#pilot-zero-cost-confirm"),pilotButton=$("#run-one-work-sa
 pilotConfirm?.addEventListener("change",()=>{aiProviderPreflightPassed=false;if(preflightButton)preflightButton.disabled=!pilotConfirm.checked;if(pilotButton)pilotButton.disabled=true});
 preflightButton?.addEventListener("click",()=>checkAIProviderPreflight(preflightButton));
 pilotButton?.addEventListener("click",runOneWorkSample);
+$("#pipeline-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
