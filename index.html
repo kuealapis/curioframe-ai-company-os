@@ -202,7 +202,18 @@
         </div>
         <section class="panel distribution-roadmap"><h2>Activation → OAuth/API → Publishing → Analytics</h2><p>Current implementation: the Account Activation checklist is being prepared. After Founder verification, the next gated stages are official OAuth/API connection, queue validation, publishing worker with QA and Owner approval, then platform analytics. No passwords or tokens are stored in the browser, and no post is sent to a platform by this queue.</p></section>
       </section>
-      <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div><div class="pipeline-board" id="pipeline-board"></div></section>
+      <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div>
+        <section class="panel video-project-create"><div class="panel-head"><div><h2>Create a video project</h2><p>Database-backed production intake · existing CurioFrame roles only</p></div><span class="pill blue">ZERO-COST MODE</span></div>
+          <form id="video-project-form" class="distribution-form">
+            <label>Video topic<input id="video-project-topic" maxlength="180" required value="Why Is Space Completely Silent?" placeholder="Enter the video topic"></label>
+            <label>Target duration<select id="video-project-duration"><option value="35">35 seconds</option><option value="40" selected>40 seconds</option><option value="50">50 seconds</option><option value="60">60 seconds</option></select></label>
+            <div class="form-note">YouTube Shorts · Vertical 9:16 · English. Creating a project only saves the record and queues tasks. It does not call an AI provider, render a video, or publish content.</div>
+            <button class="primary-btn" id="video-project-submit" type="submit">Create production project</button>
+            <p class="form-note" id="video-project-message" aria-live="polite">Owner approval remains mandatory before any publication handoff.</p>
+          </form>
+        </section>
+        <section class="panel"><div class="panel-head"><div><h2>Video projects</h2><p>Project records, assigned roles, and task progress</p></div><button class="secondary-btn" type="button" id="pipeline-refresh-btn">↻ Refresh</button></div><div id="video-project-list" class="video-project-list"><p class="muted">Loading video projects…</p></div></section>
+        <div class="pipeline-board" id="pipeline-board"></div></section>
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
       <section class="page" id="page-virtual-hq">
         <div class="page-heading hq-page-heading"><div><p class="eyebrow">CURIOFRAME AI · VIRTUAL CAMPUS</p><h1>Virtual Headquarters</h1><p class="subheading">Explore the office, visit departments, and inspect your AI team.</p></div><div class="hq-page-actions"><button class="secondary-btn" type="button" data-page="overview">← Back to Company OS</button><button class="secondary-btn" id="hq-refresh-btn" type="button">↻ Refresh</button></div></div>

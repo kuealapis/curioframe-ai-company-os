@@ -813,6 +813,47 @@ async function submitResearchQAReview(event){
  finally{if(button)button.disabled=false}
 }
 
+
+function renderVideoProjects(){
+  const host=$("#video-project-list");if(!host)return;
+  const projects=contentAssets.filter(a=>a.asset_type==="video_project");
+  host.innerHTML=projects.length?projects.map(project=>{
+    let meta={};try{meta=JSON.parse(project.body||"{}")}catch{}
+    const linked=tasks.filter(t=>(meta.task_ids||[]).includes(t.id));
+    return '<article class="video-project-card"><div class="video-project-head"><div><span class="eyebrow">SHORT-FORM VIDEO · '+escapeHtml(meta.platform||"YouTube Shorts")+'</span><h3>'+escapeHtml(project.title)+'</h3></div><span class="pill '+(project.status==="approved"?"green":"blue")+'">'+escapeHtml(prettyStatus(project.status))+'</span></div><p>'+escapeHtml(meta.duration_seconds||40)+' sec · '+escapeHtml(meta.language||"English")+' · '+escapeHtml(meta.format||"9:16")+'</p><small>'+linked.length+' linked production tasks · '+linked.filter(t=>t.status==="completed").length+' completed · no AI execution claimed</small><div class="video-project-tasks">'+linked.map(t=>'<div><span>'+escapeHtml(t.title)+'</span><small>'+escapeHtml(t.ai_employees?.name||"Unassigned")+' · '+escapeHtml(prettyStatus(t.status))+'</small></div>').join("")+'</div></article>';
+  }).join(""):'<div class="empty-state"><strong>No video projects yet</strong><p>Create the first CurioFrame Short above. This saves a project record and routes tasks to registered roles without triggering paid or unverified AI execution.</p></div>';
+}
+async function createVideoProject(event){
+  event.preventDefault();
+  const form=$("#video-project-form"),button=$("#video-project-submit"),topic=$("#video-project-topic").value.trim();
+  if(!topic){alert("Enter a video topic first.");return}
+  button.disabled=true;button.textContent="Saving project…";
+  const roles=[["research","Research & fact-check"],["content","Script, hook & captions"],["qc","Independent factual and language QC"],["marketing","Title, description & packaging"],["distribution","Channel handoff & publishing readiness"]];
+  try{
+    const projectMeta={platform:"YouTube Shorts",format:"9:16",duration_seconds:Number($("#video-project-duration").value)||40,language:"English",topic,status:"draft",execution_mode:"manual_assisted_zero_cost",ai_execution_started:false,owner_approval_required:true,created_by:currentUser.id};
+    const {data:asset,error:assetError}=await supabase.from("content_assets").insert({company_id:company.id,title:topic,asset_type:"video_project",status:"draft",body:JSON.stringify(projectMeta)}).select("id").single();
+    if(assetError)throw assetError;
+    const created=[];
+    for(const [role,title] of roles){
+      const employee=employees.find(e=>e.role_key===role);
+      if(!employee)continue;
+      const {data:task,error}=await supabase.from("tasks").insert({company_id:company.id,title:title+" · "+topic,objective:"Project asset ID: "+asset.id+". Prepare and save the assigned deliverable. This is a queued assignment only; do not claim AI execution.",assigned_employee_id:employee.id,status:"queued",priority:"high",created_by:currentUser.id}).select("id").single();
+      if(error)throw error;
+      created.push({id:task.id,role,title});
+      const event=await supabase.from("task_events").insert({company_id:company.id,task_id:task.id,employee_id:employee.id,event_type:"video_project_task_created",message:"Production task linked to video project: "+topic,metadata:{project_asset_id:asset.id,role_key:role,execution_started:false}});
+      if(event.error)throw event.error;
+    }
+    const finalMeta={...projectMeta,task_ids:created.map(x=>x.id),roles_assigned:created.map(x=>x.role),registered_roles_missing:roles.filter(([role])=>!employees.some(e=>e.role_key===role)).map(x=>x[0])};
+    const update=await supabase.from("content_assets").update({body:JSON.stringify(finalMeta),updated_at:new Date().toISOString()}).eq("id",asset.id).eq("company_id",company.id);
+    if(update.error)throw update.error;
+    await supabase.from("task_events").insert({company_id:company.id,event_type:"video_project_created",message:"Video project created: "+topic,metadata:{project_asset_id:asset.id,task_count:created.length,ai_execution_started:false,provider_calls:0}});
+    form.reset();$("#video-project-duration").value="40";
+    await loadData();
+    $("#video-project-message").textContent="Project saved. "+created.length+" tasks linked to existing registered roles. All remain queued; no AI provider was called.";
+  }catch(error){showError(error)}
+  finally{button.disabled=false;button.textContent="Create production project";}
+}
+
 function renderAll(){
   $("#employee-total").textContent=String(employees.length).padStart(2,"0");
   $("#open-task-total").textContent=String(tasks.filter(t=>!["completed","cancelled"].includes(t.status)).length).padStart(2,"0");
@@ -836,6 +877,7 @@ function renderAll(){
   $("#pipeline-overview").innerHTML=["research","content","review","scheduled","published"].map((stage,i)=>{const count=contentAssets.filter(a=>a.status===stage||(stage==="research"&&a.asset_type==="research")).length;return '<div class="pipe-row"><span>'+["Research","Content","Quality","Scheduled","Published"][i]+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+Math.min(count*25,100)+'%"></div></div><span class="pipe-count">'+count+'</span></div>'}).join("");
   $("#pipeline-board").innerHTML=["draft","review","approved","scheduled","published"].map(stage=>{const items=contentAssets.filter(a=>a.status===stage);return '<section class="pipeline-column"><h3>'+prettyStatus(stage)+'<span class="count">'+items.length+'</span></h3>'+ (items.length?items.map(a=>'<div class="pipeline-card">'+escapeHtml(a.title)+'<small>'+escapeHtml(a.asset_type)+'</small></div>').join(""):'<p class="muted">No items in this stage.</p>')+'</section>'}).join("");
   renderOrchestrator();
+  renderVideoProjects();
   renderDistribution();
   renderFinance();
   renderSales();
@@ -1664,6 +1706,7 @@ const pilotConfirm=$("#pilot-zero-cost-confirm"),pilotButton=$("#run-one-work-sa
 pilotConfirm?.addEventListener("change",()=>{aiProviderPreflightPassed=false;if(preflightButton)preflightButton.disabled=!pilotConfirm.checked;if(pilotButton)pilotButton.disabled=true});
 preflightButton?.addEventListener("click",()=>checkAIProviderPreflight(preflightButton));
 pilotButton?.addEventListener("click",runOneWorkSample);
+$("#pipeline-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#capability-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#organization-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 document.addEventListener("click",e=>{const button=e.target.closest("[data-save-account]");if(button)saveDistributionAccount(button.dataset.saveAccount,button)});
@@ -1719,6 +1762,7 @@ $("#all-task-table").addEventListener("click",async e=>{
     await loadData();
   }catch(error){alert(error.message||"AI task could not run.");button.disabled=false;button.textContent="▶ Run AI"}
 });
+$("#video-project-form")?.addEventListener("submit",createVideoProject);
 $("#task-form").addEventListener("submit",async e=>{
   if(e.submitter?.value==="cancel")return;e.preventDefault();
   const title=$("#task-title").value.trim();if(!title)return;
