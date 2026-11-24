@@ -87,6 +87,12 @@ async function exerciseViewport(page, label) {
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
   await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
+  const departmentSelect = page.getByLabel("Visit department");
+  assert.equal(await departmentSelect.locator("option").count(), 12, label + ": all 11 departments must be available in the department directory");
+  await departmentSelect.selectOption({ label: "Department 07 · 3 agents" });
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
+  await departmentSelect.selectOption({ label: "Department 01 · 3 agents" });
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 1");
   const visibleAgent = await page.locator(".agent-name-tag").evaluateAll(nodes => {
     const width = document.documentElement.clientWidth;
     const height = document.documentElement.clientHeight;
