@@ -51,7 +51,7 @@ function safeStorageGet(key){try{return window.localStorage.getItem(key)||""}cat
 function safeStorageSet(key,value){try{window.localStorage.setItem(key,value)}catch(error){console.warn("Could not save local preference:",error)}}
 function safeStorageRemove(key){try{window.localStorage.removeItem(key)}catch(error){console.warn("Could not clear local preference:",error)}}
 function setMessage(message){$("#auth-message").textContent=message}
-function showAuth(){ $("#auth-screen").hidden=false; $("#app-shell").hidden=true }
+function showAuth(){ document.body.classList.remove("hq-immersive"); $("#auth-screen").hidden=false; $("#app-shell").hidden=true }
 function showApp(){ $("#auth-screen").hidden=true; $("#app-shell").hidden=false }
 function setSystem(text){$("#system-status").innerHTML="<b></b> "+escapeHtml(text)}
 function statusClass(s){return s==="in_progress"?"blue":s==="completed"||s==="published"?"green":s==="review"||s==="pending"?"amber":"gray"}
@@ -1584,7 +1584,8 @@ async function refreshSession(){
   if(data.user)await startWorkspace(data.user);else showAuth();
 }
 function navigate(page){
-  $$(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
+  document.body.classList.toggle("hq-immersive",page==="virtual-hq");
+  $(".page").forEach(p=>p.classList.toggle("active-page",p.id==="page-"+page));
   $$(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.page===page));
   $("#page-crumb").textContent=page.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
   $("#sidebar").classList.remove("open");history.replaceState(null,"","#"+page);
