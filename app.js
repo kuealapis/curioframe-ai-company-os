@@ -1557,7 +1557,7 @@ let authMode="signin";
 function setAuthModeUI(){
   const recovery=authMode==="recovery";
   $("#auth-title").textContent=recovery?"Choose a new password":"Owner sign in";
-  $("#auth-copy").textContent=recovery?"Enter a new password for your CurioFrame Owner account.":"Sign in to open your private company workspace.";
+  $("#auth-copy").textContent=recovery?"Enter a new password for your CurioFrame Owner account.":"Sign in to access the Owner-only CurioFrame workspace.";
   $("#auth-submit").textContent=recovery?"Update password":"Sign in";
   $("#auth-forgot-password").hidden=recovery;$("#auth-options").hidden=recovery;
   $("#auth-password-label").textContent=recovery?"New password":"Password";
