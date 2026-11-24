@@ -42,7 +42,7 @@ const employeeSeed = [
   {name:"Distribution Officer",role_key:"distribution",department:"Distribution & Channel Operations",responsibilities:"Maintains official channel registry, profile readiness, publishing calendar and queue, publication status, and analytics handoffs. Never stores platform passwords or bypasses Founder approval."}
 ];
 
-let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], financeEntries=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
+let currentUser=null, company=null, operatingPolicy=null, departments=[], employees=[], tasks=[], approvals=[], allApprovals=[], contentAssets=[], agentMessages=[], qualityReviews=[], taskEvents=[], recoverySnapshots=[], workflowRuns=[], workflowSteps=[], distributionAccounts=[], distributionPublications=[], financeEntries=[], salesLeads=[], capabilityTestRuns=[], workSampleAssignments=[], hqChannel=null, selectedHQEmployeeId=null;
 let aiProviderPreflightPassed=false;
 let workSamplePilotRunning=false;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -73,7 +73,7 @@ async function ensureCompany(){
 }
 
 async function loadData(){
-  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,capabilityTestRes,workSampleRes]=await Promise.all([
+  const [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,salesLeadRes,capabilityTestRes,workSampleRes]=await Promise.all([
     supabase.from("company_departments").select("*").eq("company_id",company.id).order("priority"),
     supabase.from("company_operating_policies").select("*").eq("company_id",company.id).maybeSingle(),
     supabase.from("ai_employees").select("*").eq("company_id",company.id).order("created_at"),
@@ -89,12 +89,13 @@ async function loadData(){
     supabase.from("distribution_accounts").select("*").eq("company_id",company.id).order("platform"),
     supabase.from("distribution_publications").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(100),
     supabase.from("finance_entries").select("*").eq("company_id",company.id).order("occurred_at",{ascending:false}).limit(100),
+    supabase.from("client_leads").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(200),
     supabase.from("agent_capability_test_runs").select("*").eq("company_id",company.id).order("created_at",{ascending:false}).limit(500),
     supabase.from("agent_work_sample_assignments").select("*").eq("company_id",company.id).order("assigned_at")
   ]);
-  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,capabilityTestRes,workSampleRes])if(result.error)throw result.error;
+  for(const result of [departmentRes,policyRes,employeeRes,taskRes,approvalRes,assetRes,messageRes,qualityRes,eventRes,snapshotRes,workflowRes,workflowStepRes,distributionAccountRes,distributionPublicationRes,financeEntryRes,salesLeadRes,capabilityTestRes,workSampleRes])if(result.error)throw result.error;
   departments=departmentRes.data||[];operatingPolicy=policyRes.data||null;employees=employeeRes.data||[];tasks=taskRes.data||[];allApprovals=approvalRes.data||[];approvals=allApprovals.filter(a=>a.status==="pending");contentAssets=(assetRes.data||[]).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];financeEntries=financeEntryRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];workSampleAssignments=workSampleRes.data||[];
+  agentMessages=messageRes.data||[];qualityReviews=qualityRes.data||[];taskEvents=eventRes.data||[];recoverySnapshots=snapshotRes.data||[];workflowRuns=workflowRes.data||[];workflowSteps=workflowStepRes.data||[];distributionAccounts=distributionAccountRes.data||[];distributionPublications=distributionPublicationRes.data||[];financeEntries=financeEntryRes.data||[];salesLeads=salesLeadRes.data||[];capabilityTestRuns=capabilityTestRes.data||[];workSampleAssignments=workSampleRes.data||[];
   renderAll();
 }
 
@@ -106,6 +107,48 @@ function getJakartaISODate(){
   const value=Object.fromEntries(parts.map(part=>[part.type,part.value]));
   return value.year+"-"+value.month+"-"+value.day;
 }
+
+const SALES_STAGES=[
+  ["lead","Lead"],["contacted","Contacted"],["qualified","Qualified"],
+  ["proposal_sent","Proposal sent"],["negotiation","Negotiation"],["won","Won"],["lost","Lost"]
+];
+function renderSales(){
+  const host=$("#sales-lead-list");if(!host)return;
+  const open=salesLeads.filter(x=>!["won","lost"].includes(x.stage));
+  const won=salesLeads.filter(x=>x.stage==="won");
+  $("#sales-open-total").textContent=String(open.length);
+  $("#sales-won-total").textContent=String(won.length);
+  $("#sales-won-value").textContent=formatIDR(won.reduce((sum,x)=>sum+Number(x.estimated_value||0),0));
+  host.innerHTML=salesLeads.length?salesLeads.map(x=>{
+    const stageOptions=SALES_STAGES.map(([value,label])=>'<option value="'+value+'" '+(x.stage===value?"selected":"")+'>'+label+'</option>').join("");
+    const follow=x.next_follow_up?new Intl.DateTimeFormat("id-ID",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(x.next_follow_up+"T00:00:00Z")):"—";
+    return '<tr><td><strong>'+escapeHtml(x.client_name)+'</strong><small class="finance-source">'+escapeHtml(x.business_name||x.email||x.contact_method||"No company details")+'</small></td><td>'+escapeHtml(x.service_type||"—")+'<small class="finance-source">'+escapeHtml(formatIDR(x.estimated_value))+'</small></td><td><select class="sales-stage-select" aria-label="Update stage for '+escapeHtml(x.client_name)+'" data-lead-stage="'+escapeHtml(x.id)+'">'+stageOptions+'</select></td><td>'+escapeHtml(follow)+'</td></tr>';
+  }).join(""):'<tr><td class="empty-row" colspan="4">No prospects yet. Add the first client lead.</td></tr>';
+}
+async function submitSalesLead(event){
+  event.preventDefault();
+  const button=$("#sales-lead-submit"),message=$("#sales-lead-message");
+  button.disabled=true;message.textContent="Saving prospect…";
+  const clientName=$("#sales-client-name").value.trim(),businessName=$("#sales-business-name").value.trim(),email=$("#sales-email").value.trim(),contact=$("#sales-contact-method").value.trim(),service=$("#sales-service-type").value.trim(),value=Number($("#sales-estimated-value").value||0),follow=$("#sales-follow-up").value||null,notes=$("#sales-notes").value.trim();
+  try{
+    if(!clientName||!Number.isSafeInteger(value)||value<0)throw new Error("Enter a contact name and a valid non-negative whole-number value.");
+    const {error}=await supabase.from("client_leads").insert({company_id:company.id,client_name:clientName,business_name:businessName||null,email:email||null,contact_method:contact||null,service_type:service||null,estimated_value:value,stage:"lead",next_follow_up:follow,notes});
+    if(error)throw error;
+    $("#sales-lead-form").reset();message.textContent="Prospect saved to the company pipeline.";await loadData();
+  }catch(error){message.textContent=error.message||"Could not save prospect."}
+  finally{button.disabled=false}
+}
+async function updateSalesStage(id,stage,select){
+  if(!SALES_STAGES.some(x=>x[0]===stage)){await loadData();return}
+  select.disabled=true;
+  try{
+    const {error}=await supabase.from("client_leads").update({stage,updated_at:new Date().toISOString()}).eq("id",id).eq("company_id",company.id);
+    if(error)throw error;
+    await loadData();
+  }catch(error){alert(error.message||"Could not update the client stage.");await loadData()}
+  finally{select.disabled=false}
+}
+
 function formatIDR(value){
   return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value)||0);
 }
@@ -790,6 +833,7 @@ function renderAll(){
   renderOrchestrator();
   renderDistribution();
   renderFinance();
+  renderSales();
   renderOrganization();
   renderCapabilityLab();
   renderResearchQAPanel();
@@ -1582,8 +1626,11 @@ $("#hq-realtime-test-btn")?.addEventListener("click",event=>testHQRealtimeFeed(e
 $("#history-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
 $("#finance-entry-form")?.addEventListener("submit",submitFinanceEntry);
 $("#finance-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#sales-lead-form")?.addEventListener("submit",submitSalesLead);
+$("#sales-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
+$("#sales-lead-list")?.addEventListener("change",event=>{const select=event.target.closest("[data-lead-stage]");if(select)updateSalesStage(select.dataset.leadStage,select.value,select)});
 $("#distribution-refresh-btn")?.addEventListener("click",()=>loadData().catch(showError));
-$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch").addEventListener("click",toggleAuth);$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
+$("#auth-form").addEventListener("submit",handleAuth);$("#auth-switch")?.addEventListener("click",()=>{});$("#auth-forgot-password").addEventListener("click",requestPasswordReset);$("#auth-email").value=safeStorageGet("curioframe_owner_email");$("#remember-email").checked=!!$("#auth-email").value;
 const financeDate=$("#finance-entry-date");if(financeDate)financeDate.value=new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Jakarta"});
 window.__curioAuthReady=true;
 if(window.__curioBootTimer)clearTimeout(window.__curioBootTimer);
