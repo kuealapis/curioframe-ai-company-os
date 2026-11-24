@@ -548,3 +548,42 @@ body:has(#page-virtual-hq:fullscreen) .main{margin-left:0!important;max-width:no
  #page-sales .sales-layout{grid-template-columns:1fr}
  #page-sales .page-heading{align-items:flex-start}
 }
+
+
+/* Virtual HQ immersive route: open the office as its own full-screen workspace. */
+body.hq-immersive{overflow:hidden;background:#101a25}
+body.hq-immersive .sidebar,
+body.hq-immersive .topbar,
+body.hq-immersive .footer{display:none!important}
+body.hq-immersive .main{margin:0!important;padding:0!important;width:100%!important;max-width:none!important;height:100dvh;min-height:0;overflow:hidden}
+body.hq-immersive #page-virtual-hq{height:100dvh;min-height:0;overflow:hidden;padding:0!important;display:flex;flex-direction:column;background:#101a25}
+body.hq-immersive #page-virtual-hq .hq-page-heading{flex:0 0 auto;align-items:center;margin:0;padding:10px 16px;background:#101a25;border-bottom:1px solid #2b3b4e;color:#edf4fb}
+body.hq-immersive #page-virtual-hq .hq-page-heading .eyebrow{margin-bottom:3px;color:#83a9c7}
+body.hq-immersive #page-virtual-hq .hq-page-heading h1{font-size:17px;color:#f2f6fb}
+body.hq-immersive #page-virtual-hq .hq-page-heading .subheading{margin-top:2px;color:#9aadc0;font-size:10px}
+body.hq-immersive #page-virtual-hq .hq-page-actions{display:flex;gap:7px;flex-shrink:0}
+body.hq-immersive #page-virtual-hq .hq-page-actions button{padding:8px 10px;font-size:10px;border:1px solid #3b5067;background:#1b2b3d;color:#e7f0fa}
+body.hq-immersive #page-virtual-hq .hq-main-panel{display:flex;flex:1;flex-direction:column;min-height:0;margin:0;padding:8px 12px 10px;border:0;border-radius:0;background:#101a25;overflow:hidden}
+body.hq-immersive #page-virtual-hq .hq-live-line{flex:0 0 auto;margin-bottom:5px}
+body.hq-immersive #page-virtual-hq .hq-game-stats{flex:0 0 auto;margin-bottom:5px}
+body.hq-immersive #page-virtual-hq .hq-viewport{flex:1;min-height:0;height:auto;border-radius:12px}
+body.hq-immersive #page-virtual-hq .hq-scene-large{height:100%;min-height:0}
+body.hq-immersive #page-virtual-hq .hq-scene-large iframe{width:100%;height:100%;min-height:0;border:0;display:block}
+body.hq-immersive #page-virtual-hq .hq-game-hint,
+body.hq-immersive #page-virtual-hq .hq-selected-detail,
+body.hq-immersive #page-virtual-hq .hq-legend,
+body.hq-immersive #page-virtual-hq .hq-department-grid,
+body.hq-immersive #page-virtual-hq>.hq-note{display:none!important}
+body.hq-immersive #page-virtual-hq .hq-mission-panel{top:10px;right:10px;bottom:10px}
+@media(max-width:700px){
+ body.hq-immersive #page-virtual-hq .hq-page-heading{padding:8px 9px;gap:8px}
+ body.hq-immersive #page-virtual-hq .hq-page-heading h1{font-size:14px}
+ body.hq-immersive #page-virtual-hq .hq-page-heading .subheading{display:none}
+ body.hq-immersive #page-virtual-hq .hq-page-actions{gap:4px}
+ body.hq-immersive #page-virtual-hq .hq-page-actions button{padding:7px 8px;font-size:9px;white-space:nowrap}
+ body.hq-immersive #page-virtual-hq .hq-main-panel{padding:5px}
+ body.hq-immersive #page-virtual-hq .hq-live-line{font-size:8px;gap:5px}
+ body.hq-immersive #page-virtual-hq .hq-game-stats{gap:4px}
+ body.hq-immersive #page-virtual-hq .hq-game-stats span{font-size:7px;padding:4px 6px}
+ body.hq-immersive #page-virtual-hq .hq-mission-panel{top:auto;right:7px;bottom:7px;width:min(265px,74%);height:45%;max-height:340px}
+}
