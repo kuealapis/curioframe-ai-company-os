@@ -46,6 +46,30 @@ jobs:
           grep -Fq 'id="virtual-hq-full-scene"' index.html
           grep -Fq '#virtual-hq-full-scene iframe[data-curioframe-office]' styles.css
           echo "Authenticated Mission Control iframe, snapshot bridge, and responsive frame styles verified."
+      - name: Verify Finance, Sales, and Owner app surfaces
+        run: |
+          grep -Fq 'data-page="finance"' index.html
+          grep -Fq 'id="page-finance"' index.html
+          grep -Fq 'id="finance-entry-form"' index.html
+          grep -Fq 'data-page="sales"' index.html
+          grep -Fq 'id="page-sales"' index.html
+          grep -Fq 'id="sales-lead-form"' index.html
+          grep -Fq 'from("finance_entries").select("*")' app.js
+          grep -Fq 'from("client_leads").select("*")' app.js
+          grep -Fq 'function renderFinance()' app.js
+          grep -Fq 'function renderSales()' app.js
+          ! grep -Fq 'supabase.auth.signUp' app.js
+          echo "Finance, Sales, and Owner-only sign-in UI wiring verified."
+      - name: Verify zero-cost and research evidence gates
+        run: |
+          grep -Fq 'function askZeroCostExecution(purpose)' app.js
+          grep -Fq 'aiProviderPreflightPassed' app.js
+          grep -Fq 'verification_status:"retrieved_pending_human_review"' app.js
+          grep -Fq 'decision:"BLOCKED_NOT_VERIFIED"' app.js
+          grep -Fq 'source_status:asset.status' app.js
+          grep -Fq 'T00:00:00+07:00' app.js
+          grep -Fq 'String(x.description||"")' app.js
+          echo "AI execution guard, human-review source status, blocked unverified intake, and Jakarta ledger date handling verified."
       - name: Install free open-source dependencies
         run: npm install --prefix virtual-office-app --no-package-lock --no-audit --no-fund
       - name: Build Virtual Office

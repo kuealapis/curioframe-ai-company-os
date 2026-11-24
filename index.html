@@ -6,18 +6,18 @@
   <meta name="theme-color" content="#f4f7fb">
   <meta name="description" content="CurioFrame AI Company OS — operational command center">
   <title>CurioFrame AI — Company OS</title>
-  <link rel="stylesheet" href="./styles.css?v=20261123-13">
+  <link rel="stylesheet" href="./styles.css?v=20261124-15">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
     <form class="auth-card" id="auth-form" autocomplete="on">
       <div class="brand-mark auth-mark">C</div><p class="eyebrow">CURIOFRAME AI COMPANY OS</p>
-      <h1 id="auth-title">Owner sign in</h1><p class="auth-copy" id="auth-copy">Sign in to open your private company workspace.</p>
+      <h1 id="auth-title">Owner sign in</h1><p class="auth-copy" id="auth-copy">Sign in to access the Owner-only CurioFrame workspace.</p>
       <label id="auth-email-label">Email address<input id="auth-email" type="email" autocomplete="username" required placeholder="you@example.com"></label>
       <label><span id="auth-password-label">Password</span><input id="auth-password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
       <div class="auth-options" id="auth-options"><label class="remember-email"><input id="remember-email" type="checkbox"> Remember my email on this device</label><button class="auth-forgot" id="auth-forgot-password" type="button">Forgot password?</button></div>
       <button class="primary-btn auth-submit" id="auth-submit" type="submit">Sign in</button>
-      <button class="auth-switch" id="auth-switch" type="button">New here? Create your owner account</button>
+      <p class="auth-foot auth-owner-only">Owner access only · account creation is disabled</p>
       <p class="auth-message" id="auth-message" role="status"></p>
       <small class="auth-foot">Your workspace is private. Company records are protected by database row-level security.</small>
     </form>
@@ -30,6 +30,8 @@
       <div class="workspace-label">WORKSPACE</div>
       <nav class="nav">
         <a class="nav-link active" href="#overview" data-page="overview"><span>◫</span> Overview</a>
+        <a class="nav-link" href="#sales" data-page="sales"><span>◎</span> Sales &amp; Clients</a>
+        <a class="nav-link" href="#finance" data-page="finance"><span>＄</span> Finance &amp; Revenue</a>
         <a class="nav-link" href="#distribution" data-page="distribution"><span>⇄</span> Distribution Network</a>
         <a class="nav-link" href="#employees" data-page="employees"><span>♙</span> AI Employees</a>
         <a class="nav-link" href="#capability-lab" data-page="capability-lab"><span>✓</span> Agent Capability Lab</a>
@@ -203,10 +205,63 @@
       <section class="page" id="page-pipeline"><div class="page-heading"><div><p class="eyebrow">CONTENT OPERATIONS</p><h1>Production Pipeline</h1><p class="subheading">Research → Content → Quality → Marketing → Approval → Publish.</p></div></div><div class="pipeline-board" id="pipeline-board"></div></section>
       <section class="page" id="page-approvals"><div class="page-heading"><div><p class="eyebrow">OWNER CONTROL</p><h1>Approval Center</h1><p class="subheading">Consequential decisions stay under your control.</p></div></div><section class="panel"><div class="approval-list" id="approval-page-list"><p class="muted">Loading approvals…</p></div></section></section>
       <section class="page" id="page-virtual-hq">
-        <div class="page-heading"><div><p class="eyebrow">COMPANY FLOOR / LIVE WORKSPACE</p><h1>Virtual Headquarters</h1><p class="subheading">Walk through the 3D office, visit departments, and inspect each AI Agent’s live assignments.</p></div><button class="secondary-btn" id="hq-refresh-btn" type="button">↻ Refresh workspace</button></div>
+        <div class="page-heading hq-page-heading"><div><p class="eyebrow">CURIOFRAME AI · VIRTUAL CAMPUS</p><h1>Virtual Headquarters</h1><p class="subheading">Explore the office, visit departments, and inspect your AI team.</p></div><div class="hq-page-actions"><button class="secondary-btn" type="button" data-page="overview">← Back to Company OS</button><button class="secondary-btn" id="hq-refresh-btn" type="button">↻ Refresh</button></div></div>
         <section class="panel hq-main-panel"><div class="hq-live-line"><span class="hq-live-indicator" id="hq-live-indicator" data-state="connecting">● CONNECTING TO DATABASE EVENTS</span><span id="hq-live-last-event">Waiting for the first database change…</span><button class="secondary-btn" id="hq-realtime-test-btn" type="button">Test live feed</button><span>Drag to orbit · Pinch to zoom · Tap an employee to inspect</span></div><div class="hq-game-stats"><span id="hq-agent-total">28 AI AGENTS</span><span id="hq-agent-active">Loading live assignments…</span><span id="hq-department-total">— DEPARTMENTS</span></div><div class="hq-viewport"><div class="hq-game-toolbar" aria-label="Virtual HQ game controls"><div class="hq-game-mode"><button type="button" class="active" data-hq-action="orbit">Orbit view</button><button type="button" data-hq-action="walk">Walk mode</button></div><label class="hq-dept-jump">Explore department<select id="hq-department-select"><option value="">Jump to department…</option></select></label><div class="hq-camera-buttons"><button type="button" data-hq-action="zoom-out" aria-label="Zoom out">−</button><button type="button" data-hq-action="reset">Reset view</button><button type="button" data-hq-action="zoom-in" aria-label="Zoom in">+</button><button class="hq-fullscreen-btn" id="hq-fullscreen-btn" type="button" aria-pressed="false">⛶</button></div></div><div class="hq-build-status" aria-label="Build mode, simulation only">BUILD MODE · SIMULATION ONLY</div><div class="hq-scene hq-scene-large" id="virtual-hq-full-scene" aria-label="Interactive 3D CurioFrame AI headquarters"></div><div class="hq-mission-panel" id="hq-mission-panel"><div class="hq-mission-head"><div><small>CURIOFRAME AI</small><strong>Mission Control</strong></div><button type="button" data-hq-panel-close aria-label="Close Mission Control">×</button></div><nav class="hq-mission-tabs" aria-label="Mission Control sections"><button type="button" data-hq-panel-tab="crew" class="active">Crew</button><button type="button" data-hq-panel-tab="stats">Stats</button><button type="button" data-hq-panel-tab="activity">Activity</button><button type="button" data-hq-panel-tab="tasks">Tasks</button><button type="button" data-hq-panel-tab="calendar">Calendar</button></nav><div class="hq-mission-content" id="hq-mission-content"></div></div><button type="button" class="hq-panel-toggle" id="hq-panel-toggle">▣ Panel</button><div class="hq-joystick-wrap"><span class="hq-joystick-label">MOVE</span><div class="hq-joystick" id="hq-virtual-joystick" role="application" aria-label="Virtual joystick to move around the office"><div class="hq-joystick-knob" id="hq-joystick-knob"></div></div></div></div><p class="hq-game-hint">Drag to look around · Pinch to zoom in Orbit mode · Tap an Agent to inspect · Walk mode: drag to look · use the on-screen joystick to move · WASD / arrow keys on desktop</p><div class="hq-selected-detail" id="hq-selected-detail-full" hidden></div><div class="hq-legend"><span><i class="legend-dot idle"></i> Idle</span><span><i class="legend-dot queued"></i> Queued</span><span><i class="legend-dot working"></i> In progress</span><span><i class="legend-dot review"></i> Review</span><span><i class="legend-dot blocked"></i> Blocked</span></div></section>
         <div class="hq-department-grid" id="hq-department-grid"></div>
         <div class="notice hq-note"><span>ⓘ</span><div><strong>Operational truth</strong><p>The headquarters reflects real workspace records, not fabricated activity. Content tasks now pass through independent QC and QA agents with up to three automatic correction cycles. Only deliverables that pass both gates reach Owner final review; repeated failures are blocked and escalated. AI execution still requires the connected Gemini provider.</p></div></div>
+      </section>
+<section class="page" id="page-sales">
+        <div class="page-heading"><div><p class="eyebrow">CLIENT ACQUISITION CONTROL</p><h1>Sales &amp; Clients</h1><p class="subheading">Track prospects, service interest, proposals, follow-ups, and won clients in one owner-managed pipeline.</p></div><button class="secondary-btn" id="sales-refresh-btn" type="button">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Sales tracking is active; outreach remains manual</strong><p>This workspace stores prospect records and pipeline status. It does not send emails, messages, proposals, or make promises to clients automatically.</p></div></div>
+        <div class="stats-grid sales-stats">
+          <article class="stat-card"><div class="stat-label">OPEN PROSPECTS</div><div class="stat-value" id="sales-open-total">0</div><div class="stat-foot">Not won or lost</div></article>
+          <article class="stat-card"><div class="stat-label">WON CLIENTS</div><div class="stat-value" id="sales-won-total">0</div><div class="stat-foot">Deals marked won</div></article>
+          <article class="stat-card"><div class="stat-label">WON VALUE</div><div class="stat-value" id="sales-won-value">Rp0</div><div class="stat-foot">Recorded deal estimates</div></article>
+        </div>
+        <div class="section-grid sales-layout">
+          <section class="panel"><div class="panel-head"><div><h2>＋ Add a prospect</h2><p>Record a lead from a real client conversation or research.</p></div></div>
+            <form id="sales-lead-form" class="distribution-form">
+              <label>Contact name<input id="sales-client-name" maxlength="120" required placeholder="Client / contact person"></label>
+              <label>Business / brand<input id="sales-business-name" maxlength="160" placeholder="Company or brand"></label>
+              <label>Email (optional)<input id="sales-email" type="email" maxlength="254" placeholder="client@example.com"></label>
+              <label>Contact channel<input id="sales-contact-method" maxlength="80" placeholder="Instagram, WhatsApp, email…"></label>
+              <label>Service interest<input id="sales-service-type" maxlength="120" placeholder="Short-form video package"></label>
+              <label>Estimated deal value (IDR)<input id="sales-estimated-value" type="number" min="0" step="1" inputmode="numeric" placeholder="500000"></label>
+              <label>Next follow-up date<input id="sales-follow-up" type="date"></label>
+              <label>Notes<textarea id="sales-notes" rows="3" maxlength="2000" placeholder="Needs, agreed next step, context…"></textarea></label>
+              <button class="primary-btn" id="sales-lead-submit" type="submit">Save prospect</button>
+              <p class="form-note" id="sales-lead-message" aria-live="polite">Only store information needed for legitimate client follow-up.</p>
+            </form>
+          </section>
+          <section class="panel"><div class="panel-head"><div><h2>Client pipeline</h2><p>Change the stage as a real conversation progresses.</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>PROSPECT</th><th>SERVICE / VALUE</th><th>STAGE</th><th>FOLLOW-UP</th></tr></thead><tbody id="sales-lead-list"><tr><td class="empty-row" colspan="4">Loading client pipeline…</td></tr></tbody></table></div>
+          </section>
+        </div>
+        <p class="form-note">Pipeline values are estimates, not recognized revenue. Only record received payments in Finance &amp; Revenue.</p>
+      </section>
+      <section class="page" id="page-finance">
+        <div class="page-heading"><div><p class="eyebrow">OWNER FINANCE CONTROL</p><h1>Finance &amp; Revenue</h1><p class="subheading">Record realized income and expenses while the central payout wallet is being prepared.</p></div><button class="secondary-btn" id="finance-refresh-btn" type="button">↻ Refresh</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Wallet integration is intentionally deferred</strong><p>This ledger records transactions only. It does not hold funds, connect to DANA, initiate withdrawals, or verify payments automatically. Record income only after payment is actually received.</p></div></div>
+        <div class="stats-grid finance-stats">
+          <article class="stat-card"><div class="stat-label">REALIZED INCOME</div><div class="stat-value" id="finance-income-total">Rp0</div><div class="stat-foot">Payments received and recorded</div></article>
+          <article class="stat-card"><div class="stat-label">RECORDED EXPENSES</div><div class="stat-value" id="finance-expense-total">Rp0</div><div class="stat-foot">Actual expenses only</div></article>
+          <article class="stat-card"><div class="stat-label">NET RECORDED</div><div class="stat-value" id="finance-net-total">Rp0</div><div class="stat-foot">Income less expenses · not bank balance</div></article>
+        </div>
+        <div class="section-grid finance-layout">
+          <section class="panel"><div class="panel-head"><div><h2>＋ Record a transaction</h2><p>Owner-entered record · no payment credentials required</p></div></div>
+            <form id="finance-entry-form" class="distribution-form">
+              <label>Transaction type<select id="finance-entry-type" required><option value="income">Income received</option><option value="expense">Expense paid</option></select></label>
+              <label>Amount (IDR)<input id="finance-entry-amount" type="number" min="1" step="1" required inputmode="numeric" placeholder="100000"></label>
+              <label>Source / category<input id="finance-entry-source" maxlength="100" required placeholder="Client project, YouTube, software…"></label>
+              <label>Description<input id="finance-entry-description" maxlength="240" required placeholder="What was received or paid?"></label>
+              <label>Transaction date<input id="finance-entry-date" type="date" required></label>
+              <button class="primary-btn" id="finance-entry-submit" type="submit">Save transaction</button>
+              <p class="form-note" id="finance-entry-message" aria-live="polite">Do not enter PINs, OTPs, card details, or wallet credentials.</p>
+            </form>
+          </section>
+          <section class="panel"><div class="panel-head"><div><h2>Recent transactions</h2><p>Latest 100 records · newest first</p></div></div><div class="table-wrap"><table><thead><tr><th>DATE</th><th>TYPE / SOURCE</th><th>DESCRIPTION</th><th>AMOUNT</th></tr></thead><tbody id="finance-entry-list"><tr><td class="empty-row" colspan="4">Loading finance records…</td></tr></tbody></table></div></section>
+        </div>
+        <p class="form-note">Finance records are stored in the authenticated company workspace. They are management records, not official bank statements, tax reports, or proof of settlement.</p>
       </section>
       <section class="page" id="page-activity"><div class="page-heading"><div><p class="eyebrow">AUDIT TRAIL</p><h1>Activity Log</h1><p class="subheading">A transparent record of company operations.</p></div></div><div class="section-grid"><section class="panel"><div class="panel-head"><div><h2>Inter-agent communication</h2><p>Messages and handoffs between AI employees</p></div></div><div id="activity-feed" class="activity-feed"><p class="muted">Loading agent messages…</p></div></section><section class="panel"><div class="panel-head"><div><h2>Quality gate history</h2><p>Independent QC and QA decisions</p></div></div><div id="quality-feed" class="activity-feed"><p class="muted">Loading quality reviews…</p></div></section></div></section>
       <section class="page" id="page-history">

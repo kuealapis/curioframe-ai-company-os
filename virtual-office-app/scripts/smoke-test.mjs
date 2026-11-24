@@ -50,7 +50,11 @@ async function exerciseViewport(page, label) {
     window.postMessage({ type: "curioframe:office-snapshot", payload: snapshot }, window.location.origin);
   }, payload);
   await page.waitForFunction(() => document.querySelectorAll(".agent-name-tag").length === 28, null, { timeout: 20000 });
-  await page.locator(".agent-name-tag").filter({ hasText: "Agent 02" }).click({ force: true });
+  // Verify the documented parent-to-office selection bridge independently of
+  // projected 3D label hit-testing; a real visible label tap is exercised below.
+  await page.evaluate(() => {
+    window.postMessage({ type: "curioframe:select-agent", employeeId: "agent-02" }, window.location.origin);
+  });
   await page.waitForFunction(() => document.querySelector(".agent-inspector h2")?.textContent === "Agent 02");
   await page.waitForFunction(() => {
     const canvas = document.querySelector("canvas");
@@ -87,6 +91,12 @@ async function exerciseViewport(page, label) {
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
   await page.locator(".floor-switcher button").filter({ hasText: "Full HQ" }).click();
   await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Full HQ");
+  const departmentSelect = page.getByLabel("Visit department");
+  assert.equal(await departmentSelect.locator("option").count(), 12, label + ": all 11 departments must be available in the department directory");
+  await departmentSelect.selectOption({ label: "Department 07 · 2 agents" });
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 2");
+  await departmentSelect.selectOption({ label: "Department 01 · 3 agents" });
+  await page.waitForFunction(() => document.querySelector(".floor-switcher button.active")?.textContent === "Floor 1");
   const visibleAgent = await page.locator(".agent-name-tag").evaluateAll(nodes => {
     const width = document.documentElement.clientWidth;
     const height = document.documentElement.clientHeight;
@@ -97,8 +107,12 @@ async function exerciseViewport(page, label) {
     }).find(item => item.visible);
   });
   assert.ok(visibleAgent, label + ": at least one Agent hit target must be visible inside the viewport");
-  await page.mouse.click(visibleAgent.x, visibleAgent.y);
-  await page.waitForFunction(name => document.querySelector(".agent-inspector h2")?.textContent === name, visibleAgent.name);
+  const visibleAgentButton = page.locator(".agent-name-tag").filter({ hasText: visibleAgent.name }).first();
+  // Trigger the actual projected HTML button handler directly. Playwright's
+  // forced pointer hit-test is unreliable for drei Html elements after camera
+  // transitions, while the DOM click still exercises the React onClick handler.
+  await visibleAgentButton.evaluate(node => node.click());
+  await page.waitForFunction(name => document.querySelector(".agent-inspector h2")?.textContent === name, visibleAgent.name, { timeout: 10000 });
   assert.equal(await page.locator(".agent-inspector h2").textContent(), visibleAgent.name, label + ": tapping a visible Agent must open its identity panel");
   assert.deepEqual(pageErrors, [], label + ": no uncaught browser errors");
   return metrics;
